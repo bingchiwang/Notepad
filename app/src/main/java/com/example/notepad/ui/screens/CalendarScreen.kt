@@ -638,6 +638,7 @@ fun CalendarScreen(
     // --- Dialog: Add Reminder for Selected Date ---
     if (showAddReminderDialog) {
         AddMultiDayReminderDialog(
+            initialDateMillis = selectedDayStartMillis,
             onDismiss = { showAddReminderDialog = false },
             onSave = { reminderList ->
                 coroutineScope.launch {
