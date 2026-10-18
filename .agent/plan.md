@@ -74,3 +74,16 @@
   - GitHub Actions 工作流設定完成
   - 所有單元測試與 APK 建置通過
   - 專案檔案自動同步至 GitHub
+
+### Task_6_RemindersAndEditConfirm: 實作多日精確提醒系統、事件內容與日期編輯功能、刪除前二次確認對話框。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 多日提醒與時間設定：支援一次勾選多天或自訂未來 14 天任選日期，結合自訂通知時/分與快速預設時段，透過 `AlarmManager` 與 `ReminderReceiver` 實現精確系統通知。
+  - 事件編輯功能：支援待做事項（To-Do）、提醒事項（Reminder）與排程（TimeBlock）隨時編輯標題、備註、到期日期/時間、分類標籤與色彩標記。
+  - 刪除前二次確認：所有待做、提醒與行程刪除按鈕皆綁定 `ConfirmDeleteDialog`，防範誤觸刪除。
+- **驗收標準 (Acceptance Criteria):**
+  - 提醒事項支援多天多選與自訂時間
+  - 到期觸發 Android 系統通知
+  - 支援編輯事件內容與日期
+  - 刪除前跳出確認對話框
+

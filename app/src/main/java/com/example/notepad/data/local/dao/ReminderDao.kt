@@ -11,15 +11,24 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ReminderDao {
-    @Query("SELECT * FROM reminders ORDER BY triggerAt ASC")
+    @Query("SELECT * FROM reminders ORDER BY isFired ASC, triggerAt ASC")
     fun getAllReminders(): Flow<List<Reminder>>
 
+    @Query("SELECT * FROM reminders WHERE triggerAt >= :startMillis AND triggerAt <= :endMillis ORDER BY triggerAt ASC")
+    fun getRemindersByDate(startMillis: Long, endMillis: Long): Flow<List<Reminder>>
+
+    @Query("SELECT * FROM reminders WHERE id = :id LIMIT 1")
+    fun getReminderById(id: Int): Flow<Reminder?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertReminder(reminder: Reminder)
+    suspend fun insertReminder(reminder: Reminder): Long
 
     @Update
     suspend fun updateReminder(reminder: Reminder)
 
     @Delete
     suspend fun deleteReminder(reminder: Reminder)
+
+    @Query("UPDATE reminders SET isFired = 1 WHERE id = :id")
+    suspend fun markAsFired(id: Int)
 }

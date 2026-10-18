@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,29 +21,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.calendar.LunarCalendarFacade
+import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.repository.TaskRepository
-import com.example.notepad.ui.components.ColorPickerRow
-import com.example.notepad.ui.components.DeadlineAlertCard
-import com.example.notepad.ui.components.PRESET_COLORS
-import com.example.notepad.ui.components.breathingDashedBorder
+import com.example.notepad.reminder.ReminderScheduler
+import com.example.notepad.ui.components.*
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun CalendarScreen(
     calendarFacade: LunarCalendarFacade,
     taskRepository: TaskRepository
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
     val allToDos by taskRepository.allToDos.collectAsState(initial = emptyList())
+    val allReminders by taskRepository.allReminders.collectAsState(initial = emptyList())
 
     // Current viewed Year & Month (1-based month: 1..12)
     val todayCal = remember { Calendar.getInstance() }
@@ -55,6 +61,13 @@ fun CalendarScreen(
     var selectedDay by remember { mutableIntStateOf(todayDay) }
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showAddReminderDialog by remember { mutableStateOf(false) }
+
+    var editingToDo by remember { mutableStateOf<ToDo?>(null) }
+    var editingReminder by remember { mutableStateOf<Reminder?>(null) }
+
+    var deletingToDo by remember { mutableStateOf<ToDo?>(null) }
+    var deletingReminder by remember { mutableStateOf<Reminder?>(null) }
 
     // Calculate calendar grid for currentYear and currentMonth
     val monthCal = remember(currentYear, currentMonth) {
@@ -73,12 +86,10 @@ fun CalendarScreen(
         monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
     }
 
-    // Day of week for the 1st of this month (1 = Sunday, ..., 7 = Saturday)
     val firstDayOfWeek = remember(currentYear, currentMonth) {
         monthCal.get(Calendar.DAY_OF_WEEK)
     }
 
-    // Helper to get normalized date millis for (currentYear, currentMonth, day)
     fun getDayStartMillis(day: Int): Long {
         val c = Calendar.getInstance()
         c.set(currentYear, currentMonth - 1, day, 0, 0, 0)
@@ -86,16 +97,21 @@ fun CalendarScreen(
         return c.timeInMillis
     }
 
-    // Tasks due on selected date
     val selectedDayStartMillis = remember(currentYear, currentMonth, selectedDay) {
         getDayStartMillis(selectedDay)
+    }
+    val selectedDayEndMillis = remember(selectedDayStartMillis) {
+        selectedDayStartMillis + 86400000L - 1
     }
 
     val selectedDayToDos = remember(allToDos, selectedDayStartMillis) {
         allToDos.filter { it.dueDate == selectedDayStartMillis }
     }
 
-    // Get Lunar & Solar Info for selected date
+    val selectedDayReminders = remember(allReminders, selectedDayStartMillis, selectedDayEndMillis) {
+        allReminders.filter { it.triggerAt in selectedDayStartMillis..selectedDayEndMillis }
+    }
+
     val selectedDateInfo = remember(currentYear, currentMonth, selectedDay) {
         val c = Calendar.getInstance().apply {
             set(currentYear, currentMonth - 1, selectedDay, 12, 0, 0)
@@ -195,7 +211,6 @@ fun CalendarScreen(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(8.dp)) {
-                    // Weekday Labels
                     val weekdays = listOf("日", "一", "二", "三", "四", "五", "六")
                     Row(
                         modifier = Modifier
@@ -211,8 +226,8 @@ fun CalendarScreen(
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = when (index) {
-                                    0 -> Color(0xFFE53935) // Sunday red
-                                    6 -> Color(0xFF1E88E5) // Saturday blue
+                                    0 -> Color(0xFFE53935)
+                                    6 -> Color(0xFF1E88E5)
                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                             )
@@ -221,7 +236,6 @@ fun CalendarScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(bottom = 6.dp))
 
-                    // Days Grid
                     val totalSlots = ((firstDayOfWeek - 1 + daysInMonth + 6) / 7) * 7
                     val rows = totalSlots / 7
 
@@ -240,13 +254,13 @@ fun CalendarScreen(
                                     val isSelected = (dayNumber == selectedDay)
                                     val isToday = (currentYear == todayYear && currentMonth == todayMonth && dayNumber == todayDay)
                                     val dayMillis = getDayStartMillis(dayNumber)
+                                    val dayEndMillis = dayMillis + 86400000L - 1
 
-                                    // Tasks for this date
                                     val dayTasks = allToDos.filter { it.dueDate == dayMillis }
+                                    val dayReminders = allReminders.filter { it.triggerAt in dayMillis..dayEndMillis }
                                     val hasIncompleteTasks = dayTasks.any { !it.isCompleted }
                                     val isDueTomorrow = calendarFacade.isTomorrow(dayMillis) && hasIncompleteTasks
 
-                                    // Get lunar label for this day
                                     val dayDate = remember(currentYear, currentMonth, dayNumber) {
                                         Calendar.getInstance().apply {
                                             set(currentYear, currentMonth - 1, dayNumber, 12, 0, 0)
@@ -304,7 +318,6 @@ fun CalendarScreen(
                                                 }
                                             )
 
-                                            // Lunar / Solar term label
                                             Text(
                                                 text = info.displayLabel,
                                                 fontSize = 9.sp,
@@ -318,13 +331,13 @@ fun CalendarScreen(
                                                 }
                                             )
 
-                                            // Task dot indicators
-                                            if (dayTasks.isNotEmpty()) {
+                                            // Task and Reminder dots
+                                            if (dayTasks.isNotEmpty() || dayReminders.isNotEmpty()) {
                                                 Row(
                                                     modifier = Modifier.padding(top = 2.dp),
                                                     horizontalArrangement = Arrangement.spacedBy(2.dp)
                                                 ) {
-                                                    dayTasks.take(3).forEach { task ->
+                                                    dayTasks.take(2).forEach { task ->
                                                         Box(
                                                             modifier = Modifier
                                                                 .size(4.dp)
@@ -332,6 +345,14 @@ fun CalendarScreen(
                                                                 .background(
                                                                     if (task.isCompleted) Color.Gray else Color(task.color)
                                                                 )
+                                                        )
+                                                    }
+                                                    dayReminders.take(1).forEach { rem ->
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(4.dp)
+                                                                .clip(CircleShape)
+                                                                .background(Color(rem.color))
                                                         )
                                                     }
                                                 }
@@ -402,7 +423,7 @@ fun CalendarScreen(
             }
         }
 
-        // --- Selected Date To-Do Items Header ---
+        // --- Selected Date To-Do Items Section ---
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -415,54 +436,36 @@ fun CalendarScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                Button(
-                    onClick = { showAddTaskDialog = true },
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "新增待辦",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "新增待辦")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(
+                        onClick = { showAddReminderDialog = true },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("加提醒", style = MaterialTheme.typography.labelMedium)
+                    }
+
+                    Button(
+                        onClick = { showAddTaskDialog = true },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("加待辦", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
         }
 
-        // --- To-Do List for Selected Date ---
         if (selectedDayToDos.isEmpty()) {
             item {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.DateRange,
-                            contentDescription = "無待做事項",
-                            tint = MaterialTheme.colorScheme.outline,
-                            modifier = Modifier.size(36.dp)
-                        )
-                        Text(
-                            text = "這一天還沒有待做事項",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.outline
-                        )
-                        TextButton(onClick = { showAddTaskDialog = true }) {
-                            Text(text = "點此為這一天新增待辦")
-                        }
-                    }
-                }
+                Text(
+                    text = "此日尚無到期的待做事項",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
             }
         } else {
             items(selectedDayToDos, key = { it.id }) { toDo ->
@@ -480,13 +483,59 @@ fun CalendarScreen(
                             taskRepository.updateToDo(toDo.copy(isCompleted = checked))
                         }
                     },
+                    onEdit = {
+                        editingToDo = toDo
+                    },
                     onDelete = {
-                        coroutineScope.launch {
-                            taskRepository.deleteToDo(toDo)
-                        }
+                        deletingToDo = toDo
                     }
                 )
             }
+        }
+
+        // --- Selected Date Reminders Section ---
+        item {
+            Text(
+                text = "🔔 該日提醒事項 (${selectedDayReminders.size})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+        }
+
+        if (selectedDayReminders.isEmpty()) {
+            item {
+                Text(
+                    text = "此日尚無預定的提醒通知",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+        } else {
+            items(selectedDayReminders, key = { it.id }) { reminder ->
+                val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+                val timeStr = sdf.format(Date(reminder.triggerAt))
+
+                ReminderCard(
+                    title = reminder.title,
+                    message = reminder.message,
+                    triggerTimeText = "${currentMonth}月${selectedDay}日 $timeStr",
+                    tag = reminder.tag,
+                    tagColor = Color(reminder.color),
+                    isFired = reminder.isFired,
+                    onEdit = {
+                        editingReminder = reminder
+                    },
+                    onDelete = {
+                        deletingReminder = reminder
+                    }
+                )
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(60.dp))
         }
     }
 
@@ -533,7 +582,7 @@ fun CalendarScreen(
                     OutlinedTextField(
                         value = tag,
                         onValueChange = { tag = it },
-                        label = { Text("分類標籤 (例如: 日常, 工作, 緊急)") },
+                        label = { Text("分類標籤") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -584,5 +633,80 @@ fun CalendarScreen(
                 }
             }
         }
+    }
+
+    // --- Dialog: Add Reminder for Selected Date ---
+    if (showAddReminderDialog) {
+        AddMultiDayReminderDialog(
+            onDismiss = { showAddReminderDialog = false },
+            onSave = { reminderList ->
+                coroutineScope.launch {
+                    reminderList.forEach { reminder ->
+                        val newId = taskRepository.insertReminder(reminder)
+                        ReminderScheduler.scheduleReminder(context, reminder.copy(id = newId.toInt()))
+                    }
+                    showAddReminderDialog = false
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Edit To-Do ---
+    editingToDo?.let { todoToEdit ->
+        EditToDoDialog(
+            toDo = todoToEdit,
+            onDismiss = { editingToDo = null },
+            onSave = { updated ->
+                coroutineScope.launch {
+                    taskRepository.updateToDo(updated)
+                    editingToDo = null
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Edit Reminder ---
+    editingReminder?.let { remToEdit ->
+        EditReminderDialog(
+            reminder = remToEdit,
+            onDismiss = { editingReminder = null },
+            onSave = { updated ->
+                coroutineScope.launch {
+                    taskRepository.updateReminder(updated)
+                    ReminderScheduler.cancelReminder(context, updated.id)
+                    ReminderScheduler.scheduleReminder(context, updated)
+                    editingReminder = null
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Confirm Delete ToDo ---
+    deletingToDo?.let { todo ->
+        ConfirmDeleteDialog(
+            itemName = todo.title,
+            onConfirm = {
+                coroutineScope.launch {
+                    taskRepository.deleteToDo(todo)
+                    deletingToDo = null
+                }
+            },
+            onDismiss = { deletingToDo = null }
+        )
+    }
+
+    // --- Dialog: Confirm Delete Reminder ---
+    deletingReminder?.let { rem ->
+        ConfirmDeleteDialog(
+            itemName = rem.title.ifEmpty { "提醒" },
+            onConfirm = {
+                coroutineScope.launch {
+                    ReminderScheduler.cancelReminder(context, rem.id)
+                    taskRepository.deleteReminder(rem)
+                    deletingReminder = null
+                }
+            },
+            onDismiss = { deletingReminder = null }
+        )
     }
 }

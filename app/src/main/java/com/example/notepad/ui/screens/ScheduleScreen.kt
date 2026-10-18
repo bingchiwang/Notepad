@@ -22,9 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.repository.TaskRepository
-import com.example.notepad.ui.components.ColorPickerRow
-import com.example.notepad.ui.components.ColorTag
-import com.example.notepad.ui.components.PRESET_COLORS
+import com.example.notepad.ui.components.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -71,6 +69,8 @@ fun ScheduleScreen(
     val progress = if (totalCount > 0) completedCount.toFloat() / totalCount.toFloat() else 0f
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingBlock by remember { mutableStateOf<TimeBlock?>(null) }
+    var deletingBlock by remember { mutableStateOf<TimeBlock?>(null) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -224,10 +224,11 @@ fun ScheduleScreen(
                                 taskRepository.updateTimeBlock(block.copy(isCompleted = checked))
                             }
                         },
+                        onEdit = {
+                            editingBlock = block
+                        },
                         onDelete = {
-                            coroutineScope.launch {
-                                taskRepository.deleteTimeBlock(block)
-                            }
+                            deletingBlock = block
                         },
                         onStartPomodoro = {
                             onStartPomodoroForTask?.invoke(block.title)
@@ -379,6 +380,34 @@ fun ScheduleScreen(
             }
         }
     }
+
+    // --- Dialog: Edit Time Block ---
+    editingBlock?.let { blockToEdit ->
+        EditTimeBlockDialog(
+            timeBlock = blockToEdit,
+            onDismiss = { editingBlock = null },
+            onSave = { updated ->
+                coroutineScope.launch {
+                    taskRepository.updateTimeBlock(updated)
+                    editingBlock = null
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Confirm Delete Time Block ---
+    deletingBlock?.let { block ->
+        ConfirmDeleteDialog(
+            itemName = block.title,
+            onConfirm = {
+                coroutineScope.launch {
+                    taskRepository.deleteTimeBlock(block)
+                    deletingBlock = null
+                }
+            },
+            onDismiss = { deletingBlock = null }
+        )
+    }
 }
 
 @Composable
@@ -387,7 +416,8 @@ fun TimeBlockCard(
     onCheckedChange: (Boolean) -> Unit,
     onDelete: () -> Unit,
     onStartPomodoro: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onEdit: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -460,18 +490,32 @@ fun TimeBlockCard(
                 }
             }
 
-            // Quick Pomodoro & Delete action
+            // Actions: Edit, Pomodoro, Delete
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (onEdit != null) {
+                    IconButton(
+                        onClick = onEdit,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "編輯",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
                 IconButton(
                     onClick = onStartPomodoro,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Text(text = "🍅", style = MaterialTheme.typography.titleMedium)
                 }
 
                 IconButton(
                     onClick = onDelete,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.DeleteOutline,

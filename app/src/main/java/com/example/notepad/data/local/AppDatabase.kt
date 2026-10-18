@@ -15,7 +15,7 @@ import com.example.notepad.data.local.entity.ToDo
 
 @Database(
     entities = [ToDo::class, Reminder::class, TimeBlock::class, PomodoroRecord::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

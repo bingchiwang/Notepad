@@ -46,8 +46,12 @@ class TaskRepository(
     // Reminder Operations
     val allReminders: Flow<List<Reminder>> = reminderDao.getAllReminders()
 
-    suspend fun insertReminder(reminder: Reminder) {
-        reminderDao.insertReminder(reminder)
+    fun getRemindersByDate(startMillis: Long, endMillis: Long): Flow<List<Reminder>> {
+        return reminderDao.getRemindersByDate(startMillis, endMillis)
+    }
+
+    suspend fun insertReminder(reminder: Reminder): Long {
+        return reminderDao.insertReminder(reminder)
     }
 
     suspend fun updateReminder(reminder: Reminder) {
@@ -56,6 +60,10 @@ class TaskRepository(
 
     suspend fun deleteReminder(reminder: Reminder) {
         reminderDao.deleteReminder(reminder)
+    }
+
+    suspend fun markReminderAsFired(id: Int) {
+        reminderDao.markAsFired(id)
     }
 
     // TimeBlock Operations (Daily Schedule)

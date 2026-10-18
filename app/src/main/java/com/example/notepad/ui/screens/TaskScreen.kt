@@ -1,29 +1,35 @@
 package com.example.notepad.ui.screens
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.calendar.LunarCalendarFacade
+import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.repository.TaskRepository
-import com.example.notepad.ui.components.ColorPickerRow
-import com.example.notepad.ui.components.ColorTag
-import com.example.notepad.ui.components.DeadlineAlertCard
-import com.example.notepad.ui.components.PRESET_COLORS
+import com.example.notepad.reminder.ReminderScheduler
+import com.example.notepad.ui.components.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -37,14 +43,40 @@ fun TaskScreen(
     onTaskClick: (Int) -> Unit,
     onStartPomodoro: ((String) -> Unit)? = null
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
     val toDos by taskRepository.allToDos.collectAsState(initial = emptyList())
+    val reminders by taskRepository.allReminders.collectAsState(initial = emptyList())
 
-    var filterMode by remember { mutableIntStateOf(0) } // 0: 全部, 1: 進行中, 2: 已完成
-    var showAddDialog by remember { mutableStateOf(false) }
+    // 0: 📋 待做事件, 1: 🔔 提醒事項
+    var selectedTrack by remember { mutableIntStateOf(0) }
 
-    val filteredToDos = remember(toDos, filterMode) {
-        when (filterMode) {
+    var todoFilterMode by remember { mutableIntStateOf(0) } // 0: 全部, 1: 進行中, 2: 已完成
+    var showAddToDoDialog by remember { mutableStateOf(false) }
+    var showAddReminderDialog by remember { mutableStateOf(false) }
+
+    // State for editing
+    var editingToDo by remember { mutableStateOf<ToDo?>(null) }
+    var editingReminder by remember { mutableStateOf<Reminder?>(null) }
+
+    // State for deletion confirmation
+    var deletingToDo by remember { mutableStateOf<ToDo?>(null) }
+    var deletingReminder by remember { mutableStateOf<Reminder?>(null) }
+
+    // Notification permission launcher for Android 13+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    val filteredToDos = remember(toDos, todoFilterMode) {
+        when (todoFilterMode) {
             1 -> toDos.filter { !it.isCompleted }
             2 -> toDos.filter { it.isCompleted }
             else -> toDos
@@ -56,9 +88,15 @@ fun TaskScreen(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { showAddDialog = true },
-                icon = { Icon(Icons.Default.Add, contentDescription = "新增待做事項") },
-                text = { Text("新增待辦") }
+                onClick = {
+                    if (selectedTrack == 0) {
+                        showAddToDoDialog = true
+                    } else {
+                        showAddReminderDialog = true
+                    }
+                },
+                icon = { Icon(Icons.Default.Add, contentDescription = "新增") },
+                text = { Text(if (selectedTrack == 0) "新增待辦" else "新增提醒") }
             )
         }
     ) { innerPadding ->
@@ -69,96 +107,185 @@ fun TaskScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Filter Chips
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            // --- Dual-Track Navigation Segment ---
+            PrimaryTabRow(
+                selectedTabIndex = selectedTrack,
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                FilterChip(
-                    selected = filterMode == 0,
-                    onClick = { filterMode = 0 },
-                    label = { Text("全部 (${toDos.size})") }
+                Tab(
+                    selected = selectedTrack == 0,
+                    onClick = { selectedTrack = 0 },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.AutoMirrored.Filled.List, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("📋 待做事件 (${toDos.count { !it.isCompleted }})")
+                        }
+                    }
                 )
-                FilterChip(
-                    selected = filterMode == 1,
-                    onClick = { filterMode = 1 },
-                    label = { Text("進行中 (${toDos.count { !it.isCompleted }})") }
-                )
-                FilterChip(
-                    selected = filterMode == 2,
-                    onClick = { filterMode = 2 },
-                    label = { Text("已完成 (${toDos.count { it.isCompleted }})") }
+                Tab(
+                    selected = selectedTrack == 1,
+                    onClick = { selectedTrack = 1 },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("🔔 提醒事項 (${reminders.count { !it.isFired }})")
+                        }
+                    }
                 )
             }
 
-            if (filteredToDos.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
+            // === Track 0: To-Dos ===
+            if (selectedTrack == 0) {
+                // Filter Chips
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = when (filterMode) {
-                            1 -> "太棒了！目前沒有未完成的待做事項 🎉"
-                            2 -> "尚未有任何完成的紀錄"
-                            else -> "目前尚無任何待做事項，點擊右下角按鈕新增！"
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.outline
+                    FilterChip(
+                        selected = todoFilterMode == 0,
+                        onClick = { todoFilterMode = 0 },
+                        label = { Text("全部 (${toDos.size})") }
+                    )
+                    FilterChip(
+                        selected = todoFilterMode == 1,
+                        onClick = { todoFilterMode = 1 },
+                        label = { Text("進行中 (${toDos.count { !it.isCompleted }})") }
+                    )
+                    FilterChip(
+                        selected = todoFilterMode == 2,
+                        onClick = { todoFilterMode = 2 },
+                        label = { Text("已完成 (${toDos.count { it.isCompleted }})") }
                     )
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(filteredToDos, key = { it.id }) { toDo ->
-                        val isDueTomorrow = toDo.dueDate?.let { calendarFacade.isTomorrow(it) } ?: false
-                        val dueDateString = toDo.dueDate?.let {
-                            val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-                            "📅 到期日: ${sdf.format(Date(it))}"
-                        }
 
-                        DeadlineAlertCard(
-                            title = toDo.title,
-                            description = toDo.description,
-                            tag = toDo.tag,
-                            tagColor = Color(toDo.color),
-                            isDueTomorrow = isDueTomorrow,
-                            isCompleted = toDo.isCompleted,
-                            dueDateText = dueDateString,
-                            onClick = { onTaskClick(toDo.id) },
-                            onCheckedChange = { checked ->
-                                coroutineScope.launch {
-                                    taskRepository.updateToDo(toDo.copy(isCompleted = checked))
-                                }
+                if (filteredToDos.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = when (todoFilterMode) {
+                                1 -> "太棒了！目前沒有未完成的待做事項 🎉"
+                                2 -> "尚未有任何完成的紀錄"
+                                else -> "目前尚無任何待做事項，點擊右下角按鈕新增！"
                             },
-                            onDelete = {
-                                coroutineScope.launch {
-                                    taskRepository.deleteToDo(toDo)
-                                }
-                            }
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.outline
                         )
                     }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(filteredToDos, key = { it.id }) { toDo ->
+                            val isDueTomorrow = toDo.dueDate?.let { calendarFacade.isTomorrow(it) } ?: false
+                            val dueDateString = toDo.dueDate?.let {
+                                val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
+                                "📅 到期日: ${sdf.format(Date(it))}"
+                            }
 
-                    item {
-                        Spacer(modifier = Modifier.height(64.dp))
+                            DeadlineAlertCard(
+                                title = toDo.title,
+                                description = toDo.description,
+                                tag = toDo.tag,
+                                tagColor = Color(toDo.color),
+                                isDueTomorrow = isDueTomorrow,
+                                isCompleted = toDo.isCompleted,
+                                dueDateText = dueDateString,
+                                onClick = { onTaskClick(toDo.id) },
+                                onCheckedChange = { checked ->
+                                    coroutineScope.launch {
+                                        taskRepository.updateToDo(toDo.copy(isCompleted = checked))
+                                    }
+                                },
+                                onEdit = {
+                                    editingToDo = toDo
+                                },
+                                onDelete = {
+                                    deletingToDo = toDo
+                                }
+                            )
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(72.dp))
+                        }
+                    }
+                }
+            } else {
+                // === Track 1: Reminders ===
+                if (reminders.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "目前尚未設定任何提醒事項",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                            Text(
+                                text = "點擊右下角「+ 新增提醒」可一次設定多天與通知時間",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(reminders, key = { it.id }) { reminder ->
+                            val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
+                            val triggerTimeStr = sdf.format(Date(reminder.triggerAt))
+
+                            ReminderCard(
+                                title = reminder.title,
+                                message = reminder.message,
+                                triggerTimeText = triggerTimeStr,
+                                tag = reminder.tag,
+                                tagColor = Color(reminder.color),
+                                isFired = reminder.isFired,
+                                onEdit = {
+                                    editingReminder = reminder
+                                },
+                                onDelete = {
+                                    deletingReminder = reminder
+                                }
+                            )
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(72.dp))
+                        }
                     }
                 }
             }
         }
     }
 
-    // Add ToDo Dialog
-    if (showAddDialog) {
+    // --- Dialog: Add New ToDo ---
+    if (showAddToDoDialog) {
         var title by remember { mutableStateOf("") }
         var description by remember { mutableStateOf("") }
         var tag by remember { mutableStateOf("日常") }
         var selectedColor by remember { mutableLongStateOf(PRESET_COLORS.first().colorLong) }
         var setDueTomorrow by remember { mutableStateOf(false) }
 
-        Dialog(onDismissRequest = { showAddDialog = false }) {
+        Dialog(onDismissRequest = { showAddToDoDialog = false }) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -199,7 +326,6 @@ fun TaskScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Quick Tomorrow Due Checkbox
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
@@ -214,7 +340,6 @@ fun TaskScreen(
                         )
                     }
 
-                    // Color Picker
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = "色彩標記：",
@@ -232,7 +357,7 @@ fun TaskScreen(
                         horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(onClick = { showAddDialog = false }) {
+                        TextButton(onClick = { showAddToDoDialog = false }) {
                             Text("取消")
                         }
                         Spacer(modifier = Modifier.width(8.dp))
@@ -261,7 +386,7 @@ fun TaskScreen(
                                                 color = selectedColor
                                             )
                                         )
-                                        showAddDialog = false
+                                        showAddToDoDialog = false
                                     }
                                 }
                             },
@@ -274,6 +399,86 @@ fun TaskScreen(
             }
         }
     }
+
+    // --- Dialog: Add Multi-Day Reminder ---
+    if (showAddReminderDialog) {
+        AddMultiDayReminderDialog(
+            onDismiss = { showAddReminderDialog = false },
+            onSave = { reminderList ->
+                coroutineScope.launch {
+                    reminderList.forEach { reminder ->
+                        val newId = taskRepository.insertReminder(reminder)
+                        // Schedule alarm notification
+                        ReminderScheduler.scheduleReminder(
+                            context,
+                            reminder.copy(id = newId.toInt())
+                        )
+                    }
+                    showAddReminderDialog = false
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Edit ToDo ---
+    editingToDo?.let { todoToEdit ->
+        EditToDoDialog(
+            toDo = todoToEdit,
+            onDismiss = { editingToDo = null },
+            onSave = { updatedToDo ->
+                coroutineScope.launch {
+                    taskRepository.updateToDo(updatedToDo)
+                    editingToDo = null
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Edit Reminder ---
+    editingReminder?.let { reminderToEdit ->
+        EditReminderDialog(
+            reminder = reminderToEdit,
+            onDismiss = { editingReminder = null },
+            onSave = { updatedReminder ->
+                coroutineScope.launch {
+                    taskRepository.updateReminder(updatedReminder)
+                    // Reschedule alarm
+                    ReminderScheduler.cancelReminder(context, updatedReminder.id)
+                    ReminderScheduler.scheduleReminder(context, updatedReminder)
+                    editingReminder = null
+                }
+            }
+        )
+    }
+
+    // --- Dialog: Confirm Delete ToDo ---
+    deletingToDo?.let { todo ->
+        ConfirmDeleteDialog(
+            itemName = todo.title,
+            onConfirm = {
+                coroutineScope.launch {
+                    taskRepository.deleteToDo(todo)
+                    deletingToDo = null
+                }
+            },
+            onDismiss = { deletingToDo = null }
+        )
+    }
+
+    // --- Dialog: Confirm Delete Reminder ---
+    deletingReminder?.let { reminder ->
+        ConfirmDeleteDialog(
+            itemName = reminder.title.ifEmpty { "提醒" },
+            onConfirm = {
+                coroutineScope.launch {
+                    ReminderScheduler.cancelReminder(context, reminder.id)
+                    taskRepository.deleteReminder(reminder)
+                    deletingReminder = null
+                }
+            },
+            onDismiss = { deletingReminder = null }
+        )
+    }
 }
 
 @Composable
@@ -284,6 +489,9 @@ fun TaskDetailScreen(
     val coroutineScope = rememberCoroutineScope()
     val toDos by taskRepository.allToDos.collectAsState(initial = emptyList())
     val task = toDos.find { it.id == taskId }
+
+    var editingTask by remember { mutableStateOf<ToDo?>(null) }
+    var deletingTask by remember { mutableStateOf<ToDo?>(null) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -303,16 +511,21 @@ fun TaskDetailScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ColorTag(text = task.tag, tagColor = Color(task.color))
-                    IconButton(onClick = {
-                        coroutineScope.launch {
-                            taskRepository.deleteToDo(task)
+                    Row {
+                        IconButton(onClick = { editingTask = task }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "編輯事項",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "刪除事項",
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                        IconButton(onClick = { deletingTask = task }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "刪除事項",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
 
@@ -364,5 +577,31 @@ fun TaskDetailScreen(
                 )
             }
         }
+    }
+
+    editingTask?.let { t ->
+        EditToDoDialog(
+            toDo = t,
+            onDismiss = { editingTask = null },
+            onSave = { updated ->
+                coroutineScope.launch {
+                    taskRepository.updateToDo(updated)
+                    editingTask = null
+                }
+            }
+        )
+    }
+
+    deletingTask?.let { t ->
+        ConfirmDeleteDialog(
+            itemName = t.title,
+            onConfirm = {
+                coroutineScope.launch {
+                    taskRepository.deleteToDo(t)
+                    deletingTask = null
+                }
+            },
+            onDismiss = { deletingTask = null }
+        )
     }
 }

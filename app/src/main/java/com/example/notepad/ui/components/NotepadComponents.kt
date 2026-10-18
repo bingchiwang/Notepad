@@ -12,6 +12,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -97,7 +100,6 @@ fun ColorTag(
     tagColor: Color,
     modifier: Modifier = Modifier
 ) {
-    // Calculate contrast text color: use black for light backgrounds and white for dark backgrounds
     val textColor = if (tagColor.luminance() > 0.5f) Color.Black else Color.White
 
     Box(
@@ -125,7 +127,6 @@ fun Modifier.breathingDashedBorder(
 ): Modifier = composed {
     val infiniteTransition = rememberInfiniteTransition(label = "breathing_dashed_border")
     
-    // Animate alpha for the "breathing" effect
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.35f,
         targetValue = 1f,
@@ -136,7 +137,6 @@ fun Modifier.breathingDashedBorder(
         label = "alpha"
     )
 
-    // Animate phase for the "marching ants" dashed effect
     val phase by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 20f,
@@ -224,6 +224,7 @@ fun DeadlineAlertCard(
     isCompleted: Boolean = false,
     dueDateText: String? = null,
     onCheckedChange: ((Boolean) -> Unit)? = null,
+    onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     onClick: (() -> Unit)? = null
 ) {
@@ -286,9 +287,22 @@ fun DeadlineAlertCard(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         ColorTag(text = tag, tagColor = tagColor)
+                        if (onEdit != null) {
+                            IconButton(
+                                onClick = onEdit,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "編輯",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
                         if (onDelete != null) {
                             IconButton(
                                 onClick = onDelete,
@@ -334,33 +348,150 @@ fun DeadlineAlertCard(
     }
 }
 
-@Preview(showBackground = true)
+/**
+ * Card for displaying a Reminder with notification info, edit and delete actions.
+ */
 @Composable
-fun DeadlineAlertCardPreview() {
-    MaterialTheme {
+fun ReminderCard(
+    title: String,
+    message: String,
+    triggerTimeText: String,
+    tag: String,
+    tagColor: Color,
+    isFired: Boolean,
+    modifier: Modifier = Modifier,
+    onEdit: (() -> Unit)? = null,
+    onDelete: (() -> Unit)? = null
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isFired) {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
         Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            DeadlineAlertCard(
-                title = "寫期末專案報告",
-                description = "完成 Android Compose 與 Room 資料庫架構章節",
-                tag = "課業",
-                tagColor = Color(0xFF2196F3),
-                isDueTomorrow = false,
-                dueDateText = "📅 2026/10/25 到期"
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = if (isFired) Icons.Default.Notifications else Icons.Default.NotificationsActive,
+                        contentDescription = "提醒狀態",
+                        tint = if (isFired) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Text(
+                        text = title.ifEmpty { "提醒" },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isFired) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface
+                    )
+                }
 
-            DeadlineAlertCard(
-                title = "繳交伺服器帳單",
-                description = "務必在明日午夜前完成信用卡繳費",
-                tag = "緊急",
-                tagColor = Color(0xFFFF9800),
-                isDueTomorrow = true,
-                dueDateText = "📅 明日到期"
-            )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    ColorTag(text = tag, tagColor = tagColor)
+                    if (onEdit != null) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "編輯",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                    if (onDelete != null) {
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DeleteOutline,
+                                contentDescription = "刪除",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (message.isNotEmpty()) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "⏰ 預定提醒：$triggerTimeText",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isFired) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = if (isFired) "已送達通知" else "等待提醒",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isFired) MaterialTheme.colorScheme.outline else Color(0xFF388E3C),
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
+}
+
+/**
+ * Common Confirm Delete Dialog
+ */
+@Composable
+fun ConfirmDeleteDialog(
+    itemName: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("確認刪除", fontWeight = FontWeight.Bold) },
+        text = { Text("確定要刪除「$itemName」嗎？此操作將無法復原。") },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+            ) {
+                Text("確認刪除")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
