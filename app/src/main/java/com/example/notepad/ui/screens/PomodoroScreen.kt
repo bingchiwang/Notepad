@@ -25,6 +25,7 @@ import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.repository.TaskRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.notepad.ui.components.DateFormatter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -222,7 +223,7 @@ fun PomodoroScreen(
                     val minutes = timeLeftSeconds / 60
                     val seconds = timeLeftSeconds % 60
                     Text(
-                        text = String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds),
+                        text = DateFormatter.formatMinutesSeconds(minutes, seconds),
                         fontSize = 48.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -388,9 +389,8 @@ fun PomodoroScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.SemiBold
                                 )
-                                val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
                                 Text(
-                                    text = "完成於 ${timeFormat.format(Date(record.timestamp))}",
+                                    text = "完成於 ${DateFormatter.formatTime(record.timestamp)}",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.outline
                                 )

@@ -305,7 +305,7 @@ fun AddMultiDayReminderDialog(
                 // Time Selection Section
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "⏰ 提醒時間：${String.format(Locale.getDefault(), "%02d:%02d", hour, minute)}",
+                        text = "⏰ 提醒時間：${DateFormatter.formatMinutesSeconds(hour, minute)}",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -341,7 +341,7 @@ fun AddMultiDayReminderDialog(
                                 Text("-", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                             }
                             Text(
-                                String.format(Locale.getDefault(), "%02d", hour),
+                                DateFormatter.formatTwoDigits(hour),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium
                             )
@@ -356,7 +356,7 @@ fun AddMultiDayReminderDialog(
                                 Text("-", fontWeight = FontWeight.Bold, fontSize = 20.sp)
                             }
                             Text(
-                                String.format(Locale.getDefault(), "%02d", minute),
+                                DateFormatter.formatTwoDigits(minute),
                                 fontWeight = FontWeight.Bold,
                                 style = MaterialTheme.typography.titleMedium
                             )
@@ -701,7 +701,7 @@ fun EditReminderDialog(
                     }
 
                     Text(
-                        text = "${year}年${month}月${day}日  ${String.format(Locale.getDefault(), "%02d:%02d", hour, minute)}",
+                        text = "${year}年${month}月${day}日  ${DateFormatter.formatMinutesSeconds(hour, minute)}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -803,7 +803,7 @@ fun EditReminderDialog(
                             }, modifier = Modifier.size(28.dp)) {
                                 Text("-", fontWeight = FontWeight.Bold)
                             }
-                            Text(String.format(Locale.getDefault(), "%02d", month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            Text(DateFormatter.formatTwoDigits(month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             IconButton(onClick = {
                                 if (month == 12) {
                                     year += 1
@@ -831,7 +831,7 @@ fun EditReminderDialog(
                             }, modifier = Modifier.size(28.dp)) {
                                 Text("-", fontWeight = FontWeight.Bold)
                             }
-                            Text(String.format(Locale.getDefault(), "%02d", day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            Text(DateFormatter.formatTwoDigits(day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             IconButton(onClick = {
                                 val c = Calendar.getInstance().apply {
                                     set(year, month - 1, day)
@@ -858,7 +858,7 @@ fun EditReminderDialog(
                             IconButton(onClick = { hour = if (hour > 0) hour - 1 else 23 }, modifier = Modifier.size(28.dp)) {
                                 Text("-", fontWeight = FontWeight.Bold)
                             }
-                            Text(String.format(Locale.getDefault(), "%02d", hour), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            Text(DateFormatter.formatTwoDigits(hour), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             IconButton(onClick = { hour = if (hour < 23) hour + 1 else 0 }, modifier = Modifier.size(28.dp)) {
                                 Text("+", fontWeight = FontWeight.Bold)
                             }
@@ -870,7 +870,7 @@ fun EditReminderDialog(
                             IconButton(onClick = { minute = if (minute >= 5) minute - 5 else 55 }, modifier = Modifier.size(28.dp)) {
                                 Text("-", fontWeight = FontWeight.Bold)
                             }
-                            Text(String.format(Locale.getDefault(), "%02d", minute), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                            Text(DateFormatter.formatTwoDigits(minute), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                             IconButton(onClick = { minute = if (minute <= 50) minute + 5 else 0 }, modifier = Modifier.size(28.dp)) {
                                 Text("+", fontWeight = FontWeight.Bold)
                             }
@@ -1129,7 +1129,7 @@ fun EditToDoDialog(
                                 }, modifier = Modifier.size(28.dp)) {
                                     Text("-", fontWeight = FontWeight.Bold)
                                 }
-                                Text(String.format(Locale.getDefault(), "%02d", month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                Text(DateFormatter.formatTwoDigits(month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                                 IconButton(onClick = {
                                     if (month == 12) {
                                         year += 1
@@ -1157,7 +1157,7 @@ fun EditToDoDialog(
                                 }, modifier = Modifier.size(28.dp)) {
                                     Text("-", fontWeight = FontWeight.Bold)
                                 }
-                                Text(String.format(Locale.getDefault(), "%02d", day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                Text(DateFormatter.formatTwoDigits(day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                                 IconButton(onClick = {
                                     val c = Calendar.getInstance().apply {
                                         set(year, month - 1, day)

@@ -186,8 +186,7 @@ fun TaskScreen(
                         items(filteredToDos, key = { it.id }) { toDo ->
                             val isDueTomorrow = toDo.dueDate?.let { calendarFacade.isTomorrow(it) } ?: false
                             val dueDateString = toDo.dueDate?.let {
-                                val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
-                                "📅 到期日: ${sdf.format(Date(it))}"
+                                "📅 到期日: ${DateFormatter.formatDate(it)}"
                             }
 
                             DeadlineAlertCard(
@@ -249,8 +248,7 @@ fun TaskScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(reminders, key = { it.id }) { reminder ->
-                            val sdf = SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault())
-                            val triggerTimeStr = sdf.format(Date(reminder.triggerAt))
+                            val triggerTimeStr = DateFormatter.formatDateTime(reminder.triggerAt)
 
                             ReminderCard(
                                 title = reminder.title,
@@ -543,9 +541,8 @@ fun TaskDetailScreen(
                 }
 
                 task.dueDate?.let {
-                    val sdf = SimpleDateFormat("yyyy/MM/dd", Locale.getDefault())
                     Text(
-                        text = "📅 到期日: ${sdf.format(Date(it))}",
+                        text = "📅 到期日: ${DateFormatter.formatDate(it)}",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold

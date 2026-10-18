@@ -514,8 +514,7 @@ fun CalendarScreen(
             }
         } else {
             items(selectedDayReminders, key = { it.id }) { reminder ->
-                val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-                val timeStr = sdf.format(Date(reminder.triggerAt))
+                val timeStr = DateFormatter.formatTime(reminder.triggerAt)
 
                 ReminderCard(
                     title = reminder.title,

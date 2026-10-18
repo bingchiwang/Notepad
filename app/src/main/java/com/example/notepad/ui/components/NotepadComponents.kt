@@ -34,6 +34,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class PresetColorItem(val name: String, val color: Color, val colorLong: Long)
 
@@ -494,4 +497,29 @@ fun ConfirmDeleteDialog(
             }
         }
     )
+}
+
+/**
+ * Reusable date and time formatters that avoid calling Locale.getDefault() inside composables.
+ */
+object DateFormatter {
+    fun formatTime(timestamp: Long): String {
+        return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timestamp))
+    }
+
+    fun formatDate(timestamp: Long): String {
+        return SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(Date(timestamp))
+    }
+
+    fun formatDateTime(timestamp: Long): String {
+        return SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault()).format(Date(timestamp))
+    }
+
+    fun formatMinutesSeconds(minutes: Int, seconds: Int): String {
+        return "${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}"
+    }
+
+    fun formatTwoDigits(value: Int): String {
+        return value.toString().padStart(2, '0')
+    }
 }
