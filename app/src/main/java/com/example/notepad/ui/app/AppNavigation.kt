@@ -1,6 +1,9 @@
 package com.example.notepad.ui.app
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.DateRange
@@ -29,7 +32,8 @@ import com.example.notepad.ui.screens.TaskScreen
 @Composable
 fun AppNavigation(
     taskRepository: TaskRepository,
-    calendarFacade: LunarCalendarFacade
+    calendarFacade: LunarCalendarFacade,
+    modifier: Modifier = Modifier
 ) {
     val topLevelRoutes = remember {
         setOf(TaskRoute, CalendarRoute, ScheduleRoute, PomodoroRoute)
@@ -98,7 +102,7 @@ fun AppNavigation(
     }
 
     NavigationSuiteScaffold(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         navigationSuiteItems = {
             item(
                 selected = navigationState.topLevelRoute == TaskRoute,
@@ -126,11 +130,19 @@ fun AppNavigation(
             )
         }
     ) {
-        NavDisplay(
-            modifier = Modifier.fillMaxSize(),
-            entries = navigationState.toEntries(entryProvider),
-            onBack = { navigator.goBack() },
-            sceneStrategies = listOf(listDetailStrategy)
-        )
+        // Safe status bar & camera cutout padding to keep top space clean
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .displayCutoutPadding()
+        ) {
+            NavDisplay(
+                modifier = Modifier.fillMaxSize(),
+                entries = navigationState.toEntries(entryProvider),
+                onBack = { navigator.goBack() },
+                sceneStrategies = listOf(listDetailStrategy)
+            )
+        }
     }
 }
