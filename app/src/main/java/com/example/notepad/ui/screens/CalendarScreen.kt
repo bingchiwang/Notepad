@@ -1,30 +1,588 @@
 package com.example.notepad.ui.screens
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Today
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.notepad.calendar.LunarCalendarFacade
+import com.example.notepad.data.local.entity.ToDo
+import com.example.notepad.data.repository.TaskRepository
+import com.example.notepad.ui.components.ColorPickerRow
+import com.example.notepad.ui.components.DeadlineAlertCard
+import com.example.notepad.ui.components.PRESET_COLORS
+import com.example.notepad.ui.components.breathingDashedBorder
+import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.Date
 
 @Composable
-fun CalendarScreen(calendarFacade: LunarCalendarFacade) {
-    val today = remember { Date() }
-    val calendarInfo = remember(today) { calendarFacade.getCalendarInfo(today) }
+fun CalendarScreen(
+    calendarFacade: LunarCalendarFacade,
+    taskRepository: TaskRepository
+) {
+    val coroutineScope = rememberCoroutineScope()
+    val allToDos by taskRepository.allToDos.collectAsState(initial = emptyList())
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(text = "Lunar Calendar", style = MaterialTheme.typography.headlineMedium)
-        Text(text = "Today: ${calendarInfo.lunarDate.getFormattedString()}")
-        if (calendarInfo.solarTerm != null) {
-            Text(text = "Solar Term: ${calendarInfo.solarTerm}")
+    // Current viewed Year & Month (1-based month: 1..12)
+    val todayCal = remember { Calendar.getInstance() }
+    val todayYear = todayCal.get(Calendar.YEAR)
+    val todayMonth = todayCal.get(Calendar.MONTH) + 1
+    val todayDay = todayCal.get(Calendar.DAY_OF_MONTH)
+
+    var currentYear by remember { mutableIntStateOf(todayYear) }
+    var currentMonth by remember { mutableIntStateOf(todayMonth) }
+    var selectedDay by remember { mutableIntStateOf(todayDay) }
+
+    var showAddTaskDialog by remember { mutableStateOf(false) }
+
+    // Calculate calendar grid for currentYear and currentMonth
+    val monthCal = remember(currentYear, currentMonth) {
+        Calendar.getInstance().apply {
+            set(Calendar.YEAR, currentYear)
+            set(Calendar.MONTH, currentMonth - 1)
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
         }
-        if (calendarInfo.festival != null) {
-            Text(text = "Festival: ${calendarInfo.festival}")
+    }
+
+    val daysInMonth = remember(currentYear, currentMonth) {
+        monthCal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    }
+
+    // Day of week for the 1st of this month (1 = Sunday, ..., 7 = Saturday)
+    val firstDayOfWeek = remember(currentYear, currentMonth) {
+        monthCal.get(Calendar.DAY_OF_WEEK)
+    }
+
+    // Helper to get normalized date millis for (currentYear, currentMonth, day)
+    fun getDayStartMillis(day: Int): Long {
+        val c = Calendar.getInstance()
+        c.set(currentYear, currentMonth - 1, day, 0, 0, 0)
+        c.set(Calendar.MILLISECOND, 0)
+        return c.timeInMillis
+    }
+
+    // Tasks due on selected date
+    val selectedDayStartMillis = remember(currentYear, currentMonth, selectedDay) {
+        getDayStartMillis(selectedDay)
+    }
+
+    val selectedDayToDos = remember(allToDos, selectedDayStartMillis) {
+        allToDos.filter { it.dueDate == selectedDayStartMillis }
+    }
+
+    // Get Lunar & Solar Info for selected date
+    val selectedDateInfo = remember(currentYear, currentMonth, selectedDay) {
+        val c = Calendar.getInstance().apply {
+            set(currentYear, currentMonth - 1, selectedDay, 12, 0, 0)
+        }
+        calendarFacade.getCalendarInfo(c.time)
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // --- Header: Month Navigator & Year-Month Title ---
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = {
+                        if (currentMonth == 1) {
+                            currentYear -= 1
+                            currentMonth = 12
+                        } else {
+                            currentMonth -= 1
+                        }
+                        selectedDay = 1
+                    }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = "上個月",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${currentYear} 年 ${currentMonth} 月",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = selectedDateInfo.lunarDate.getYearCyclic(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = {
+                            currentYear = todayYear
+                            currentMonth = todayMonth
+                            selectedDay = todayDay
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Today,
+                                contentDescription = "今天",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+
+                        IconButton(onClick = {
+                            if (currentMonth == 12) {
+                                currentYear += 1
+                                currentMonth = 1
+                            } else {
+                                currentMonth += 1
+                            }
+                            selectedDay = 1
+                        }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "下個月",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Calendar Grid ---
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    // Weekday Labels
+                    val weekdays = listOf("日", "一", "二", "三", "四", "五", "六")
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceAround
+                    ) {
+                        weekdays.forEachIndexed { index, name ->
+                            Text(
+                                text = name,
+                                modifier = Modifier.weight(1f),
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = when (index) {
+                                    0 -> Color(0xFFE53935) // Sunday red
+                                    6 -> Color(0xFF1E88E5) // Saturday blue
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(bottom = 6.dp))
+
+                    // Days Grid
+                    val totalSlots = ((firstDayOfWeek - 1 + daysInMonth + 6) / 7) * 7
+                    val rows = totalSlots / 7
+
+                    for (row in 0 until rows) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            for (col in 0 until 7) {
+                                val slotIndex = row * 7 + col
+                                val dayNumber = slotIndex - (firstDayOfWeek - 1) + 1
+
+                                if (dayNumber in 1..daysInMonth) {
+                                    val isSelected = (dayNumber == selectedDay)
+                                    val isToday = (currentYear == todayYear && currentMonth == todayMonth && dayNumber == todayDay)
+                                    val dayMillis = getDayStartMillis(dayNumber)
+
+                                    // Tasks for this date
+                                    val dayTasks = allToDos.filter { it.dueDate == dayMillis }
+                                    val hasIncompleteTasks = dayTasks.any { !it.isCompleted }
+                                    val isDueTomorrow = calendarFacade.isTomorrow(dayMillis) && hasIncompleteTasks
+
+                                    // Get lunar label for this day
+                                    val dayDate = remember(currentYear, currentMonth, dayNumber) {
+                                        Calendar.getInstance().apply {
+                                            set(currentYear, currentMonth - 1, dayNumber, 12, 0, 0)
+                                        }.time
+                                    }
+                                    val info = remember(dayDate) { calendarFacade.getCalendarInfo(dayDate) }
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(0.85f)
+                                            .padding(2.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .then(
+                                                if (isDueTomorrow) {
+                                                    Modifier.breathingDashedBorder(
+                                                        color = Color(0xFFFF3D00),
+                                                        cornerRadius = 8f,
+                                                        strokeWidth = 2f
+                                                    )
+                                                } else Modifier
+                                            )
+                                            .background(
+                                                when {
+                                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                                                    isToday -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+                                                    else -> Color.Transparent
+                                                }
+                                            )
+                                            .then(
+                                                if (isToday && !isSelected) {
+                                                    Modifier.border(
+                                                        1.5.dp,
+                                                        MaterialTheme.colorScheme.primary,
+                                                        RoundedCornerShape(8.dp)
+                                                    )
+                                                } else Modifier
+                                            )
+                                            .clickable { selectedDay = dayNumber },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
+                                        ) {
+                                            Text(
+                                                text = dayNumber.toString(),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                                                color = when {
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+                                                    col == 0 -> Color(0xFFE53935)
+                                                    col == 6 -> Color(0xFF1E88E5)
+                                                    else -> MaterialTheme.colorScheme.onSurface
+                                                }
+                                            )
+
+                                            // Lunar / Solar term label
+                                            Text(
+                                                text = info.displayLabel,
+                                                fontSize = 9.sp,
+                                                maxLines = 1,
+                                                fontWeight = if (!info.festival.isNullOrEmpty() || !info.solarTerm.isNullOrEmpty()) FontWeight.Bold else FontWeight.Normal,
+                                                color = when {
+                                                    !info.festival.isNullOrEmpty() -> Color(0xFFD32F2F)
+                                                    !info.solarTerm.isNullOrEmpty() -> Color(0xFF388E3C)
+                                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                                    else -> MaterialTheme.colorScheme.outline
+                                                }
+                                            )
+
+                                            // Task dot indicators
+                                            if (dayTasks.isNotEmpty()) {
+                                                Row(
+                                                    modifier = Modifier.padding(top = 2.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                                ) {
+                                                    dayTasks.take(3).forEach { task ->
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(4.dp)
+                                                                .clip(CircleShape)
+                                                                .background(
+                                                                    if (task.isCompleted) Color.Gray else Color(task.color)
+                                                                )
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f).aspectRatio(0.85f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Selected Date Detail & Lunar Information Card ---
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${currentYear}年${currentMonth}月${selectedDay}日",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = selectedDateInfo.lunarDate.getFormattedString(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        if (!selectedDateInfo.displayFestival.isNullOrEmpty()) {
+                            Text(
+                                text = "🏮 節慶：${selectedDateInfo.displayFestival}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFD32F2F),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        if (!selectedDateInfo.solarTerm.isNullOrEmpty()) {
+                            Text(
+                                text = "🌿 節氣：${selectedDateInfo.solarTerm}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF388E3C),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- Selected Date To-Do Items Header ---
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📋 該日待做事項 (${selectedDayToDos.size})",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Button(
+                    onClick = { showAddTaskDialog = true },
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "新增待辦",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = "新增待辦")
+                }
+            }
+        }
+
+        // --- To-Do List for Selected Date ---
+        if (selectedDayToDos.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "無待做事項",
+                            tint = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Text(
+                            text = "這一天還沒有待做事項",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                        TextButton(onClick = { showAddTaskDialog = true }) {
+                            Text(text = "點此為這一天新增待辦")
+                        }
+                    }
+                }
+            }
+        } else {
+            items(selectedDayToDos, key = { it.id }) { toDo ->
+                val isTomorrow = calendarFacade.isTomorrow(selectedDayStartMillis)
+                DeadlineAlertCard(
+                    title = toDo.title,
+                    description = toDo.description,
+                    tag = toDo.tag,
+                    tagColor = Color(toDo.color),
+                    isDueTomorrow = isTomorrow,
+                    isCompleted = toDo.isCompleted,
+                    dueDateText = "📅 ${currentMonth}月${selectedDay}日 到期",
+                    onCheckedChange = { checked ->
+                        coroutineScope.launch {
+                            taskRepository.updateToDo(toDo.copy(isCompleted = checked))
+                        }
+                    },
+                    onDelete = {
+                        coroutineScope.launch {
+                            taskRepository.deleteToDo(toDo)
+                        }
+                    }
+                )
+            }
+        }
+    }
+
+    // --- Dialog: Add New To-Do for Selected Date ---
+    if (showAddTaskDialog) {
+        var title by remember { mutableStateOf("") }
+        var description by remember { mutableStateOf("") }
+        var tag by remember { mutableStateOf("日常") }
+        var selectedColor by remember { mutableLongStateOf(PRESET_COLORS.first().colorLong) }
+
+        Dialog(onDismissRequest = { showAddTaskDialog = false }) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text(
+                        text = "新增待做事項 (${currentMonth}月${selectedDay}日)",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("事項標題 *") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("詳細說明 (選填)") },
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = tag,
+                        onValueChange = { tag = it },
+                        label = { Text("分類標籤 (例如: 日常, 工作, 緊急)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "色彩標記：",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        ColorPickerRow(
+                            selectedColor = selectedColor,
+                            onColorSelected = { selectedColor = it }
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { showAddTaskDialog = false }) {
+                            Text("取消")
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                if (title.isNotBlank()) {
+                                    coroutineScope.launch {
+                                        taskRepository.insertToDo(
+                                            ToDo(
+                                                title = title.trim(),
+                                                description = description.trim(),
+                                                dueDate = selectedDayStartMillis,
+                                                tag = tag.trim().ifEmpty { "日常" },
+                                                color = selectedColor
+                                            )
+                                        )
+                                        showAddTaskDialog = false
+                                    }
+                                }
+                            },
+                            enabled = title.isNotBlank()
+                        ) {
+                            Text("儲存")
+                        }
+                    }
+                }
+            }
         }
     }
 }

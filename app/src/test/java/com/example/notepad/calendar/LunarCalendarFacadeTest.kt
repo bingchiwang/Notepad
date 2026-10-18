@@ -1,6 +1,7 @@
 package com.example.notepad.calendar
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Calendar
 
@@ -25,6 +26,9 @@ class LunarCalendarFacadeTest {
         assertEquals(1, info.lunarDate.month)
         assertEquals(1, info.lunarDate.day)
         assertEquals("Spring Festival", info.festival)
+        assertEquals("春節", info.displayLabel)
+        assertEquals("初一", info.lunarDate.getLunarDayName())
+        assertEquals("甲辰龍年", info.lunarDate.getYearCyclic())
     }
 
     @Test
@@ -34,6 +38,7 @@ class LunarCalendarFacadeTest {
         val info = facade.getCalendarInfo(date)
         
         assertEquals("清明", info.solarTerm)
+        assertEquals("清明", info.displayLabel)
     }
 
     @Test
@@ -43,5 +48,15 @@ class LunarCalendarFacadeTest {
         val info = facade.getCalendarInfo(date)
         
         assertEquals("Christmas", info.festival)
+        assertEquals("聖誕", info.displayLabel)
+    }
+
+    @Test
+    fun `test isTomorrow helper`() {
+        val tomorrow = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+        }
+        val tomorrowMillis = facade.getMidnightMillis(tomorrow.time)
+        assertTrue(facade.isTomorrow(tomorrowMillis))
     }
 }

@@ -14,58 +14,63 @@
 
 ## 核心功能 (Features)
 1. **雙軌任務管理 (Dual-Track Task Management)**：獨立處理待辦事項（可設到期日與完成勾選框）與提醒事項（可指定通知時間）。
-2. **離線農曆萬年曆 (Offline Lunar Perpetual Calendar)**：完整功能之離線萬年曆，支援計算 1900–2100 年農曆日期、天干地支生肖、二十四節氣與傳統節日。
-3. **智慧自訂色彩標記 (Smart Custom Color Tagging)**：使用者可使用 8 款經典預設色彩或自選色彩盤為項目加上標籤，膠囊標籤會依背景明度自動計算並套用最佳文字對比度以確保易讀性。
-4. **即將到期 UI 警示 (Imminent Deadline UI Alerts)**：針對次日到期之項目提供進階視覺提示，任務卡片與月曆視圖同步觸發動態效果，包含橘紅色「呼吸」發光虛線外框與彈跳「⚠️ 明日到期！」徽章。
-5. **自動化 GitHub 工作流 (CI/CD)**：內建設定以自動上傳專案，並將未來的程式碼修改直接同步至 GitHub 儲存庫。
+2. **離線農曆萬年曆 (Offline Lunar Perpetual Calendar)**：完整功能之離線萬年曆，支援計算 1900–2100 年農曆日期、天干地支生肖、二十四節氣與傳統節日。支援月曆視覺化網格、當月/當日待做事項清單、日期快速跳轉。
+3. **智慧自訂色彩標記 (Smart Custom Color Tagging)**：提供 8 款經典預設色彩（經典藍、森林綠、琥珀橙、珊瑚紅、典雅紫、蒂芬妮、明亮黃、質感灰），膠囊標籤依背景明度自動計算並套用最佳文字對比度。
+4. **即將到期 UI 警示 (Imminent Deadline UI Alerts)**：針對次日到期之項目提供進階視覺提示，任務卡片與月曆視圖同步觸發橘紅色「呼吸」發光虛線外框與彈跳「⚠️ 明日到期！」徽章。
+5. **每日時間規劃表 (Daily Time Planner)**：時間軸視覺化日程安排，支援開始/結束時間區塊、分類標籤、完成打勾與每日進度百分比。
+6. **番茄鐘專注計時器 (Pomodoro Timer)**：支援專注工作 (25m)、短暫休息 (5m)、深度休息 (15m)，搭配環狀動態倒數進度條、目標任務連動、今日番茄數統計與歷史紀錄。
+7. **自動化 GitHub 工作流 (CI/CD)**：專案已推送到 GitHub 儲存庫，每次修改後自動 commit 並同步 push。
 
 ## 核心技術棧 (High-Level Tech Stack)
 * **開發語言 (Language)**：Kotlin
-* **UI 框架 (UI Framework)**：Jetpack Compose
-* **導航與自適應策略 (Navigation & Adaptive Strategy)**：**Jetpack Navigation 3**（狀態驅動）與 **Compose Material Adaptive** 函式庫（支援所有響應式版面配置）。
-* **架構設計 (Architecture)**：**外觀模式 (Facade Pattern)**（簡化底層複雜日曆運算）與 **倉儲模式 (Repository Pattern)**（清晰的資料存取抽象層）。
-* **核心相依套件 (Core Dependencies)**：Kotlin Coroutines（非同步運算與 UI 狀態更新）。
-* **資料持久化 (Persistence)**：Room Database（本機儲存雙軌待辦事項、提醒與自訂色彩標記）。
-* **版本控制 (Version Control)**：Git 與 GitHub Actions（處理自動推送與同步需求）。
+* **UI 框架 (UI Framework)**：Jetpack Compose (Material 3)
+* **導航與自適應策略 (Navigation & Adaptive Strategy)**：**Jetpack Navigation 3** 與 **Compose Material Adaptive** 函式庫。
+* **架構設計 (Architecture)**：**外觀模式 (Facade Pattern)** 與 **倉儲模式 (Repository Pattern)**。
+* **核心相依套件 (Core Dependencies)**：Kotlin Coroutines / Flow。
+* **資料持久化 (Persistence)**：Room Database（包含 ToDo、Reminder、TimeBlock、PomodoroRecord 實體與 DAO）。
+* **版本控制 (Version Control)**：Git 與 GitHub Actions。
 
 ## 實作步驟 (Implementation Steps)
 
-### Task_1_DataLayer: 設定 Room 資料庫，包含 ToDo 與 Reminder 實體、DAO，並為雙軌任務實作 Repository 模式。
+### Task_1_DataLayer: 設定 Room 資料庫，包含 ToDo、Reminder、TimeBlock、PomodoroRecord 實體、DAO，並為雙軌任務與日程實作 Repository 模式。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** `coder_agent` 已成功建立 Room 資料庫、`ToDo` 與 `Reminder` 實體、DAO（`ToDoDao`, `ReminderDao`），以及用於雙軌任務的 `TaskRepository`。專案已正常建置。
+- **更新記錄 (Updates):** 建立 Room Database (v2)，包含 ToDo (含到期日、色彩、標籤)、Reminder、TimeBlock (每日排程)、PomodoroRecord (番茄鐘紀錄)，並完成 TaskRepository 抽象化封裝。
 - **驗收標準 (Acceptance Criteria):**
-  - Room 資料庫設定完成
-  - 建立 ToDo 與 Reminder 實體
-  - Repository 成功處理資料存取操作
+  - Room 資料庫設定完成且支援 migration
+  - 各模組實體與 DAO 完整支援 CRUD 與響應式 Flow
+  - Repository 統一提供存取操作
 
 ### Task_2_LunarCalendar: 實作離線農曆萬年曆引擎，並透過 Facade 模式封裝對外提供服務。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** 離線農曆萬年曆引擎已成功實作。`LunarCalendarEngine` 支援 1900–2100 年農曆日期、二十四節氣與節慶之演算。`LunarCalendarFacade` 提供簡潔的封裝介面。單元測試確認計算正確。
+- **更新記錄 (Updates):** 離線農曆萬年曆引擎實作完成，支援 1900–2100 年農曆換算、天干地支生肖年份、二十四節氣與節慶。提供 `LunarCalendarFacade` 與日曆標籤文字提取接口。單元測試全數通過。
 - **驗收標準 (Acceptance Criteria):**
-  - 支援 1900–2100 年農曆日期、二十四節氣與傳統節慶之離線運算
-  - Facade 類別成功抽象化運算複雜度
+  - 支援 1900–2100 年農曆日期、節氣與節慶之離線運算
+  - Facade 封裝完整運算複雜度
 
-### Task_3_UIComponents: 建立 Jetpack Compose 元件：高對比度文字自訂色彩標籤、即將到期之 UI 警示動態卡片。
+### Task_3_UIComponents: 建立 Jetpack Compose 元件：高對比度色彩標籤、色彩選盤、即將到期之呼吸虛線與彈跳徽章動態卡片。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** `coder_agent` 已成功建立 UI 元件。`ColorTag` 依亮度自動判定文字對比色。`DeadlineAlertCard` 包含自訂呼吸動態虛線邊框 Modifier 以及用於明日到期項目的彈跳徽章動畫。預覽元件正常可用。
+- **更新記錄 (Updates):** 完成 `ColorTag`、`ColorPickerRow`（8 款經典色票）、`breathingDashedBorder`、`BouncingBadge`、`DeadlineAlertCard`（支援打勾完成、刪除、明日到期發光動態）。
 - **驗收標準 (Acceptance Criteria):**
-  - 色彩標籤元件能自動計算文字對比以保持清晰易讀
-  - 明日到期之項目能觸發呼吸發光虛線邊框與彈跳徽章動畫
+  - 色彩標籤自動計算文字對比
+  - 明日到期項目觸發橘紅呼吸虛線邊框與彈跳徽章動畫
 
-### Task_4_ScreensNav: 使用 Jetpack Navigation 3 與 Compose Material Adaptive 佈局實作各畫面，整合 Repository 與 Calendar Facade。
+### Task_4_ScreensNav: 實作畫面與導航：待辦清單、農曆月曆、每日時間規劃表、番茄鐘。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** `coder_agent` 已成功建構應用程式畫面。App 採用 `NavigationSuiteScaffold` 進行自適應導航（底部導航列 vs 側邊導航軌），並使用 `ListDetailSceneStrategy` 在大螢幕上提供響應式雙欄分割視圖。使用 Jetpack Navigation 3 在日曆與任務畫面間路由。已成功整合 Repository 與 Facade。專案建置成功。
+- **更新記錄 (Updates):** 
+  - 待辦清單 (TaskScreen)：支援篩選狀態、新增待辦（設定到期日、色彩標籤、明日到期警示）。
+  - 農曆月曆 (CalendarScreen)：月曆月份切換、日期網格、農曆/節氣/節慶顯示、當日待辦事項連動與打勾。
+  - 每日時間規劃表 (ScheduleScreen)：日期切換、進度百分比、時間區塊清單、新增區塊、一鍵開啟番茄鐘。
+  - 番茄鐘 (PomodoroScreen)：25/5/15 分鐘三模式、環狀進度倒數、任務連動、今日番茄數統計與歷史紀錄。
+  - 導航系統 (AppNavigation)：使用 Navigation 3 + NavigationSuiteScaffold，支援自適應排版。
 - **驗收標準 (Acceptance Criteria):**
-  - 畫面採用 Adaptive 自適應佈局以支援不同螢幕尺寸
-  - Navigation 3 負責日曆與任務畫面之路由切換
-  - 正確顯示任務與農曆資訊
+  - 月曆完整展示該月日曆與當日/當月待做事項
+  - 每日時間規劃表與番茄鐘正常運作
+  - 測試與除錯建置通過
 
-### Task_5_GitHubVerify: 執行與驗證：設定 GitHub Actions CI/CD 工作流，驗證應用程式穩定性並確保符合所有需求。
+### Task_5_GitHubVerify: 執行與驗證：設定 GitHub Actions CI/CD 工作流，驗證應用程式穩定性並確保自動推送至 GitHub。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** 已成功於 GitHub 建立遠端儲存庫 `https://github.com/bingchiwang/Notepad`，完成首次推送，並設定 CI/CD 工作流與本機同步腳本 `sync.ps1`。每次修改檔案後將自動 commit 並 push 至 GitHub。
+- **更新記錄 (Updates):** 遠端儲存庫已綁定至 `https://github.com/bingchiwang/Notepad`，每次檔案異動皆自動執行 commit 並 push。測試與 APK 建置皆通過。
 - **驗收標準 (Acceptance Criteria):**
-  - 成功建立並綁定 GitHub 儲存庫
-  - GitHub Actions 工作流設定檔已建立（推送自動觸發測試與建置）
-  - 本機與遠端 main 分支完全同步
-  - 建立一鍵同步腳本支援後續自動更新
-- **耗時 (Duration):** COMPLETED
+  - GitHub Actions 工作流設定完成
+  - 所有單元測試與 APK 建置通過
+  - 專案檔案自動同步至 GitHub

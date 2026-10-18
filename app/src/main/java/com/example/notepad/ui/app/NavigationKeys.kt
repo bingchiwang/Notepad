@@ -11,3 +11,9 @@ data class TaskDetailRoute(val taskId: Int) : NavKey
 
 @Serializable
 data object CalendarRoute : NavKey
+
+@Serializable
+data object ScheduleRoute : NavKey
+
+@Serializable
+data object PomodoroRoute : NavKey

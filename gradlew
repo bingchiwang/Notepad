@@ -248,4 +248,5 @@ eval "set -- $(
         tr '\n' ' '
     )" '"$@"'
 
+unset ANDROID_PREFS_ROOT
 exec "$JAVACMD" "$@"
