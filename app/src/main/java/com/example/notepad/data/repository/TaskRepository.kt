@@ -5,6 +5,7 @@ import com.example.notepad.data.local.dao.ReminderDao
 import com.example.notepad.data.local.dao.TimeBlockDao
 import com.example.notepad.data.local.dao.ToDoDao
 import com.example.notepad.data.local.entity.PomodoroRecord
+import com.example.notepad.data.local.entity.Priority
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
@@ -19,6 +20,16 @@ class TaskRepository(
     // ToDo Operations
     val allToDos: Flow<List<ToDo>> = toDoDao.getAllToDos()
 
+    /** 僅未完成任務串流（規範 4.2） */
+    val activeToDos: Flow<List<ToDo>> = toDoDao.getActiveToDos()
+
+    /** 已完成任務串流（規範 4.2） */
+    val completedToDos: Flow<List<ToDo>> = toDoDao.getCompletedToDos()
+
+    fun getToDosByPriority(priority: Priority): Flow<List<ToDo>> {
+        return toDoDao.getToDosByPriority(priority)
+    }
+
     fun getToDosByDate(date: Long): Flow<List<ToDo>> {
         return toDoDao.getToDosByDate(date)
     }
@@ -31,12 +42,20 @@ class TaskRepository(
         return toDoDao.getToDoById(id)
     }
 
+    /**
+     * 新增待辦事項（規範 4.2：任務名稱不得為空白）
+     */
     suspend fun insertToDo(toDo: ToDo) {
-        toDoDao.insertToDo(toDo)
+        require(toDo.title.isNotBlank()) { "任務名稱不得為空白" }
+        toDoDao.insertToDo(toDo.copy(title = toDo.title.trim()))
     }
 
+    /**
+     * 更新待辦事項（規範 4.2：任務名稱不得為空白）
+     */
     suspend fun updateToDo(toDo: ToDo) {
-        toDoDao.updateToDo(toDo)
+        require(toDo.title.isNotBlank()) { "任務名稱不得為空白" }
+        toDoDao.updateToDo(toDo.copy(title = toDo.title.trim()))
     }
 
     suspend fun deleteToDo(toDo: ToDo) {
@@ -48,6 +67,10 @@ class TaskRepository(
 
     fun getRemindersByDate(startMillis: Long, endMillis: Long): Flow<List<Reminder>> {
         return reminderDao.getRemindersByDate(startMillis, endMillis)
+    }
+
+    suspend fun getPendingRemindersByToDoId(toDoId: Int): List<Reminder> {
+        return reminderDao.getPendingRemindersByToDoId(toDoId)
     }
 
     suspend fun insertReminder(reminder: Reminder): Long {

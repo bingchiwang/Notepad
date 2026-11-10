@@ -20,6 +20,12 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders WHERE id = :id LIMIT 1")
     fun getReminderById(id: Int): Flow<Reminder?>
 
+    /**
+     * 取得特定任務尚未觸發的關聯提醒，用於任務完成時取消對應通知排程（規範 4.4）
+     */
+    @Query("SELECT * FROM reminders WHERE linkedToDoId = :toDoId AND isFired = 0")
+    suspend fun getPendingRemindersByToDoId(toDoId: Int): List<Reminder>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReminder(reminder: Reminder): Long
 

@@ -87,6 +87,18 @@
   - 支援編輯事件內容與日期
   - 刪除前跳出確認對話框
 
+### Task_7_DataLayerExpansion: 第一階段資料層擴充（Note / Category / ToDo 優先級 / ThemePreferences）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 新增 `Note` 與 `Category` 資料實體、DAO (`NoteDao`, `CategoryDao`) 與 `NoteRepository`，支援空白標題/內文、釘選優先排序、修改時間自動更新、分類唯一索引防重與刪除分類連動處理、標題與內文全文搜尋排序。
+  - 新增 `Priority`（高、中、低）列舉與 `DatabaseConverters`，於 `ToDo` 加入 `priority` 欄位並於 `AppDatabase` 升級為 v4（含 `MIGRATION_3_4` 遷移邏輯）。
+  - 於 `Reminder` 加入可選欄位 `linkedToDoId`，為任務完成取消關聯提醒提供資料結構基礎。
+  - 建立 `ThemePreferences`（DataStore Preferences 持久化 `ThemeMode`: 淺色、深色、跟隨系統）並串接至 `MainActivity`。
+- **驗收標準 (Acceptance Criteria):**
+  - Room v4 Schema 與遷移編譯成功
+  - `NoteRepository`、`TaskRepository`、`PriorityAndConverters`、`ThemePreferences` 單元測試全數通過
+  - `./gradlew build` 與 `./gradlew test` 驗證通過
+
 ## 程式碼管理規範 (Code Management Guidelines)
 1. **每個類別及函式應有明確用途**：保持單一職責，確保每個組件結構清晰且功能專一。
 2. **避免重複撰寫相同程式碼**：遵循 DRY 原則，重複出現的邏輯抽象為共用函式或元件。
