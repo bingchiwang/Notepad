@@ -59,7 +59,7 @@
 - 修改提醒時間時，必須更新原本的通知排程（取消舊排程並重新排定）。
 - 必須處理 Android 通知權限（Android 13+ `POST_NOTIFICATIONS` 與精確鬧鐘權限處理）。
 
-### 4.5 自訂主題規範
+### 自訂主題規範
 - 支援淺色模式（Light Mode）。
 - 支援深色模式（Dark Mode）。
 - 支援跟隨系統模式（System Default Mode）。
