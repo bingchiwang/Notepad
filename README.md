@@ -82,6 +82,14 @@
 - **提醒通知**：格式檢核、過期不安排、通知總開關、任務完成取消排程、時間變更重新排程、Android 13+ 權限完備。
 - **自訂主題**：支援淺色 / 深色 / 跟隨系統，全局頁面一致，DataStore Preferences 持久化。
 
+### 4. 功能異動與變更管理規範
+如果需要增加或修改功能，必須依序執行：
+1. **確認修改目的**
+2. **確認是否影響其他功能**
+3. **更新相關程式碼**
+4. **執行必要測試**（`./gradlew test` 與 `./gradlew build`）
+5. **更新專案規格書及版本紀錄**（[`SPECIFICATION.md`](SPECIFICATION.md) 與 [`CHANGELOG.md`](CHANGELOG.md)）
+
 ---
 
 ## 🏗️ Architecture & Design Patterns / 架構與設計模式
@@ -90,20 +98,17 @@
 [ UI Layer: Jetpack Compose + Navigation 3 + M3 Adaptive ]
                         │
                         ▼
-[ ViewModel Layer: StateFlow & UI State Management ]
-                        │
-                        ▼
-   ┌────────────────────┴────────────────────┐
-   ▼                                         ▼
-[ Repository Pattern: TaskRepository ]    [ Facade Pattern: LunarCalendarFacade ]
-   │                                         │
-   ▼                                         ▼
-[ Room Database & SQLite DAOs ]           [ High-Performance Lunar Engine ]
+   ┌────────────────────┼────────────────────┐
+   ▼                    ▼                    ▼
+[ TaskRepository ]  [ NoteRepository ]  [ DataStore Preferences ]
+   │                    │               (Theme / Notification / Draft)
+   ▼                    ▼
+[ Room Database v4 (MIGRATION_3_4) & DAOs ]   [ Facade: LunarCalendarFacade ]
 ```
 
 1. **外觀模式 (Facade Pattern)**：`LunarCalendarFacade` 將繁複的 200 年農曆二進位壓縮位元資料與節氣運算隱藏在背後，提供簡潔高層接口。
-2. **倉儲模式 (Repository Pattern)**：`TaskRepository` 統一調度 Room 資料庫（To-Do、Reminder、TimeBlock、Pomodoro），向 UI 層暴露乾淨的響應式 Kotlin Flow。
-3. **導航與適應性 (Navigation 3 & Adaptive Layout)**：採用最新版 `androidx.navigation3`，結合自適應導航架構，手機與平板均獲得最佳佈局體驗。
+2. **倉儲模式 (Repository Pattern)**：`TaskRepository` 與 `NoteRepository` 分別負責雙軌待辦排程與記事分類管理，向 UI 層暴露響應式 Kotlin Flow。
+3. **導航與適應性 (Navigation 3 & Adaptive Layout)**：採用最新版 `androidx.navigation3`，結合安全系統欄邊距（`statusBarsPadding`, `navigationBarsPadding`, `displayCutoutPadding`）實現手機與平板皆不遮擋的適應性佈局。
 
 ---
 
@@ -113,9 +118,9 @@
 - **UI 框架**：Jetpack Compose, Material Design 3, Compose Material Icons Extended
 - **導航套件**：Jetpack Navigation 3 (`androidx.navigation3`)
 - **自適應佈局**：Compose Material Adaptive (`NavigationSuiteScaffold`)
-- **本機資料庫**：Room Persistence Library (SQLite)
-- **背景與排程**：AlarmManager, BroadcastReceiver (`ReminderScheduler`)
-- **狀態持久化**：AndroidX DataStore Preferences
+- **本機資料庫**：Room Persistence Library v4 (SQLite + `MIGRATION_3_4`)
+- **背景與排程**：AlarmManager, BroadcastReceiver (`ReminderScheduler`, `ReminderReceiver`)
+- **狀態持久化**：AndroidX DataStore Preferences（主題、通知開關、未保存草稿）
 - **建置工具**：Gradle Kotlin DSL (`build.gradle.kts`), Version Catalog (`libs.versions.toml`)
 - **CI/CD**：GitHub Actions (`.github/workflows/android.yml`)
 
@@ -125,26 +130,39 @@
 
 ```text
 com.example.notepad/
-├── MainActivity.kt             # 應用程式進入點與全螢幕配置
+├── MainActivity.kt             # 應用程式進入點、全螢幕設定與動態主題對比度同步
 ├── calendar/                   # 離線農曆計算引擎與外觀模式
 │   ├── LunarCalendarEngine.kt  # 核心位元演算法 (1900–2100)
 │   ├── LunarCalendarFacade.kt  # Facade 服務介面
 │   └── LunarDate.kt            # 農曆日期與節氣節慶模型
 ├── data/                       # 資料持久層
-│   ├── local/                  # Room 資料庫、DAOs、Entities
-│   │   ├── dao/                # ToDoDao, ReminderDao, TimeBlockDao, PomodoroDao
-│   │   ├── entity/             # ToDo, Reminder, TimeBlock, PomodoroRecord
-│   │   └── AppDatabase.kt      # Room 主資料庫
-│   └── repository/             # TaskRepository
+│   ├── local/                  # Room 資料庫、DAOs、Entities、轉換器
+│   │   ├── dao/                # NoteDao, CategoryDao, ToDoDao, ReminderDao, TimeBlockDao, PomodoroDao
+│   │   ├── entity/             # Note, Category, ToDo, Priority, Reminder, TimeBlock, PomodoroRecord
+│   │   ├── DatabaseConverters.kt
+│   │   └── AppDatabase.kt      # Room 主資料庫 (v4 + MIGRATION_3_4)
+│   ├── preferences/            # DataStore 持久化
+│   │   ├── ThemePreferences.kt
+│   │   ├── NotificationPreferences.kt
+│   │   └── NoteDraftPreferences.kt
+│   └── repository/             # NoteRepository, TaskRepository
 ├── reminder/                   # 系統通知與鬧鐘排程
-│   ├── ReminderReceiver.kt     # 鬧鐘廣播接收器與 Notification 觸發
-│   └── ReminderScheduler.kt    # 精確鬧鐘排定與取消管理
+│   ├── ReminderReceiver.kt     # 鬧鐘廣播接收器（含總開關與權限檢核）
+│   └── ReminderScheduler.kt    # 精確鬧鐘排定、取消與任務連動取消
 └── ui/                         # 視覺介面層 (Jetpack Compose)
-    ├── app/                    # Navigation 3 導航配置與狀態管理
-    ├── components/             # 色彩標籤、呼吸邊框、多日彈窗、反饋工具 (DateFormatter, showFeedback)
-    ├── screens/                # TaskScreen, CalendarScreen, ScheduleScreen, PomodoroScreen
+    ├── app/                    # Navigation 3 導航與系統欄防遮擋安全容器
+    ├── components/             # 優先級徽章、設定彈窗、色彩標籤、呼吸邊框、多日彈窗、反饋工具
+    ├── screens/                # NotesScreen, NoteEditorScreen, TaskScreen, CalendarScreen, ScheduleScreen, PomodoroScreen
     └── theme/                  # M3 主題設定、色彩調色盤與字型規範
 ```
+
+---
+
+## 📚 Documentation / 專案文件
+
+- **[專案規格書 (SPECIFICATION.md)](SPECIFICATION.md)**：系統架構、Room v4 / DataStore 資料模型及詳細功能規格。
+- **[版本紀錄 (CHANGELOG.md)](CHANGELOG.md)**：歷次功能擴充、錯誤修復與測試驗證紀錄。
+- **[開發與操作規範 (AGENTS.md)](AGENTS.md)**：程式碼品質、UX 體驗、功能規範與變更管理工作流。
 
 ---
 

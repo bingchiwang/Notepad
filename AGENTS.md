@@ -66,3 +66,16 @@
 - 主題切換後所有頁面必須保持一致。
 - 使用者設定必須保存，重新開啟 App 後仍然有效（DataStore Preferences 持久化儲存）。
 
+---
+
+## 四、功能異動與變更管理規範 (Change Management Guidelines)
+
+如果需要增加或修改功能，必須嚴格依序執行以下五個步驟：
+
+1. **確認修改目的**：明確釐清需求目標、使用情境與預期產出，避免無目標之改動。
+2. **確認是否影響其他功能**：盤點目標模組的上下游相依性（資料庫 Schema、Repository 介面、共用元件、導航與既有功能），評估並防範回歸風險。
+3. **更新相關程式碼**：遵循程式碼管理規範與操作規範實作變更，保持既有模組向下相容並補齊必要註解。
+4. **執行必要測試**：針對異動與受影響範圍撰寫或更新單元測試，並執行 `./gradlew test` 與 `./gradlew build` 驗證通過。
+5. **更新專案規格書及版本紀錄**：同步更新 [`SPECIFICATION.md`](SPECIFICATION.md)、[`CHANGELOG.md`](CHANGELOG.md)、[`README.md`](README.md) 與 [`.agent/plan.md`](.agent/plan.md)，最後執行 Commit 並推送至 GitHub。
+
+
