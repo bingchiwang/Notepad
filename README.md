@@ -1,124 +1,170 @@
-# Lunar To-Do & Reminder App (農曆萬年曆與雙軌待辦提醒軟體)
+# Lunar To-Do & Notepad App (農曆萬年曆與雙軌待辦提醒記事)
 
-[![Android CI](https://github.com/bingchiwang/notepad/actions/workflows/android.yml/badge.svg)](https://github.com/bingchiwang/notepad/actions/workflows/android.yml)
+[![Android CI](https://github.com/bingchiwang/Notepad/actions/workflows/android.yml/badge.svg)](https://github.com/bingchiwang/Notepad/actions/workflows/android.yml)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-purple.svg)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-M3-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
+[![Min SDK](https://img.shields.io/badge/Min%20SDK-30-lightgrey.svg)](https://developer.android.com)
+[![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
 ## 🌟 Overview / 專案概述
 
-**Lunar To-Do & Reminder App (農曆萬年曆與雙軌待辦提醒軟體)** 是一款結合現代 Android 頂尖技術與傳統農曆文化的生產力應用程式。本應用專為華人生活圈設計，不僅提供靈活的雙軌待辦與提醒管理，更內建高效能的 **1900–2100 離線農曆萬年曆引擎**，支援干支紀年、二十四節氣與傳統節日計算。
+**Lunar To-Do & Notepad App** 是一款專為現代生活打造的高效生產力 Android 應用程式。本應用整合了**雙軌任務管理（待做事項與多日提醒）**、**1900–2100 年完全離線農曆萬年曆**、**每日時間規劃表（Daily Schedule Planner）**與**番茄鐘專注計時器（Pomodoro Timer）**。
 
-App 採用純 Jetpack Compose 與 Material Design 3 打造，支援全面全螢幕體驗 (Edge-to-Edge)、動態色彩 (Dynamic Color)、自適應平板雙窗格佈局 (Compose Material Adaptive) 以及 Jetpack Navigation 3 狀態驅動導航。
+全介面基於 **Jetpack Compose** 與 **Material Design 3** 打造，支援全面沉浸式體驗（Edge-to-Edge）、動態色彩標籤、平板與摺疊機自適應佈局（Adaptive Layout）、以及 **Jetpack Navigation 3** 狀態驅動導航。
 
 ---
 
 ## 📋 Key Features / 核心功能特色
 
-### 1. 📋 雙軌待辦管理 (Dual-Track Task Management)
-- **待辦事項 (To-Dos)**：支援完整勾選狀態、截止日期設定、優先級與分類標籤。
-- **提醒事項 (Reminders)**：獨立的提醒追蹤系統，支援 `AlarmManager` 推播通知與時間排程。
-- **番茄鐘專注與時間區塊 (Pomodoro & Time Boxing)**：內建專注計時與時間區塊管理，提升日常工作效率。
+### 1. 📋 雙軌任務與自由多日提醒 (Dual-Track Tasks & Reminders)
+- **待做事件 (To-Dos)**：支援標題說明、到期日設定、色彩標籤、完成打勾狀態更新與過濾（全部 / 進行中 / 已完成）。
+- **自由多日提醒事項 (Multi-Day Reminders)**：
+  - **打破天數限制**：內建跨月/跨年導覽與互動月曆網格，支援任選未來任意年份與月份的多個日期。
+  - **精準時間排程**：自訂小時/分鐘與常用時間段快選（08:00, 09:00, 12:00 等）。
+  - **系統級推播通知**：整合 `AlarmManager.setExactAndAllowWhileIdle` 與 `BroadcastReceiver`，即使休眠亦能準時發出系統通知。
+  - **完整編輯與安全防護**：支援即時編輯提醒內容與日期時間，刪除前全面觸發二次確認對話框（`ConfirmDeleteDialog`）。
 
 ### 2. 📅 離線農曆萬年曆 (Offline Lunar Perpetual Calendar)
-- **完全離線計算**：覆蓋 1900 至 2100 年的農曆轉換引擎，無需網路連線即可隨時查詢。
-- **豐富曆法資訊**：精準提供農曆年月日、干支紀年 (天干地支)、二十四節氣以及傳統重要民俗節日。
-- **日曆與任務聯動**：點選日曆日期即可直接檢視當天對應的待辦與提醒事項。
+- **完全離線換算**：支援 1900 年至 2100 年農曆演算法，無需聯網即時查詢。
+- **豐富民俗資訊**：完整提供農曆月日、天干地支生肖紀年、二十四節氣與傳統民俗節慶。
+- **月曆視覺化網格**：清楚標記當月所有日期、當日待辦事項連動、一鍵快速跳轉。
 
-### 3. 🎨 智慧自定義顏色標籤 (Smart Custom Color Tagging)
-- **多樣色彩選擇**：提供 8 種經典預設色彩與原生顏色選擇器。
-- **智慧對比度計算**：膠囊標籤 (Capsule Labels) 自動計算文字與背景的最佳對比度，確保在任何主題下皆清晰易讀。
+### 3. ⏰ 每日時間規劃表 (Daily Schedule Planner)
+- **時間軸視覺化**：直觀呈現全天時間區塊（開始時間、結束時間、分類與備註）。
+- **進度即時計算**：依打勾完成狀態自動計算並顯示當日進度百分比進度條。
+- **一鍵專注**：點擊排程項目即可一鍵帶入番茄鐘進行深度專注工作。
 
-### 4. 🚨 即將到期警報 (Imminent Deadline Alerts)
-- **呼吸燈動態邊框**：針對即將到期的任務呈現具呼吸感的橘紅虛線邊框。
-- **醒目提醒徽章**：即時同步顯示「⚠️ Due Tomorrow!」或逾期徽章，跨卡片與日曆檢視無縫同步。
+### 4. 🍅 番茄鐘專注計時器 (Pomodoro Timer)
+- **三大預設模式**：專注工作（25 分鐘）、短暫休息（5 分鐘）、深度休息（15 分鐘）。
+- **動態倒數環**：流暢環狀進度條倒數與播放/暫停/重置控制。
+- **歷史與統計**：任務完成即時納入今日番茄數統計，並記錄完成時間。
+
+### 5. 🚨 即將到期動態警示 (Imminent Deadline Alerts)
+- **呼吸發光虛線外框**：次日到期的任務卡片與月曆視圖同步觸發橘紅漸層呼吸發光動態。
+- **跳動徽章**：伴隨 `⚠️ 明日到期！` 動態徽章，提醒使用者優先處理。
+
+### 6. 🎨 專屬手繪風自適應圖示 (Adaptive App Icon)
+- **符合 Android 官方規範**：手繪筆記本與鉛筆插圖，精準縮放置中於 72dp 安全可視區內。
+- **全解析度支援**：完整提供 `mdpi`、`hdpi`、`xhdpi`、`xxhdpi`、`xxxhdpi` 各尺寸資源與傳統圓形圖示（Round Icon）。
+
+---
+
+## 📜 專案開發與操作規範 (Project Guidelines)
+
+本專案遵循嚴格的代碼管理與操作體驗標準（詳見 [`AGENTS.md`](AGENTS.md)）：
+
+### 1. 程式碼管理規範
+1. **明確用途與職責**：每個類別及函式保持單一職責（Single Responsibility）。
+2. **避免重複撰寫**：遵循 DRY 原則，重複邏輯抽離為共用模組或工具類。
+3. **重要邏輯適當註解**：關鍵演算法、架構與業務規則加入繁體中文註解。
+4. **命名明確具語意**：禁止無意義簡稱或單字母命名。
+5. **保護既有模組相依性**：禁止隨意修改或刪除其他模組依賴的公開介面。
+6. **功能驗證與穩定性保證**：修改完成後必須通過編譯檢查與單元測試。
+7. **每次修改檔案皆須上傳 GitHub**：專案核心原則，異動後即刻同步推送。
+
+### 2. 操作與 UX 規範
+1. **主要功能易於尋找**：核心分區明確，首頁及底部導航直接呈現。
+2. **新增按鈕保持明顯**：提供高識別度的懸浮按鈕（FAB）。
+3. **刪除資料前二次確認**：所有刪除行為皆需二次彈窗確認。
+4. **儲存成功即時提示**：新增或編輯成功後提供清晰的反饋訊息（`showFeedback`）。
+5. **錯誤發生時清楚反饋**：異常或驗證未過時提供清楚訊息，避免無響應。
+6. **各頁面統一底部導航**：使用全局一致的 `NavigationSuiteScaffold`。
+7. **減少繁瑣點擊步驟**：提供常用時間預設、快速切換與一鍵勾選。
+
+### 3. 功能操作規範 (4.1 ~ 4.5)
+- **4.1 記事管理**：唯一識別碼、標題內文可空白、儲存更新時間、釘選置頂優先、草稿持久化保護。
+- **4.2 待辦事項**：名稱不得空白、優先級分級（高/中/低）、完成狀態即時同步、截止日與提醒日分離。
+- **4.3 分類搜尋**：唯一 ID、分類名不重複、刪除分類安全連動、標題與內文全欄位搜尋、依修改時間排序。
+- **4.4 提醒通知**：格式檢核、過期不安排、通知總開關、任務完成取消排程、時間變更重新排程、Android 13+ 權限完備。
+- **4.5 自訂主題**：支援淺色 / 深色 / 跟隨系統，全局頁面一致，DataStore Preferences 持久化。
 
 ---
 
 ## 🏗️ Architecture & Design Patterns / 架構與設計模式
 
-本專案嚴格遵循 Android 官方架構指南 (MAD) 與 Clean Architecture 原則，採用以下核心設計模式：
-
 ```
-[ UI Layer: Jetpack Compose + Nav 3 ]
-              │
-              ▼
-[ ViewModel Layer: StateFlow & UI State ]
-              │
-              ▼
-[ Repository Pattern: TaskRepository ] ───► [ Facade Pattern: LunarCalendarFacade ]
-              │                                      │
-              ▼                                      ▼
-[ Local Data Source: Room DB & DAOs ]       [ Algorithm Engine: LunarCalendarEngine ]
+[ UI Layer: Jetpack Compose + Navigation 3 + M3 Adaptive ]
+                        │
+                        ▼
+[ ViewModel Layer: StateFlow & UI State Management ]
+                        │
+                        ▼
+   ┌────────────────────┴────────────────────┐
+   ▼                                         ▼
+[ Repository Pattern: TaskRepository ]    [ Facade Pattern: LunarCalendarFacade ]
+   │                                         │
+   ▼                                         ▼
+[ Room Database & SQLite DAOs ]           [ High-Performance Lunar Engine ]
 ```
 
-1. **Facade Pattern (外觀模式)**：
-   - 透過 `LunarCalendarFacade` 與 `LunarCalendarEngine`，封裝複雜且高效能的農曆位元運算與曆法轉換邏輯，向 UI 層提供簡潔易用的 API。
-2. **Repository Pattern (儲存庫模式)**：
-   - `TaskRepository` 統一協調 Room Database (`AppDatabase`、各 Dao) 與 Kotlin Flows，提供非同步、響應式資料流。
-3. **Jetpack Navigation 3 & Compose Material Adaptive**：
-   - 使用 `@Serializable` NavKeys 與 `NavDisplay` 進行狀態驅動導航。
-   - 透過 `ListDetailPaneScaffold` 實現手機與平板/摺疊機的響應式適應性佈局。
+1. **外觀模式 (Facade Pattern)**：`LunarCalendarFacade` 將繁複的 200 年農曆二進位壓縮位元資料與節氣運算隱藏在背後，提供簡潔高層接口。
+2. **倉儲模式 (Repository Pattern)**：`TaskRepository` 統一調度 Room 資料庫（To-Do、Reminder、TimeBlock、Pomodoro），向 UI 層暴露乾淨的響應式 Kotlin Flow。
+3. **導航與適應性 (Navigation 3 & Adaptive Layout)**：採用最新版 `androidx.navigation3`，結合自適應導航架構，手機與平板均獲得最佳佈局體驗。
 
 ---
 
-## 🛠️ Tech Stack / 技術堆疊
+## 🛠️ Tech Stack / 技術棧
 
-- **UI Framework**: Jetpack Compose, Material Design 3, Material Icons Extended
-- **Navigation**: Jetpack Navigation 3 (`androidx.navigation3`)
-- **Adaptive UI**: Compose Material Adaptive (`ListDetailPaneScaffold`)
-- **Architecture**: MVVM, Kotlin Coroutines & Flows
-- **Database**: Room Persistence Library (SQLite)
-- **Background Tasks**: AlarmManager, BroadcastReceiver (`ReminderScheduler`, `ReminderReceiver`)
-- **Build System**: Gradle Kotlin DSL (`build.gradle.kts`), Version Catalogs (`libs.versions.toml`)
+- **開發語言**：Kotlin 2.0+
+- **UI 框架**：Jetpack Compose, Material Design 3, Compose Material Icons Extended
+- **導航套件**：Jetpack Navigation 3 (`androidx.navigation3`)
+- **自適應佈局**：Compose Material Adaptive (`NavigationSuiteScaffold`)
+- **本機資料庫**：Room Persistence Library (SQLite)
+- **背景與排程**：AlarmManager, BroadcastReceiver (`ReminderScheduler`)
+- **狀態持久化**：AndroidX DataStore Preferences
+- **建置工具**：Gradle Kotlin DSL (`build.gradle.kts`), Version Catalog (`libs.versions.toml`)
+- **CI/CD**：GitHub Actions (`.github/workflows/android.yml`)
 
 ---
 
-## 📂 Project Structure / 專案目錄結構
+## 📂 Project Structure / 專案結構
 
 ```text
 com.example.notepad/
-├── calendar/               # 離線農曆計算引擎與外觀模式
-│   ├── LunarCalendarEngine.kt
-│   ├── LunarCalendarFacade.kt
-│   └── LunarDate.kt
-├── data/                   # 資料層 (Room DB & Repository)
-│   ├── local/              # AppDatabase, DAOs, Entities
-│   └── repository/         # TaskRepository
-├── reminder/               # 鬧鐘與通知排程
-│   ├── ReminderReceiver.kt
-│   └── ReminderScheduler.kt
-└── ui/                     # 呈現層 (Jetpack Compose)
-    ├── app/                # Navigation 3 導航與狀態管理
-    ├── components/         # 共用 UI 元件與對話框
-    ├── screens/            # 各功能主畫面 (Task, Schedule, Calendar, Pomodoro)
-    └── theme/              # Color, Theme, Type (M3 樣式與動態色彩)
+├── MainActivity.kt             # 應用程式進入點與全螢幕配置
+├── calendar/                   # 離線農曆計算引擎與外觀模式
+│   ├── LunarCalendarEngine.kt  # 核心位元演算法 (1900–2100)
+│   ├── LunarCalendarFacade.kt  # Facade 服務介面
+│   └── LunarDate.kt            # 農曆日期與節氣節慶模型
+├── data/                       # 資料持久層
+│   ├── local/                  # Room 資料庫、DAOs、Entities
+│   │   ├── dao/                # ToDoDao, ReminderDao, TimeBlockDao, PomodoroDao
+│   │   ├── entity/             # ToDo, Reminder, TimeBlock, PomodoroRecord
+│   │   └── AppDatabase.kt      # Room 主資料庫
+│   └── repository/             # TaskRepository
+├── reminder/                   # 系統通知與鬧鐘排程
+│   ├── ReminderReceiver.kt     # 鬧鐘廣播接收器與 Notification 觸發
+│   └── ReminderScheduler.kt    # 精確鬧鐘排定與取消管理
+└── ui/                         # 視覺介面層 (Jetpack Compose)
+    ├── app/                    # Navigation 3 導航配置與狀態管理
+    ├── components/             # 色彩標籤、呼吸邊框、多日彈窗、反饋工具 (DateFormatter, showFeedback)
+    ├── screens/                # TaskScreen, CalendarScreen, ScheduleScreen, PomodoroScreen
+    └── theme/                  # M3 主題設定、色彩調色盤與字型規範
 ```
 
 ---
 
 ## 🚀 CI/CD & GitHub Integration / 持續整合
 
-本專案配置了完整的 GitHub Actions 工作流程 (`.github/workflows/android.yml`)，確保每次 Push 與 Pull Request 的程式碼品質：
-- **環境設定**：自動安裝 Temurin JDK 17 與 Gradle 快取。
-- **自動建置**：執行 `./gradlew build` 確保編譯無誤。
-- **自動測試**：執行 `./gradlew test` 運行單元測試與業務邏輯驗證。
+本專案配置 GitHub Actions 自動化工作流（`.github/workflows/android.yml`）：
+- **JDK 17 Temurin**：自動化編譯環境與 Gradle 快取。
+- **Android Lint 靜態檢查**：驗證 Composable 代碼品質與規範。
+- **單元測試**：自動執行 `./gradlew test`，確保每次提交皆穩定可靠。
 
 ---
 
 ## 🏁 Getting Started & Building / 快速開始與建置
 
 ### 系統需求
-- Android Studio Ladybug 或更新版本
+- Android Studio Ladybug (2024.2.1) 或更新版本
 - JDK 17
-- Android SDK 34+ (支援 SDK 35)
+- Android SDK 30 ~ 37
 
-### 建置與運行指令
-在專案根目錄下執行以下指令：
-
+### 建置指令
 ```bash
 # 建置 Debug APK
 ./gradlew assembleDebug
@@ -126,12 +172,12 @@ com.example.notepad/
 # 執行單元測試
 ./gradlew testDebugUnitTest
 
-# 執行儀器化測試 (需連接實機或模擬器)
-./gradlew connectedDebugAndroidTest
+# 執行完整專案檢查與建置
+./gradlew build
 ```
 
 ---
 
 ## 📄 License / 授權條款
 
-本專案採用 [MIT License](LICENSE) 授權條款。
+本專案採用 [MIT License](LICENSE) 開源授權條款。
