@@ -4,6 +4,7 @@ import com.example.notepad.data.local.dao.CategoryDao
 import com.example.notepad.data.local.dao.NoteDao
 import com.example.notepad.data.local.entity.Category
 import com.example.notepad.data.local.entity.Note
+import com.example.notepad.data.local.entity.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -181,14 +182,40 @@ private class FakeNoteDao : NoteDao {
 
     override suspend fun clearCategoryFromNotes(categoryId: Int, updatedAt: Long) {
         notesFlow.value = notesFlow.value.map {
-            if (it.categoryId == categoryId) it.copy(categoryId = null, updatedAt = updatedAt) else it
+            if (it.categoryId == categoryId) {
+                it.copy(categoryId = null, updatedAt = updatedAt, syncStatus = SyncStatus.PENDING_UPLOAD)
+            } else {
+                it
+            }
         }
     }
 
     override suspend fun reassignNotesCategory(oldCategoryId: Int, newCategoryId: Int?, updatedAt: Long) {
         notesFlow.value = notesFlow.value.map {
-            if (it.categoryId == oldCategoryId) it.copy(categoryId = newCategoryId, updatedAt = updatedAt) else it
+            if (it.categoryId == oldCategoryId) {
+                it.copy(categoryId = newCategoryId, updatedAt = updatedAt, syncStatus = SyncStatus.PENDING_UPLOAD)
+            } else {
+                it
+            }
         }
+    }
+
+    override suspend fun getAllNotesOnce(): List<Note> = notesFlow.value
+
+    override suspend fun getNoteBySyncIdOnce(syncId: String): Note? =
+        notesFlow.value.find { it.syncId == syncId }
+
+    override fun observePendingCount(): Flow<Int> =
+        notesFlow.map { list -> list.count { it.syncStatus == SyncStatus.PENDING_UPLOAD } }
+
+    override suspend fun markAsSynced(syncId: String) {
+        notesFlow.value = notesFlow.value.map {
+            if (it.syncId == syncId) it.copy(syncStatus = SyncStatus.SYNCED) else it
+        }
+    }
+
+    override suspend fun deleteBySyncId(syncId: String) {
+        notesFlow.value = notesFlow.value.filterNot { it.syncId == syncId }
     }
 }
 
@@ -231,5 +258,23 @@ private class FakeCategoryDao : CategoryDao {
 
     override suspend fun deleteCategoryById(id: Int) {
         categoriesFlow.value = categoriesFlow.value.filterNot { it.id == id }
+    }
+
+    override suspend fun getAllCategoriesOnce(): List<Category> = categoriesFlow.value
+
+    override suspend fun getCategoryBySyncIdOnce(syncId: String): Category? =
+        categoriesFlow.value.find { it.syncId == syncId }
+
+    override fun observePendingCount(): Flow<Int> =
+        categoriesFlow.map { list -> list.count { it.syncStatus == SyncStatus.PENDING_UPLOAD } }
+
+    override suspend fun markAsSynced(syncId: String) {
+        categoriesFlow.value = categoriesFlow.value.map {
+            if (it.syncId == syncId) it.copy(syncStatus = SyncStatus.SYNCED) else it
+        }
+    }
+
+    override suspend fun deleteBySyncId(syncId: String) {
+        categoriesFlow.value = categoriesFlow.value.filterNot { it.syncId == syncId }
     }
 }

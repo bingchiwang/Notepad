@@ -25,4 +25,19 @@ interface TimeBlockDao {
 
     @Delete
     suspend fun deleteTimeBlock(timeBlock: TimeBlock)
+
+    @Query("SELECT * FROM time_blocks")
+    suspend fun getAllTimeBlocksOnce(): List<TimeBlock>
+
+    @Query("SELECT * FROM time_blocks WHERE syncId = :syncId LIMIT 1")
+    suspend fun getTimeBlockBySyncIdOnce(syncId: String): TimeBlock?
+
+    @Query("SELECT COUNT(*) FROM time_blocks WHERE syncStatus = 1")
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE time_blocks SET syncStatus = 0 WHERE syncId = :syncId")
+    suspend fun markAsSynced(syncId: String)
+
+    @Query("DELETE FROM time_blocks WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
 }

@@ -7,6 +7,7 @@ import com.example.notepad.data.local.dao.ToDoDao
 import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.local.entity.Priority
 import com.example.notepad.data.local.entity.Reminder
+import com.example.notepad.data.local.entity.SyncStatus
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
 import kotlinx.coroutines.flow.Flow
@@ -132,6 +133,24 @@ private class FakeToDoDao : ToDoDao {
     override suspend fun deleteToDo(toDo: ToDo) {
         flow.value = flow.value.filterNot { it.id == toDo.id }
     }
+
+    override suspend fun getAllToDosOnce(): List<ToDo> = flow.value
+
+    override suspend fun getToDoBySyncIdOnce(syncId: String): ToDo? =
+        flow.value.find { it.syncId == syncId }
+
+    override fun observePendingCount(): Flow<Int> =
+        flow.map { list -> list.count { it.syncStatus == SyncStatus.PENDING_UPLOAD } }
+
+    override suspend fun markAsSynced(syncId: String) {
+        flow.value = flow.value.map {
+            if (it.syncId == syncId) it.copy(syncStatus = SyncStatus.SYNCED) else it
+        }
+    }
+
+    override suspend fun deleteBySyncId(syncId: String) {
+        flow.value = flow.value.filterNot { it.syncId == syncId }
+    }
 }
 
 private class FakeReminderDao : ReminderDao {
@@ -163,8 +182,32 @@ private class FakeReminderDao : ReminderDao {
         flow.value = flow.value.filterNot { it.id == reminder.id }
     }
 
-    override suspend fun markAsFired(id: Int) {
-        flow.value = flow.value.map { if (it.id == id) it.copy(isFired = true) else it }
+    override suspend fun markAsFired(id: Int, updatedAt: Long) {
+        flow.value = flow.value.map {
+            if (it.id == id) {
+                it.copy(isFired = true, updatedAt = updatedAt, syncStatus = SyncStatus.PENDING_UPLOAD)
+            } else {
+                it
+            }
+        }
+    }
+
+    override suspend fun getAllRemindersOnce(): List<Reminder> = flow.value
+
+    override suspend fun getReminderBySyncIdOnce(syncId: String): Reminder? =
+        flow.value.find { it.syncId == syncId }
+
+    override fun observePendingCount(): Flow<Int> =
+        flow.map { list -> list.count { it.syncStatus == SyncStatus.PENDING_UPLOAD } }
+
+    override suspend fun markAsSynced(syncId: String) {
+        flow.value = flow.value.map {
+            if (it.syncId == syncId) it.copy(syncStatus = SyncStatus.SYNCED) else it
+        }
+    }
+
+    override suspend fun deleteBySyncId(syncId: String) {
+        flow.value = flow.value.filterNot { it.syncId == syncId }
     }
 }
 
@@ -175,10 +218,35 @@ private class FakeTimeBlockDao : TimeBlockDao {
     override suspend fun insertTimeBlock(timeBlock: TimeBlock) {}
     override suspend fun updateTimeBlock(timeBlock: TimeBlock) {}
     override suspend fun deleteTimeBlock(timeBlock: TimeBlock) {}
+    override suspend fun getAllTimeBlocksOnce(): List<TimeBlock> = flow.value
+    override suspend fun getTimeBlockBySyncIdOnce(syncId: String): TimeBlock? =
+        flow.value.find { it.syncId == syncId }
+    override fun observePendingCount(): Flow<Int> =
+        flow.map { list -> list.count { it.syncStatus == SyncStatus.PENDING_UPLOAD } }
+    override suspend fun markAsSynced(syncId: String) {
+        flow.value = flow.value.map {
+            if (it.syncId == syncId) it.copy(syncStatus = SyncStatus.SYNCED) else it
+        }
+    }
+    override suspend fun deleteBySyncId(syncId: String) {
+        flow.value = flow.value.filterNot { it.syncId == syncId }
+    }
 }
 
 private class FakePomodoroDao : PomodoroDao {
+    private val flow = MutableStateFlow<List<PomodoroRecord>>(emptyList())
     override fun getTodayCount(date: Long): Flow<Int> = MutableStateFlow(0)
-    override fun getRecordsByDate(date: Long): Flow<List<PomodoroRecord>> = MutableStateFlow(emptyList())
+    override fun getRecordsByDate(date: Long): Flow<List<PomodoroRecord>> = flow
     override suspend fun insertRecord(record: PomodoroRecord) {}
+    override suspend fun getAllRecordsOnce(): List<PomodoroRecord> = flow.value
+    override fun observePendingCount(): Flow<Int> =
+        flow.map { list -> list.count { it.syncStatus == SyncStatus.PENDING_UPLOAD } }
+    override suspend fun markAsSynced(syncId: String) {
+        flow.value = flow.value.map {
+            if (it.syncId == syncId) it.copy(syncStatus = SyncStatus.SYNCED) else it
+        }
+    }
+    override suspend fun deleteBySyncId(syncId: String) {
+        flow.value = flow.value.filterNot { it.syncId == syncId }
+    }
 }

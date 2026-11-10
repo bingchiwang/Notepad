@@ -71,12 +71,27 @@ interface NoteDao {
     /**
      * 刪除分類時將該分類底下的記事改為未分類，防止資料遺失
      */
-    @Query("UPDATE notes SET categoryId = NULL, updatedAt = :updatedAt WHERE categoryId = :categoryId")
+    @Query("UPDATE notes SET categoryId = NULL, updatedAt = :updatedAt, syncStatus = 1 WHERE categoryId = :categoryId")
     suspend fun clearCategoryFromNotes(categoryId: Int, updatedAt: Long)
 
     /**
      * 刪除分類時將該分類底下的記事批次轉移至目標分類
      */
-    @Query("UPDATE notes SET categoryId = :newCategoryId, updatedAt = :updatedAt WHERE categoryId = :oldCategoryId")
+    @Query("UPDATE notes SET categoryId = :newCategoryId, updatedAt = :updatedAt, syncStatus = 1 WHERE categoryId = :oldCategoryId")
     suspend fun reassignNotesCategory(oldCategoryId: Int, newCategoryId: Int?, updatedAt: Long)
+
+    @Query("SELECT * FROM notes")
+    suspend fun getAllNotesOnce(): List<Note>
+
+    @Query("SELECT * FROM notes WHERE syncId = :syncId LIMIT 1")
+    suspend fun getNoteBySyncIdOnce(syncId: String): Note?
+
+    @Query("SELECT COUNT(*) FROM notes WHERE syncStatus = 1")
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE notes SET syncStatus = 0 WHERE syncId = :syncId")
+    suspend fun markAsSynced(syncId: String)
+
+    @Query("DELETE FROM notes WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
 }

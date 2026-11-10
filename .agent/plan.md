@@ -111,6 +111,18 @@
   - 所有主要功能皆可由統一底部導覽及頂部快捷列即時存取
   - 31 項單元測試與 `./gradlew build`（95 項任務）全部執行通過
 
+### Task_9_FirebaseCloudSync: 新增 Firebase 雲端資料同步功能（本地優先 + 離線恢復自動上傳 + 最新修改優先衝突合併）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 擴充 Room Database 至 v5（`MIGRATION_4_5`）：為 `Note`、`Category`、`ToDo`、`Reminder`、`TimeBlock`、`PomodoroRecord` 加入 `syncId`、`updatedAt`、`syncStatus` 欄位，並新增 `SyncTombstone`（`sync_tombstones`）記錄離線刪除動作。
+  - 建立 `SyncPreferences`（保存同步空間代碼、`lastSyncAt` 與手動 Firebase 設定）、`AndroidNetworkMonitor`（網路恢復自動偵測）、`FirebaseFirestoreDataSource`（支援 `google-services.json` 或 UI 手動填入 `Project ID / App ID / API Key`）與 `CloudSyncManager`（雙向同步全部資料與設定、離線保留待上傳狀態、連網自動上傳及雲端提醒排程連動）。
+  - 實作 `SyncConflictResolver` 採智慧合併與最新修改時間優先（`updatedAt` LWW）處理衝突，並建立 `CloudSyncDialog` 與頂部狀態徽章供檢視同步摘要、修改設定與一鍵手動同步。
+  - 更新 `NoteRepositoryTest`、`TaskRepositoryTest` 假物件相容新 DAO 接口，新增 `SyncConflictResolverTest`（8 項）與 `CloudSyncManagerTest`（4 項），共計 43 項單元測試全數通過。
+- **驗收標準 (Acceptance Criteria):**
+  - 新增／修改／刪除優先寫入本機並保留待同步狀態，有網即時同步至 Firebase Firestore，離線恢復後自動上傳
+  - 成功同步後更新 `lastSyncAt` 且衝突時依最新修改時間優先智慧合併
+  - 43 項單元測試與 `./gradlew build`（含 `lint` 與 `assembleRelease` R8）全部執行通過
+
 ## 程式碼管理規範 (Code Management Guidelines)
 1. **每個類別及函式應有明確用途**：保持單一職責，確保每個組件結構清晰且功能專一。
 2. **避免重複撰寫相同程式碼**：遵循 DRY 原則，重複出現的邏輯抽象為共用函式或元件。

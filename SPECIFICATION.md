@@ -5,24 +5,27 @@
 - **套件識別碼 (`applicationId`)**：`com.example.notepad`
 - **開發語言與框架**：Kotlin、Jetpack Compose（Material Design 3）、Jetpack Navigation 3、Compose Material Adaptive
 - **SDK 支援範圍**：`minSdk = 30`、`compileSdk = 37`、`targetSdk = 37`
-- **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences
-- **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 4`
+- **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Firebase Cloud Sync（`CloudSyncManager`）
+- **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 5`
 
 ---
 
 ## 2. 系統模組架構與資料模型
 
-### 2.1 本機資料庫結構（Room Database v4 - `AppDatabase`）
+### 2.1 本機資料庫結構（Room Database v5 - `AppDatabase`）
 | 資料表名稱 | 實體類別 | 主要欄位 | 索引與關聯規則 |
 | :--- | :--- | :--- | :--- |
-| `notes` | `Note` | `id` (PK), `title`, `content`, `isPinned`, `categoryId`, `color`, `createdAt`, `updatedAt` | 外鍵參照 `categories(id)`，`onDelete = ForeignKey.SET_NULL`；索引 `index_notes_categoryId` |
-| `categories` | `Category` | `id` (PK), `name`, `color`, `createdAt` | `index_categories_name` 唯一索引（`unique = true`） |
-| `todos` | `ToDo` | `id` (PK), `title`, `description`, `isCompleted`, `dueDate`, `tag`, `color`, `createdAt`, `priority` | `priority` 透過 `DatabaseConverters` 轉換（`HIGH=3`, `MEDIUM=2`, `LOW=1`） |
-| `reminders` | `Reminder` | `id` (PK), `title`, `message`, `triggerAt`, `tag`, `color`, `isFired`, `createdAt`, `linkedToDoId` | `linkedToDoId` 用於待辦完成時連動取消未觸發通知 |
-| `time_blocks` | `TimeBlock` | `id` (PK), `date`, `startTime`, `endTime`, `title`, `description`, `isCompleted`, `tag`, `color` | 依日期儲存每日時間規劃區塊 |
-| `pomodoro_records` | `PomodoroRecord` | `id` (PK), `timestamp`, `durationMinutes`, `taskTitle`, `date` | 記錄每日專注完成次數與歷史紀錄 |
+| `notes` | `Note` | `id` (PK), `title`, `content`, `isPinned`, `categoryId`, `color`, `createdAt`, `updatedAt`, `syncId`, `syncStatus` | 外鍵參照 `categories(id)`，`onDelete = ForeignKey.SET_NULL`；索引 `index_notes_categoryId`、唯一索引 `syncId` |
+| `categories` | `Category` | `id` (PK), `name`, `color`, `createdAt`, `syncId`, `updatedAt`, `syncStatus` | `index_categories_name` 與 `syncId` 唯一索引（`unique = true`） |
+| `todos` | `ToDo` | `id` (PK), `title`, `description`, `isCompleted`, `dueDate`, `tag`, `color`, `createdAt`, `priority`, `syncId`, `updatedAt`, `syncStatus` | `priority` 透過 `DatabaseConverters` 轉換（`HIGH=3`, `MEDIUM=2`, `LOW=1`）；唯一索引 `syncId` |
+| `reminders` | `Reminder` | `id` (PK), `title`, `message`, `triggerAt`, `tag`, `color`, `isFired`, `createdAt`, `linkedToDoId`, `syncId`, `updatedAt`, `syncStatus` | `linkedToDoId` 用於待辦完成時連動取消未觸發通知；唯一索引 `syncId` |
+| `time_blocks` | `TimeBlock` | `id` (PK), `date`, `startTime`, `endTime`, `title`, `description`, `isCompleted`, `tag`, `color`, `syncId`, `updatedAt`, `syncStatus` | 依日期儲存每日時間規劃區塊；唯一索引 `syncId` |
+| `pomodoro_records` | `PomodoroRecord` | `id` (PK), `timestamp`, `durationMinutes`, `taskTitle`, `date`, `syncId`, `updatedAt`, `syncStatus` | 記錄每日專注完成次數與歷史紀錄；唯一索引 `syncId` |
+| `sync_tombstones` | `SyncTombstone` | `id` (PK), `entityType`, `syncId`, `deletedAt` | 複合唯一索引 `(entityType, syncId)`，記錄離線刪除動作供連網後推播刪除與衝突比對 |
 
-* **資料庫版本遷移 (`MIGRATION_3_4`)**：自 v3 無損升級至 v4，保留既有待辦、提醒、時間規劃與番茄鐘紀錄，新增 `todos.priority`（預設 `2 = MEDIUM`）、`reminders.linkedToDoId`、以及 `categories` 與 `notes` 資料表。
+* **資料庫版本遷移 (`MIGRATION_3_4` & `MIGRATION_4_5`)**：
+  * `MIGRATION_3_4` 自 v3 無損升級至 v4，建立 `notes`/`categories` 表與 `todos.priority`/`reminders.linkedToDoId` 欄位。
+  * `MIGRATION_4_5` 自 v4 無損升級至 v5，為上述 6 張資料表補齊 `syncId`（為舊資料指派唯一 UUID）、`updatedAt`、`syncStatus` 欄位與唯一索引，並建立 `sync_tombstones` 表。
 
 ### 2.2 偏好設定持久化（DataStore Preferences）
 | 類別 | DataStore 檔名 | 儲存鍵值與預設狀態 | 功能說明 |
@@ -30,6 +33,7 @@
 | `ThemePreferences` | `theme_preferences` | `theme_mode`（預設 `ThemeMode.SYSTEM`） | 支援 `LIGHT`（淺色）、`DARK`（深色）、`SYSTEM`（跟隨系統），跨頁面一致且重開 App 維持有效 |
 | `NotificationPreferences` | `notification_preferences` | `notifications_enabled`（預設 `true`） | 全域通知總開關；關閉時取消所有待觸發鬧鐘且接收器不再顯示通知 |
 | `NoteDraftPreferences` | `note_draft_preferences` | `NoteDraft`（`hasActiveDraft`, `editingNoteId`, `title`, `content`, `categoryId`, `color`, `isPinned`） | 即時保存尚未儲存之記事編輯內容，避免切換分頁或系統回收遺失草稿 |
+| `SyncPreferences` | `cloud_sync_preferences` | `SyncSettings`（`syncEnabled`, `syncAccountId`, `firebaseProjectId`, `firebaseAppId`, `firebaseApiKey`, `lastSyncAt`, `lastSyncMessage`, `settingsUpdatedAt`, `settingsSyncPending`） | 保存雲端同步開關、跨裝置空間代碼、選填手動 Firebase 參數、待同步設定時間戳與最後同步時間 (`lastSyncAt`) |
 
 ---
 
@@ -73,9 +77,17 @@
 - **番茄鐘計時器（`PomodoroScreen`）**：提供專注工作（25 分鐘）、短暫休息（5 分鐘）、深度休息（15 分鐘），累計今日完成次數與歷史紀錄。
 
 ### 3.5 全局導航、系統欄安全防護與操作規範
-- **導航架構（`AppNavigation`）**：採用 Jetpack Navigation 3 與 `NavigationSuiteScaffold`，全應用所有主要頁面維持一致的 5 項底部導覽（`記事`、`待辦`、`月曆`、`排程`、`番茄鐘`）及頂部主題／通知快捷工具列。
+- **導航架構（`AppNavigation`）**：採用 Jetpack Navigation 3 與 `NavigationSuiteScaffold`，全應用所有主要頁面維持一致的 5 項底部導覽（`記事`、`待辦`、`月曆`、`排程`、`番茄鐘`）及頂部雲端同步／通知／主題快捷工具列。
 - **系統欄與挖孔防護**：外層容器套用 `statusBarsPadding()`、`navigationBarsPadding()`、`displayCutoutPadding()`，編輯器套用 `imePadding()`，防止手機系統導覽列、狀態欄、鏡頭挖孔或鍵盤遮擋介面。
-- **操作反饋機制**：所有新增、更新、刪除成功及異常錯誤皆透過 `showFeedback` 或行內訊息提供清楚即時反饋，所有刪除操作皆經由二次確認對話框防護。
+- **操作反饋機制**：所有新增、更新、刪除、設定變更與雲端同步結果皆透過 `showFeedback` 或行內訊息提供清楚即時反饋，所有刪除操作皆經由二次確認對話框防護。
+
+### 3.6 Firebase 雲端資料同步與衝突解決（`CloudSyncManager` / `FirebaseFirestoreDataSource` / `CloudSyncDialog`）
+1. **本地優先寫入（Local-First）**：新增、修改或刪除記事、分類、待辦、提醒、時間規劃、番茄鐘與偏好設定時，一律優先寫入本機 Room 資料庫或 DataStore，確保零網路延遲與離線可用性。
+2. **全資料 Firebase 雲端同步**：於連線且配置就緒時將全部資料類型（含關聯之分類 `categorySyncId` 與連結待辦 `linkedToDoSyncId`）雙向同步至 Firebase Firestore 集合 `notepad_sync/{accountId}/items/{ENTITYTYPE_SYNCID}`；支援自動識別 `google-services.json` 或由使用者於 `CloudSyncDialog` 手動輸入 Firebase Project ID / App ID / Web API Key 動態初始化。
+3. **離線異動與刪除墓碑保留**：無網路期間，本機異動維持 `SyncStatus.PENDING_UPLOAD`，刪除資料則即時寫入 `sync_tombstones`（`SyncTombstone`），避免唯一索引（如同名分類重建）衝突同時完整保存待同步刪除操作。
+4. **網路恢復自動上傳**：透過 `AndroidNetworkMonitor`（`ConnectivityManager.NetworkCallback` + `ACCESS_NETWORK_STATE`）偵測網路連線恢復，自動節流觸發 `CloudSyncManager.syncNow` 上傳排隊異動；雲端拉回提醒異動時透過 `onReminderSyncedFromCloud` 同步重整 `ReminderScheduler` 鬧鐘排程。
+5. **最後同步時間記錄**：同步成功後立即寫入 `SyncPreferences.lastSyncAt` 與狀態摘要，並將本機狀態重設為 `SYNCED` 與清除已推播的墓碑；若離線或發生錯誤，保留既有的成功同步時間不覆寫。
+6. **智慧合併與最新修改優先衝突解決（`SyncConflictResolver`）**：雙向比對 `updatedAt` 時間戳記（與刪除時間 `deletedAt`），以最新修改時間勝出（Last-Write-Wins）；若離線雙邊修改同一資料且本機於雲端刪除後仍有更新編輯，智慧保留本機修改並復原雲端版本。
 
 ---
 

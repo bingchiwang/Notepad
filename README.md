@@ -12,44 +12,55 @@
 
 ## 🌟 Overview / 專案概述
 
-**Lunar To-Do & Notepad App** 是一款專為現代生活打造的高效生產力 Android 應用程式。本應用整合了**雙軌任務管理（待做事項與多日提醒）**、**1900–2100 年完全離線農曆萬年曆**、**每日時間規劃表（Daily Schedule Planner）**與**番茄鐘專注計時器（Pomodoro Timer）**。
+**Lunar To-Do & Notepad App** 是一款專為現代生活打造的高效生產力 Android 應用程式。本應用整合了**記事與分類全文搜尋**、**雙軌任務管理（待做事項優先級與多日提醒）**、**1900–2100 年完全離線農曆萬年曆**、**每日時間規劃表（Daily Schedule Planner）**、**番茄鐘專注計時器（Pomodoro Timer）**以及**本地優先（Offline-First）Firebase 雲端資料同步**。
 
-全介面基於 **Jetpack Compose** 與 **Material Design 3** 打造，支援全面沉浸式體驗（Edge-to-Edge）、動態色彩標籤、平板與摺疊機自適應佈局（Adaptive Layout）、以及 **Jetpack Navigation 3** 狀態驅動導航。
+全介面基於 **Jetpack Compose** 與 **Material Design 3** 打造，支援全面沉浸式體驗（Edge-to-Edge + 系統導覽列防遮擋）、動態色彩標籤、淺色／深色／跟隨系統主題切換、平板與摺疊機自適應佈局（Adaptive Layout）、以及 **Jetpack Navigation 3** 狀態驅動導航。
 
 ---
 
 ## 📋 Key Features / 核心功能特色
 
-### 1. 📋 雙軌任務與自由多日提醒 (Dual-Track Tasks & Reminders)
-- **待做事件 (To-Dos)**：支援標題說明、到期日設定、色彩標籤、完成打勾狀態更新與過濾（全部 / 進行中 / 已完成）。
+### 1. 📝 記事管理與草稿不遺失編輯器 (Notes, Categories & Full-Text Search)
+- **彈性紀錄與釘選置頂**：每篇記事具唯一識別碼，標題與內容皆可空白；修改自動更新 `updatedAt`，支援一鍵釘選置頂排序。
+- **草稿自動持久化**：透過 `NoteDraftPreferences` 即時保護未儲存內容，切換頁面或重開 App 皆不遺失草稿。
+- **防重分類與全文搜尋**：分類具名稱防重檢查（大小寫無關），刪除分類時安全轉移或解除記事關聯；搜尋同時比對標題與內文並依修改時間降冪排列。
+
+### 2. 📋 雙軌任務與自由多日提醒 (Dual-Track Tasks & Reminders)
+- **待做事件 (To-Dos)**：支援高／中／低優先級徽章（`Priority`）、必填檢核、到期日設定、色彩標籤、進行中與已完成清單明確隔離。
 - **自由多日提醒事項 (Multi-Day Reminders)**：
   - **打破天數限制**：內建跨月/跨年導覽與互動月曆網格，支援任選未來任意年份與月份的多個日期。
-  - **精準時間排程**：自訂小時/分鐘與常用時間段快選（08:00, 09:00, 12:00 等）。
-  - **系統級推播通知**：整合 `AlarmManager.setExactAndAllowWhileIdle` 與 `BroadcastReceiver`，即使休眠亦能準時發出系統通知。
-  - **完整編輯與安全防護**：支援即時編輯提醒內容與日期時間，刪除前全面觸發二次確認對話框（`ConfirmDeleteDialog`）。
+  - **精準時間排程**：自訂小時/分鐘與常用時間段快選，搭配 `NotificationPreferences` 全域通知總開關與 Android 13+ 權限引導。
+  - **系統級推播通知**：整合 `AlarmManager.setExactAndAllowWhileIdle` 與 `BroadcastReceiver`；完成關聯待辦時自動取消未觸發通知排程。
+  - **完整編輯與安全防護**：支援即時編輯提醒內容與日期時間，所有刪除前全面觸發二次確認對話框（`ConfirmDeleteDialog`）。
 
-### 2. 📅 離線農曆萬年曆 (Offline Lunar Perpetual Calendar)
+### 3. ☁️ Firebase 雲端雙向同步 (Offline-First Cloud Sync)
+- **本地優先儲存**：新增、修改與刪除一律優先寫入本機 Room v5 / DataStore，確保離線零延遲使用體驗。
+- **全資料與偏好雙向同步**：支援同步記事、分類、待辦事項、提醒、每日時間規劃、番茄鐘紀錄與主題／通知偏好設定；同時相容 `google-services.json` 自動初始化與介面手動設定 Firebase 參數（Project ID / App ID / Web API Key）。
+- **斷線保留與恢復自動上傳**：離線期間完整維持 `PENDING_UPLOAD` 狀態與 `SyncTombstone` 刪除墓碑；網路恢復後透過 `AndroidNetworkMonitor` 自動上傳排隊變更。
+- **智慧衝突解決與同步記錄**：成功同步即時記錄 `lastSyncAt` 最後同步時間；雙向衝突委派 `SyncConflictResolver` 依最新修改時間優先（`updatedAt` LWW）策略智慧合併。
+
+### 4. 📅 離線農曆萬年曆 (Offline Lunar Perpetual Calendar)
 - **完全離線換算**：支援 1900 年至 2100 年農曆演算法，無需聯網即時查詢。
 - **豐富民俗資訊**：完整提供農曆月日、天干地支生肖紀年、二十四節氣與傳統民俗節慶。
 - **月曆視覺化網格**：清楚標記當月所有日期、當日待辦事項連動、一鍵快速跳轉。
 
-### 3. ⏰ 每日時間規劃表 (Daily Schedule Planner)
+### 5. ⏰ 每日時間規劃表 (Daily Schedule Planner)
 - **時間軸視覺化**：直觀呈現全天時間區塊（開始時間、結束時間、分類與備註）。
 - **進度即時計算**：依打勾完成狀態自動計算並顯示當日進度百分比進度條。
 - **一鍵專注**：點擊排程項目即可一鍵帶入番茄鐘進行深度專注工作。
 
-### 4. 🍅 番茄鐘專注計時器 (Pomodoro Timer)
+### 6. 🍅 番茄鐘專注計時器 (Pomodoro Timer)
 - **三大預設模式**：專注工作（25 分鐘）、短暫休息（5 分鐘）、深度休息（15 分鐘）。
 - **動態倒數環**：流暢環狀進度條倒數與播放/暫停/重置控制。
 - **歷史與統計**：任務完成即時納入今日番茄數統計，並記錄完成時間。
 
-### 5. 🚨 即將到期動態警示 (Imminent Deadline Alerts)
+### 7. 🚨 即將到期動態警示 (Imminent Deadline Alerts)
 - **呼吸發光虛線外框**：次日到期的任務卡片與月曆視圖同步觸發橘紅漸層呼吸發光動態。
 - **跳動徽章**：伴隨 `⚠️ 明日到期！` 動態徽章，提醒使用者優先處理。
 
-### 6. 🎨 專屬手繪風自適應圖示 (Adaptive App Icon)
-- **符合 Android 官方規範**：手繪筆記本與鉛筆插圖，精準縮放置中於 72dp 安全可視區內。
-- **全解析度支援**：完整提供 `mdpi`、`hdpi`、`xhdpi`、`xxhdpi`、`xxxhdpi` 各尺寸資源與傳統圓形圖示（Round Icon）。
+### 8. 🎨 專屬手繪風自適應圖示與自訂主題 (Adaptive Icon & Custom Themes)
+- **符合 Android 官方規範**：手繪筆記本與鉛筆插圖，精準縮放置中於 72dp 安全可視區內，提供完整 `mdpi`–`xxxhdpi` 解析度資源。
+- **三模式即時主題**：支援淺色（Light）、深色（Dark）與跟隨系統（System）模式並透過 DataStore 永久保存。
 
 ---
 
@@ -100,14 +111,17 @@
                         ▼
    ┌────────────────────┼────────────────────┐
    ▼                    ▼                    ▼
-[ TaskRepository ]  [ NoteRepository ]  [ DataStore Preferences ]
-   │                    │               (Theme / Notification / Draft)
-   ▼                    ▼
-[ Room Database v4 (MIGRATION_3_4) & DAOs ]   [ Facade: LunarCalendarFacade ]
+[ TaskRepository ]  [ NoteRepository ]  [ CloudSyncManager ]  [ DataStore Preferences ]
+   │                    │                  │   ▲             (Theme/Notif/Draft/Sync)
+   ▼                    ▼                  ▼   │
+[ Room Database v5 (MIGRATION_4_5) & DAOs ]    [ FirebaseFirestoreDataSource ]
+                        │                      [ SyncConflictResolver (updatedAt LWW) ]
+                        ▼
+             [ Facade: LunarCalendarFacade ]
 ```
 
 1. **外觀模式 (Facade Pattern)**：`LunarCalendarFacade` 將繁複的 200 年農曆二進位壓縮位元資料與節氣運算隱藏在背後，提供簡潔高層接口。
-2. **倉儲模式 (Repository Pattern)**：`TaskRepository` 與 `NoteRepository` 分別負責雙軌待辦排程與記事分類管理，向 UI 層暴露響應式 Kotlin Flow。
+2. **倉儲與離線優先同步模式 (Repository & Offline-First Sync)**：`TaskRepository` 與 `NoteRepository` 統一優先寫入本機 Room v5，異動自動透過 `CloudSyncManager`、`AndroidNetworkMonitor` 與 `SyncConflictResolver` 與 Firebase Firestore 雙向同步，離線期間保留 `PENDING_UPLOAD` 與 `SyncTombstone`。
 3. **導航與適應性 (Navigation 3 & Adaptive Layout)**：採用最新版 `androidx.navigation3`，結合安全系統欄邊距（`statusBarsPadding`, `navigationBarsPadding`, `displayCutoutPadding`）實現手機與平板皆不遮擋的適應性佈局。
 
 ---
@@ -118,9 +132,10 @@
 - **UI 框架**：Jetpack Compose, Material Design 3, Compose Material Icons Extended
 - **導航套件**：Jetpack Navigation 3 (`androidx.navigation3`)
 - **自適應佈局**：Compose Material Adaptive (`NavigationSuiteScaffold`)
-- **本機資料庫**：Room Persistence Library v4 (SQLite + `MIGRATION_3_4`)
+- **本機資料庫**：Room Persistence Library v5 (SQLite + `MIGRATION_3_4` + `MIGRATION_4_5`)
+- **雲端同步後端**：Firebase BOM (`35.1.0`) + Cloud Firestore (`FirebaseFirestoreDataSource`) + `ConnectivityManager` 連線監測
 - **背景與排程**：AlarmManager, BroadcastReceiver (`ReminderScheduler`, `ReminderReceiver`)
-- **狀態持久化**：AndroidX DataStore Preferences（主題、通知開關、未保存草稿）
+- **狀態持久化**：AndroidX DataStore Preferences（主題、通知開關、未保存草稿、雲端同步設定與 `lastSyncAt`）
 - **建置工具**：Gradle Kotlin DSL (`build.gradle.kts`), Version Catalog (`libs.versions.toml`)
 - **CI/CD**：GitHub Actions (`.github/workflows/android.yml`)
 
@@ -130,28 +145,35 @@
 
 ```text
 com.example.notepad/
-├── MainActivity.kt             # 應用程式進入點、全螢幕設定與動態主題對比度同步
+├── MainActivity.kt             # 應用程式進入點、全螢幕設定、雲端同步生命週期初始化與動態主題同步
 ├── calendar/                   # 離線農曆計算引擎與外觀模式
 │   ├── LunarCalendarEngine.kt  # 核心位元演算法 (1900–2100)
 │   ├── LunarCalendarFacade.kt  # Facade 服務介面
 │   └── LunarDate.kt            # 農曆日期與節氣節慶模型
-├── data/                       # 資料持久層
+├── data/                       # 資料持久層與雲端同步
 │   ├── local/                  # Room 資料庫、DAOs、Entities、轉換器
-│   │   ├── dao/                # NoteDao, CategoryDao, ToDoDao, ReminderDao, TimeBlockDao, PomodoroDao
-│   │   ├── entity/             # Note, Category, ToDo, Priority, Reminder, TimeBlock, PomodoroRecord
+│   │   ├── dao/                # NoteDao, CategoryDao, ToDoDao, ReminderDao, TimeBlockDao, PomodoroDao, SyncTombstoneDao
+│   │   ├── entity/             # Note, Category, ToDo, Priority, Reminder, TimeBlock, PomodoroRecord, SyncTombstone, SyncMetadata
 │   │   ├── DatabaseConverters.kt
-│   │   └── AppDatabase.kt      # Room 主資料庫 (v4 + MIGRATION_3_4)
+│   │   └── AppDatabase.kt      # Room 主資料庫 (v5 + MIGRATION_3_4 + MIGRATION_4_5)
 │   ├── preferences/            # DataStore 持久化
 │   │   ├── ThemePreferences.kt
 │   │   ├── NotificationPreferences.kt
-│   │   └── NoteDraftPreferences.kt
-│   └── repository/             # NoteRepository, TaskRepository
+│   │   ├── NoteDraftPreferences.kt
+│   │   └── SyncPreferences.kt
+│   ├── repository/             # NoteRepository, TaskRepository
+│   └── sync/                   # Firebase 雲端雙向同步模組
+│       ├── CloudRemoteDataSource.kt
+│       ├── CloudSyncManager.kt
+│       ├── CloudSyncModels.kt  # CloudSyncDocument & SyncConflictResolver
+│       ├── FirebaseFirestoreDataSource.kt
+│       └── NetworkMonitor.kt   # ConnectivityManager 連線與恢復觀察
 ├── reminder/                   # 系統通知與鬧鐘排程
 │   ├── ReminderReceiver.kt     # 鬧鐘廣播接收器（含總開關與權限檢核）
 │   └── ReminderScheduler.kt    # 精確鬧鐘排定、取消與任務連動取消
 └── ui/                         # 視覺介面層 (Jetpack Compose)
     ├── app/                    # Navigation 3 導航與系統欄防遮擋安全容器
-    ├── components/             # 優先級徽章、設定彈窗、色彩標籤、呼吸邊框、多日彈窗、反饋工具
+    ├── components/             # CloudSyncDialog、優先級徽章、設定彈窗、色彩標籤、呼吸邊框、多日彈窗、反饋工具
     ├── screens/                # NotesScreen, NoteEditorScreen, TaskScreen, CalendarScreen, ScheduleScreen, PomodoroScreen
     └── theme/                  # M3 主題設定、色彩調色盤與字型規範
 ```
@@ -160,9 +182,10 @@ com.example.notepad/
 
 ## 📚 Documentation / 專案文件
 
-- **[專案規格書 (SPECIFICATION.md)](SPECIFICATION.md)**：系統架構、Room v4 / DataStore 資料模型及詳細功能規格。
+- **[專案規格書 (SPECIFICATION.md)](SPECIFICATION.md)**：系統架構、Room v5 / DataStore / Firebase 雲端同步模型及詳細功能規格。
 - **[版本紀錄 (CHANGELOG.md)](CHANGELOG.md)**：歷次功能擴充、錯誤修復與測試驗證紀錄。
 - **[開發與操作規範 (AGENTS.md)](AGENTS.md)**：程式碼品質、UX 體驗、功能規範與變更管理工作流。
+- **[專案開發計畫 (.agent/plan.md)](.agent/plan.md)**：分階段功能實作與驗收紀錄。
 
 ---
 

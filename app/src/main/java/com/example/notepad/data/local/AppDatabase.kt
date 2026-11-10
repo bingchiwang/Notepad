@@ -11,17 +11,19 @@ import com.example.notepad.data.local.dao.CategoryDao
 import com.example.notepad.data.local.dao.NoteDao
 import com.example.notepad.data.local.dao.PomodoroDao
 import com.example.notepad.data.local.dao.ReminderDao
+import com.example.notepad.data.local.dao.SyncTombstoneDao
 import com.example.notepad.data.local.dao.TimeBlockDao
 import com.example.notepad.data.local.dao.ToDoDao
 import com.example.notepad.data.local.entity.Category
 import com.example.notepad.data.local.entity.Note
 import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.local.entity.Reminder
+import com.example.notepad.data.local.entity.SyncTombstone
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
 
 /**
- * 應用程式核心 Room 資料庫（v4：新增 Note、Category 資料表與 ToDo 優先級）
+ * 應用程式核心 Room 資料庫（v5：新增雲端同步欄位 syncId / syncStatus / updatedAt 與離線刪除墓碑表）
  */
 @Database(
     entities = [
@@ -30,9 +32,10 @@ import com.example.notepad.data.local.entity.ToDo
         TimeBlock::class,
         PomodoroRecord::class,
         Note::class,
-        Category::class
+        Category::class,
+        SyncTombstone::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(DatabaseConverters::class)
@@ -43,6 +46,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun pomodoroDao(): PomodoroDao
     abstract fun noteDao(): NoteDao
     abstract fun categoryDao(): CategoryDao
+    abstract fun syncTombstoneDao(): SyncTombstoneDao
 
     companion object {
         @Volatile
@@ -54,12 +58,9 @@ abstract class AppDatabase : RoomDatabase() {
          */
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // 為待辦事項新增 priority 欄位（預設 2 = MEDIUM）
                 db.execSQL("ALTER TABLE todos ADD COLUMN priority INTEGER NOT NULL DEFAULT 2")
-                // 為提醒事項新增關聯待辦欄位
                 db.execSQL("ALTER TABLE reminders ADD COLUMN linkedToDoId INTEGER")
 
-                // 建立分類資料表及名稱唯一索引（規範 4.3）
                 db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `categories` (
@@ -74,7 +75,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "CREATE UNIQUE INDEX IF NOT EXISTS `index_categories_name` ON `categories` (`name`)"
                 )
 
-                // 建立記事資料表及分類外鍵關聯（刪除分類時設為 NULL）
                 db.execSQL(
                     """
                     CREATE TABLE IF NOT EXISTS `notes` (
@@ -96,6 +96,70 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v4 升級至 v5 之結構遷移：為既有全部資料實體補齊跨裝置同步識別碼、更新時間與待同步狀態，
+         * 並建立離線刪除墓碑資料表 (`sync_tombstones`)。
+         */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // todos
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `syncId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `syncStatus` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("UPDATE `todos` SET `syncId` = 'v4-todo-' || `id`, `updatedAt` = `createdAt` WHERE `syncId` = ''")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_todos_syncId` ON `todos` (`syncId`)")
+
+                // reminders
+                db.execSQL("ALTER TABLE `reminders` ADD COLUMN `syncId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `reminders` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `reminders` ADD COLUMN `syncStatus` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("UPDATE `reminders` SET `syncId` = 'v4-reminder-' || `id`, `updatedAt` = `createdAt` WHERE `syncId` = ''")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_reminders_syncId` ON `reminders` (`syncId`)")
+
+                // time_blocks
+                db.execSQL("ALTER TABLE `time_blocks` ADD COLUMN `syncId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `time_blocks` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `time_blocks` ADD COLUMN `syncStatus` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("UPDATE `time_blocks` SET `syncId` = 'v4-timeblock-' || `id`, `updatedAt` = `date` WHERE `syncId` = ''")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_time_blocks_syncId` ON `time_blocks` (`syncId`)")
+
+                // pomodoro_records
+                db.execSQL("ALTER TABLE `pomodoro_records` ADD COLUMN `syncId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `pomodoro_records` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `pomodoro_records` ADD COLUMN `syncStatus` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("UPDATE `pomodoro_records` SET `syncId` = 'v4-pomodoro-' || `id`, `updatedAt` = `timestamp` WHERE `syncId` = ''")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_pomodoro_records_syncId` ON `pomodoro_records` (`syncId`)")
+
+                // categories
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `syncId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `updatedAt` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `categories` ADD COLUMN `syncStatus` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("UPDATE `categories` SET `syncId` = 'v4-category-' || `id`, `updatedAt` = `createdAt` WHERE `syncId` = ''")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_categories_syncId` ON `categories` (`syncId`)")
+
+                // notes (已具備 updatedAt)
+                db.execSQL("ALTER TABLE `notes` ADD COLUMN `syncId` TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE `notes` ADD COLUMN `syncStatus` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("UPDATE `notes` SET `syncId` = 'v4-note-' || `id` WHERE `syncId` = ''")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_notes_syncId` ON `notes` (`syncId`)")
+
+                // sync_tombstones
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `sync_tombstones` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `entityType` TEXT NOT NULL,
+                        `syncId` TEXT NOT NULL,
+                        `deletedAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS `index_sync_tombstones_entityType_syncId` ON `sync_tombstones` (`entityType`, `syncId`)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -103,7 +167,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "notepad_database"
                 )
-                    .addMigrations(MIGRATION_3_4)
+                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance

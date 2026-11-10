@@ -40,4 +40,19 @@ interface CategoryDao {
 
     @Query("DELETE FROM categories WHERE id = :id")
     suspend fun deleteCategoryById(id: Int)
+
+    @Query("SELECT * FROM categories")
+    suspend fun getAllCategoriesOnce(): List<Category>
+
+    @Query("SELECT * FROM categories WHERE syncId = :syncId LIMIT 1")
+    suspend fun getCategoryBySyncIdOnce(syncId: String): Category?
+
+    @Query("SELECT COUNT(*) FROM categories WHERE syncStatus = 1")
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE categories SET syncStatus = 0 WHERE syncId = :syncId")
+    suspend fun markAsSynced(syncId: String)
+
+    @Query("DELETE FROM categories WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
 }

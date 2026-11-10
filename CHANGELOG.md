@@ -4,6 +4,19 @@
 
 ---
 
+## [1.4.0] - 2026-11-10
+### 新增 (Added)
+- **Firebase 雲端資料同步架構（本地優先 + 雙向合併）**：整合 Firebase BOM (`35.1.0`) 與 Cloud Firestore（支援有 `google-services.json` 自動初始化，亦可在 UI 手動輸入 Project ID / App ID / Web API Key 動態連線），同步範圍涵蓋記事、分類、待辦事項、提醒、每日時間規劃、番茄鐘紀錄及主題／通知偏好設定。
+- **資料庫升級 v5 與同步詮釋資料**：新增 `SyncStatus`（`SYNCED`、`PENDING_UPLOAD`）、`SyncEntityType` 與 `SyncTombstone` 離線刪除墓碑表；為所有核心資料實體擴充唯一索引 `syncId`、`updatedAt` 與 `syncStatus`，並提供 `MIGRATION_4_5` 無損升級遷移。
+- **離線保留、斷線重連自動上傳與同步狀態追蹤**：新增 `SyncPreferences`（DataStore 保存 `syncEnabled`、`syncAccountId` 與 `lastSyncAt` 最後同步時間）、`AndroidNetworkMonitor`（`ConnectivityManager` 連線恢復偵測）與 `CloudSyncManager`（於 `NoteRepository`、`TaskRepository` 與偏好設定異動時自動觸發節流同步；雲端拉回提醒時同步更新 `ReminderScheduler` 鬧鐘排程）。
+- **智慧衝突解決器與雲端管理介面**：建立 `SyncConflictResolver`（依最新 `updatedAt` 時間戳優先策略解決雙端編輯與刪除墓碑衝突）與 `CloudSyncDialog`，並於 `AppNavigation` 頂部工具列加入即時同步狀態圖示與待同步數量徽章。
+
+### 調整與修復 (Changed / Fixed)
+- **建置記憶體配置與格式修正**：調整 `gradle.properties` 之 `org.gradle.jvmargs` 為 `-Xmx4096m -XX:MaxMetaspaceSize=1024m`，並修復檔案尾端編碼格式，確保 R8 混淆與 Dexing 流程穩定建置。
+- **測試覆蓋擴充**：新增 `SyncConflictResolverTest`（8 項衝突決策測試）與 `CloudSyncManagerTest`（4 項雙向同步與離線恢復端到端模擬測試），全專案單元測試擴充至 43 項（皆使用記憶體式 Fake DAO／模擬遠端儲存）。
+
+---
+
 ## [1.3.0] - 2026-11-10
 ### 新增 (Added)
 - **記事管理與草稿不遺失系統**：新增 `Note` 資料實體、`NoteDao`、`NoteRepository`、`NotesScreen` 與 `NoteEditorScreen`，並透過 `NoteDraftPreferences`（DataStore）保存未儲存草稿，防止切換分頁或重開 App 遺失內容。

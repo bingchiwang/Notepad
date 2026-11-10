@@ -4,6 +4,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.EditNote
@@ -30,12 +34,15 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.preferences.NoteDraftPreferences
 import com.example.notepad.data.preferences.NotificationPreferences
+import com.example.notepad.data.preferences.SyncPreferences
 import com.example.notepad.data.preferences.ThemeMode
 import com.example.notepad.data.preferences.ThemePreferences
 import com.example.notepad.data.repository.NoteRepository
 import com.example.notepad.data.repository.TaskRepository
+import com.example.notepad.data.sync.CloudSyncManager
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.components.AppSettingsDialog
+import com.example.notepad.ui.components.CloudSyncDialog
 import com.example.notepad.ui.components.showFeedback
 import com.example.notepad.ui.screens.CalendarScreen
 import com.example.notepad.ui.screens.NoteEditorScreen
@@ -60,6 +67,8 @@ fun AppNavigation(
     themePreferences: ThemePreferences,
     notificationPreferences: NotificationPreferences,
     noteDraftPreferences: NoteDraftPreferences,
+    syncPreferences: SyncPreferences,
+    cloudSyncManager: CloudSyncManager,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -67,7 +76,9 @@ fun AppNavigation(
 
     val currentThemeMode by themePreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
     val notificationsEnabled by notificationPreferences.notificationsEnabledFlow.collectAsState(initial = true)
+    val syncUiState by cloudSyncManager.uiState.collectAsState()
     var showSettingsDialog by remember { mutableStateOf(false) }
+    var showCloudSyncDialog by remember { mutableStateOf(false) }
 
     val topLevelRoutes = remember {
         setOf(NotesRoute, TaskRoute, CalendarRoute, ScheduleRoute, PomodoroRoute)
@@ -245,6 +256,47 @@ fun AppNavigation(
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                // 雲端同步狀態指示與管理入口
+                                val syncIcon = when {
+                                    syncUiState.isSyncing -> Icons.Default.CloudSync
+                                    !syncUiState.syncSettings.syncEnabled || !syncUiState.isOnline -> Icons.Default.CloudOff
+                                    syncUiState.pendingCount > 0 -> Icons.Default.CloudUpload
+                                    else -> Icons.Default.CloudDone
+                                }
+                                val syncTint = when {
+                                    syncUiState.isSyncing -> MaterialTheme.colorScheme.primary
+                                    !syncUiState.isOnline || !syncUiState.isFirebaseConfigured -> MaterialTheme.colorScheme.error
+                                    syncUiState.pendingCount > 0 -> MaterialTheme.colorScheme.tertiary
+                                    syncUiState.syncSettings.syncEnabled -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                                IconButton(
+                                    onClick = { showCloudSyncDialog = true },
+                                    modifier = Modifier.size(40.dp)
+                                ) {
+                                    BadgedBox(
+                                        badge = {
+                                            if (syncUiState.pendingCount > 0) {
+                                                Badge {
+                                                    val label = if (syncUiState.pendingCount > 99) {
+                                                        "99+"
+                                                    } else {
+                                                        syncUiState.pendingCount.toString()
+                                                    }
+                                                    Text(label)
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = syncIcon,
+                                            contentDescription = "雲端同步狀態",
+                                            tint = syncTint,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                }
+
                                 // 通知總開關快速指示與設定入口
                                 IconButton(
                                     onClick = { showSettingsDialog = true },
@@ -321,6 +373,8 @@ fun AppNavigation(
                 coroutineScope.launch {
                     try {
                         themePreferences.setThemeMode(mode)
+                        syncPreferences.markSettingsPending()
+                        cloudSyncManager.requestSyncOnDataChanged()
                         showFeedback(context, "已切換為${mode.label}")
                     } catch (e: Exception) {
                         showFeedback(context, "主題切換失敗: ${e.localizedMessage ?: "發生錯誤"}")
@@ -336,6 +390,8 @@ fun AppNavigation(
                             notificationPreferences = notificationPreferences,
                             enabled = enabled
                         )
+                        syncPreferences.markSettingsPending()
+                        cloudSyncManager.requestSyncOnDataChanged()
                         showFeedback(
                             context,
                             if (enabled) "已開啟提醒通知並恢復未來排程" else "已關閉提醒通知功能"
@@ -346,6 +402,49 @@ fun AppNavigation(
                 }
             },
             onDismiss = { showSettingsDialog = false }
+        )
+    }
+
+    if (showCloudSyncDialog) {
+        CloudSyncDialog(
+            uiState = syncUiState,
+            onSaveConfig = { enabled, accountId, projectId, appId, apiKey ->
+                coroutineScope.launch {
+                    try {
+                        syncPreferences.updateConfiguration(
+                            syncEnabled = enabled,
+                            syncAccountId = accountId,
+                            firebaseProjectId = projectId,
+                            firebaseAppId = appId,
+                            firebaseApiKey = apiKey
+                        )
+                        showFeedback(context, "已儲存雲端同步設定")
+                        if (enabled) {
+                            cloudSyncManager.requestSyncOnDataChanged()
+                        }
+                    } catch (e: Exception) {
+                        showFeedback(context, "雲端設定儲存失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
+                }
+            },
+            onSyncNow = { enabled, accountId, projectId, appId, apiKey ->
+                coroutineScope.launch {
+                    try {
+                        syncPreferences.updateConfiguration(
+                            syncEnabled = enabled,
+                            syncAccountId = accountId,
+                            firebaseProjectId = projectId,
+                            firebaseAppId = appId,
+                            firebaseApiKey = apiKey
+                        )
+                        val result = cloudSyncManager.syncNow(isManual = true)
+                        showFeedback(context, result.message)
+                    } catch (e: Exception) {
+                        showFeedback(context, "雲端同步失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
+                }
+            },
+            onDismiss = { showCloudSyncDialog = false }
         )
     }
 }

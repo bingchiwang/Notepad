@@ -17,4 +17,16 @@ interface PomodoroDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecord(record: PomodoroRecord)
+
+    @Query("SELECT * FROM pomodoro_records")
+    suspend fun getAllRecordsOnce(): List<PomodoroRecord>
+
+    @Query("SELECT COUNT(*) FROM pomodoro_records WHERE syncStatus = 1")
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE pomodoro_records SET syncStatus = 0 WHERE syncId = :syncId")
+    suspend fun markAsSynced(syncId: String)
+
+    @Query("DELETE FROM pomodoro_records WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
 }

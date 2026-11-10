@@ -35,6 +35,21 @@ interface ReminderDao {
     @Delete
     suspend fun deleteReminder(reminder: Reminder)
 
-    @Query("UPDATE reminders SET isFired = 1 WHERE id = :id")
-    suspend fun markAsFired(id: Int)
+    @Query("UPDATE reminders SET isFired = 1, updatedAt = :updatedAt, syncStatus = 1 WHERE id = :id")
+    suspend fun markAsFired(id: Int, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("SELECT * FROM reminders")
+    suspend fun getAllRemindersOnce(): List<Reminder>
+
+    @Query("SELECT * FROM reminders WHERE syncId = :syncId LIMIT 1")
+    suspend fun getReminderBySyncIdOnce(syncId: String): Reminder?
+
+    @Query("SELECT COUNT(*) FROM reminders WHERE syncStatus = 1")
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE reminders SET syncStatus = 0 WHERE syncId = :syncId")
+    suspend fun markAsSynced(syncId: String)
+
+    @Query("DELETE FROM reminders WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
 }

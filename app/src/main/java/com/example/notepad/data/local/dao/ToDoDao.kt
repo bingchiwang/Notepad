@@ -50,4 +50,19 @@ interface ToDoDao {
 
     @Delete
     suspend fun deleteToDo(toDo: ToDo)
+
+    @Query("SELECT * FROM todos")
+    suspend fun getAllToDosOnce(): List<ToDo>
+
+    @Query("SELECT * FROM todos WHERE syncId = :syncId LIMIT 1")
+    suspend fun getToDoBySyncIdOnce(syncId: String): ToDo?
+
+    @Query("SELECT COUNT(*) FROM todos WHERE syncStatus = 1")
+    fun observePendingCount(): Flow<Int>
+
+    @Query("UPDATE todos SET syncStatus = 0 WHERE syncId = :syncId")
+    suspend fun markAsSynced(syncId: String)
+
+    @Query("DELETE FROM todos WHERE syncId = :syncId")
+    suspend fun deleteBySyncId(syncId: String)
 }
