@@ -523,3 +523,10 @@ object DateFormatter {
         return value.toString().padStart(2, '0')
     }
 }
+
+/**
+ * 統一的即時操作提示反饋工具（遵循操作規範：儲存成功與錯誤提示）
+ */
+fun showFeedback(context: android.content.Context, message: String) {
+    android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+}

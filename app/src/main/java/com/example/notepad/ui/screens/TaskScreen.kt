@@ -375,16 +375,21 @@ fun TaskScreen(
                                     }
 
                                     coroutineScope.launch {
-                                        taskRepository.insertToDo(
-                                            ToDo(
-                                                title = title.trim(),
-                                                description = description.trim(),
-                                                dueDate = dueMillis,
-                                                tag = tag.trim().ifEmpty { "日常" },
-                                                color = selectedColor
+                                        try {
+                                            taskRepository.insertToDo(
+                                                ToDo(
+                                                    title = title.trim(),
+                                                    description = description.trim(),
+                                                    dueDate = dueMillis,
+                                                    tag = tag.trim().ifEmpty { "日常" },
+                                                    color = selectedColor
+                                                )
                                             )
-                                        )
-                                        showAddToDoDialog = false
+                                            showFeedback(context, "已成功新增待辦事項")
+                                            showAddToDoDialog = false
+                                        } catch (e: Exception) {
+                                            showFeedback(context, "新增失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                                        }
                                     }
                                 }
                             },
@@ -404,15 +409,20 @@ fun TaskScreen(
             onDismiss = { showAddReminderDialog = false },
             onSave = { reminderList ->
                 coroutineScope.launch {
-                    reminderList.forEach { reminder ->
-                        val newId = taskRepository.insertReminder(reminder)
-                        // Schedule alarm notification
-                        ReminderScheduler.scheduleReminder(
-                            context,
-                            reminder.copy(id = newId.toInt())
-                        )
+                    try {
+                        reminderList.forEach { reminder ->
+                            val newId = taskRepository.insertReminder(reminder)
+                            // Schedule alarm notification
+                            ReminderScheduler.scheduleReminder(
+                                context,
+                                reminder.copy(id = newId.toInt())
+                            )
+                        }
+                        showFeedback(context, "已成功建立 ${reminderList.size} 個提醒事項")
+                        showAddReminderDialog = false
+                    } catch (e: Exception) {
+                        showFeedback(context, "建立提醒失敗: ${e.localizedMessage ?: "發生錯誤"}")
                     }
-                    showAddReminderDialog = false
                 }
             }
         )
@@ -425,8 +435,13 @@ fun TaskScreen(
             onDismiss = { editingToDo = null },
             onSave = { updatedToDo ->
                 coroutineScope.launch {
-                    taskRepository.updateToDo(updatedToDo)
-                    editingToDo = null
+                    try {
+                        taskRepository.updateToDo(updatedToDo)
+                        showFeedback(context, "待辦事項已更新")
+                        editingToDo = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             }
         )
@@ -439,11 +454,16 @@ fun TaskScreen(
             onDismiss = { editingReminder = null },
             onSave = { updatedReminder ->
                 coroutineScope.launch {
-                    taskRepository.updateReminder(updatedReminder)
-                    // Reschedule alarm
-                    ReminderScheduler.cancelReminder(context, updatedReminder.id)
-                    ReminderScheduler.scheduleReminder(context, updatedReminder)
-                    editingReminder = null
+                    try {
+                        taskRepository.updateReminder(updatedReminder)
+                        // Reschedule alarm
+                        ReminderScheduler.cancelReminder(context, updatedReminder.id)
+                        ReminderScheduler.scheduleReminder(context, updatedReminder)
+                        showFeedback(context, "提醒事項已更新")
+                        editingReminder = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             }
         )
@@ -455,8 +475,13 @@ fun TaskScreen(
             itemName = todo.title,
             onConfirm = {
                 coroutineScope.launch {
-                    taskRepository.deleteToDo(todo)
-                    deletingToDo = null
+                    try {
+                        taskRepository.deleteToDo(todo)
+                        showFeedback(context, "已刪除待辦事項")
+                        deletingToDo = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "刪除失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             },
             onDismiss = { deletingToDo = null }
@@ -469,9 +494,14 @@ fun TaskScreen(
             itemName = reminder.title.ifEmpty { "提醒" },
             onConfirm = {
                 coroutineScope.launch {
-                    ReminderScheduler.cancelReminder(context, reminder.id)
-                    taskRepository.deleteReminder(reminder)
-                    deletingReminder = null
+                    try {
+                        ReminderScheduler.cancelReminder(context, reminder.id)
+                        taskRepository.deleteReminder(reminder)
+                        showFeedback(context, "已刪除提醒事項")
+                        deletingReminder = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "刪除失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             },
             onDismiss = { deletingReminder = null }

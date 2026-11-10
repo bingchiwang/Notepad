@@ -611,16 +611,21 @@ fun CalendarScreen(
                             onClick = {
                                 if (title.isNotBlank()) {
                                     coroutineScope.launch {
-                                        taskRepository.insertToDo(
-                                            ToDo(
-                                                title = title.trim(),
-                                                description = description.trim(),
-                                                dueDate = selectedDayStartMillis,
-                                                tag = tag.trim().ifEmpty { "日常" },
-                                                color = selectedColor
+                                        try {
+                                            taskRepository.insertToDo(
+                                                ToDo(
+                                                    title = title.trim(),
+                                                    description = description.trim(),
+                                                    dueDate = selectedDayStartMillis,
+                                                    tag = tag.trim().ifEmpty { "日常" },
+                                                    color = selectedColor
+                                                )
                                             )
-                                        )
-                                        showAddTaskDialog = false
+                                            showFeedback(context, "已成功新增待辦事項")
+                                            showAddTaskDialog = false
+                                        } catch (e: Exception) {
+                                            showFeedback(context, "新增失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                                        }
                                     }
                                 }
                             },
@@ -641,11 +646,16 @@ fun CalendarScreen(
             onDismiss = { showAddReminderDialog = false },
             onSave = { reminderList ->
                 coroutineScope.launch {
-                    reminderList.forEach { reminder ->
-                        val newId = taskRepository.insertReminder(reminder)
-                        ReminderScheduler.scheduleReminder(context, reminder.copy(id = newId.toInt()))
+                    try {
+                        reminderList.forEach { reminder ->
+                            val newId = taskRepository.insertReminder(reminder)
+                            ReminderScheduler.scheduleReminder(context, reminder.copy(id = newId.toInt()))
+                        }
+                        showFeedback(context, "已成功建立 ${reminderList.size} 個提醒事項")
+                        showAddReminderDialog = false
+                    } catch (e: Exception) {
+                        showFeedback(context, "建立提醒失敗: ${e.localizedMessage ?: "發生錯誤"}")
                     }
-                    showAddReminderDialog = false
                 }
             }
         )
@@ -658,8 +668,13 @@ fun CalendarScreen(
             onDismiss = { editingToDo = null },
             onSave = { updated ->
                 coroutineScope.launch {
-                    taskRepository.updateToDo(updated)
-                    editingToDo = null
+                    try {
+                        taskRepository.updateToDo(updated)
+                        showFeedback(context, "待辦事項已更新")
+                        editingToDo = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             }
         )
@@ -672,10 +687,15 @@ fun CalendarScreen(
             onDismiss = { editingReminder = null },
             onSave = { updated ->
                 coroutineScope.launch {
-                    taskRepository.updateReminder(updated)
-                    ReminderScheduler.cancelReminder(context, updated.id)
-                    ReminderScheduler.scheduleReminder(context, updated)
-                    editingReminder = null
+                    try {
+                        taskRepository.updateReminder(updated)
+                        ReminderScheduler.cancelReminder(context, updated.id)
+                        ReminderScheduler.scheduleReminder(context, updated)
+                        showFeedback(context, "提醒事項已更新")
+                        editingReminder = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             }
         )
@@ -687,8 +707,13 @@ fun CalendarScreen(
             itemName = todo.title,
             onConfirm = {
                 coroutineScope.launch {
-                    taskRepository.deleteToDo(todo)
-                    deletingToDo = null
+                    try {
+                        taskRepository.deleteToDo(todo)
+                        showFeedback(context, "已刪除待辦事項")
+                        deletingToDo = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "刪除失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             },
             onDismiss = { deletingToDo = null }
@@ -701,9 +726,14 @@ fun CalendarScreen(
             itemName = rem.title.ifEmpty { "提醒" },
             onConfirm = {
                 coroutineScope.launch {
-                    ReminderScheduler.cancelReminder(context, rem.id)
-                    taskRepository.deleteReminder(rem)
-                    deletingReminder = null
+                    try {
+                        ReminderScheduler.cancelReminder(context, rem.id)
+                        taskRepository.deleteReminder(rem)
+                        showFeedback(context, "已刪除提醒事項")
+                        deletingReminder = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "刪除失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             },
             onDismiss = { deletingReminder = null }

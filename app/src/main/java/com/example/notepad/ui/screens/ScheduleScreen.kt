@@ -31,6 +31,7 @@ fun ScheduleScreen(
     taskRepository: TaskRepository,
     onStartPomodoroForTask: ((String) -> Unit)? = null
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     // Date state (in start-of-day millis)
@@ -356,18 +357,23 @@ fun ScheduleScreen(
                             onClick = {
                                 if (title.isNotBlank()) {
                                     coroutineScope.launch {
-                                        taskRepository.insertTimeBlock(
-                                            TimeBlock(
-                                                date = selectedDateMillis,
-                                                startTime = startTime.trim(),
-                                                endTime = endTime.trim(),
-                                                title = title.trim(),
-                                                description = description.trim(),
-                                                tag = tag.trim().ifEmpty { "日程" },
-                                                color = selectedColor
+                                        try {
+                                            taskRepository.insertTimeBlock(
+                                                TimeBlock(
+                                                    date = selectedDateMillis,
+                                                    startTime = startTime.trim(),
+                                                    endTime = endTime.trim(),
+                                                    title = title.trim(),
+                                                    description = description.trim(),
+                                                    tag = tag.trim().ifEmpty { "日程" },
+                                                    color = selectedColor
+                                                )
                                             )
-                                        )
-                                        showAddDialog = false
+                                            showFeedback(context, "已成功安排行程")
+                                            showAddDialog = false
+                                        } catch (e: Exception) {
+                                            showFeedback(context, "安排行程失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                                        }
                                     }
                                 }
                             },
@@ -388,8 +394,13 @@ fun ScheduleScreen(
             onDismiss = { editingBlock = null },
             onSave = { updated ->
                 coroutineScope.launch {
-                    taskRepository.updateTimeBlock(updated)
-                    editingBlock = null
+                    try {
+                        taskRepository.updateTimeBlock(updated)
+                        showFeedback(context, "行程已更新")
+                        editingBlock = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             }
         )
@@ -401,8 +412,13 @@ fun ScheduleScreen(
             itemName = block.title,
             onConfirm = {
                 coroutineScope.launch {
-                    taskRepository.deleteTimeBlock(block)
-                    deletingBlock = null
+                    try {
+                        taskRepository.deleteTimeBlock(block)
+                        showFeedback(context, "已刪除行程")
+                        deletingBlock = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "刪除失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
             },
             onDismiss = { deletingBlock = null }
