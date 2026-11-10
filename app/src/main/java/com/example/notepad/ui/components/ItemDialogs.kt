@@ -9,9 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.notepad.data.local.entity.Priority
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
@@ -198,29 +197,446 @@ fun MonthCalendarGrid(
 }
 
 /**
- * Safely clamps day of month when month or year changes.
+ * 依據年份與月份安全限制日數（避免跨月或跨閏年產生無效日期）
  */
-private fun clampDay(y: Int, m: Int, d: Int): Int {
+private fun clampDay(year: Int, month: Int, day: Int): Int {
     val maxDays = Calendar.getInstance().apply {
-        set(y, m - 1, 1)
+        set(year, month - 1, 1)
     }.getActualMaximum(Calendar.DAY_OF_MONTH)
-    return d.coerceIn(1, maxDays)
+    return day.coerceIn(1, maxDays)
+}
+
+/**
+ * 共用的年／月／日與可展開月曆調整區段（遵守 DRY 原則）
+ */
+@Composable
+private fun SingleDatePickerSection(
+    year: Int,
+    month: Int,
+    day: Int,
+    showCalendarPicker: Boolean,
+    onToggleCalendarPicker: () -> Unit,
+    onDateChanged: (newYear: Int, newMonth: Int, newDay: Int) -> Unit
+) {
+    val todayCal = remember { Calendar.getInstance() }
+
+    if (showCalendarPicker) {
+        MonthNavigatorHeader(
+            year = year,
+            month = month,
+            onPrevYear = {
+                val newYear = year - 1
+                onDateChanged(newYear, month, clampDay(newYear, month, day))
+            },
+            onPrevMonth = {
+                val (newYear, newMonth) = if (month == 1) year - 1 to 12 else year to month - 1
+                onDateChanged(newYear, newMonth, clampDay(newYear, newMonth, day))
+            },
+            onNextMonth = {
+                val (newYear, newMonth) = if (month == 12) year + 1 to 1 else year to month + 1
+                onDateChanged(newYear, newMonth, clampDay(newYear, newMonth, day))
+            },
+            onNextYear = {
+                val newYear = year + 1
+                onDateChanged(newYear, month, clampDay(newYear, month, day))
+            },
+            onTodayClick = {
+                onDateChanged(
+                    todayCal.get(Calendar.YEAR),
+                    todayCal.get(Calendar.MONTH) + 1,
+                    todayCal.get(Calendar.DAY_OF_MONTH)
+                )
+            }
+        )
+
+        val currentSelectedMillis = remember(year, month, day) {
+            Calendar.getInstance().apply {
+                set(year, month - 1, day, 0, 0, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+        }
+
+        MonthCalendarGrid(
+            viewYear = year,
+            viewMonth = month,
+            selectedDatesMillis = setOf(currentSelectedMillis),
+            onDateToggled = { clickedMillis ->
+                val cal = Calendar.getInstance().apply { timeInMillis = clickedMillis }
+                onDateChanged(
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH) + 1,
+                    cal.get(Calendar.DAY_OF_MONTH)
+                )
+            }
+        )
+    }
+
+    // 年 / 月 / 日 步進調整列
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 年
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("年：", style = MaterialTheme.typography.labelSmall)
+            IconButton(onClick = {
+                val newYear = year - 1
+                onDateChanged(newYear, month, clampDay(newYear, month, day))
+            }, modifier = Modifier.size(28.dp)) {
+                Text("-", fontWeight = FontWeight.Bold)
+            }
+            Text("$year", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            IconButton(onClick = {
+                val newYear = year + 1
+                onDateChanged(newYear, month, clampDay(newYear, month, day))
+            }, modifier = Modifier.size(28.dp)) {
+                Text("+", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // 月
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("月：", style = MaterialTheme.typography.labelSmall)
+            IconButton(onClick = {
+                val (newYear, newMonth) = if (month == 1) year - 1 to 12 else year to month - 1
+                onDateChanged(newYear, newMonth, clampDay(newYear, newMonth, day))
+            }, modifier = Modifier.size(28.dp)) {
+                Text("-", fontWeight = FontWeight.Bold)
+            }
+            Text(DateFormatter.formatTwoDigits(month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            IconButton(onClick = {
+                val (newYear, newMonth) = if (month == 12) year + 1 to 1 else year to month + 1
+                onDateChanged(newYear, newMonth, clampDay(newYear, newMonth, day))
+            }, modifier = Modifier.size(28.dp)) {
+                Text("+", fontWeight = FontWeight.Bold)
+            }
+        }
+
+        // 日
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("日：", style = MaterialTheme.typography.labelSmall)
+            IconButton(onClick = {
+                val cal = Calendar.getInstance().apply {
+                    set(year, month - 1, day)
+                    add(Calendar.DAY_OF_MONTH, -1)
+                }
+                onDateChanged(
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH) + 1,
+                    cal.get(Calendar.DAY_OF_MONTH)
+                )
+            }, modifier = Modifier.size(28.dp)) {
+                Text("-", fontWeight = FontWeight.Bold)
+            }
+            Text(DateFormatter.formatTwoDigits(day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+            IconButton(onClick = {
+                val cal = Calendar.getInstance().apply {
+                    set(year, month - 1, day)
+                    add(Calendar.DAY_OF_MONTH, 1)
+                }
+                onDateChanged(
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH) + 1,
+                    cal.get(Calendar.DAY_OF_MONTH)
+                )
+            }, modifier = Modifier.size(28.dp)) {
+                Text("+", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+
+    TextButton(
+        onClick = onToggleCalendarPicker,
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp)
+    ) {
+        Text(
+            if (showCalendarPicker) "收起月曆" else "展開月曆選擇",
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
+
+/**
+ * 共用的時／分步進調整列（遵守 DRY 原則）
+ */
+@Composable
+private fun HourMinuteStepperRow(
+    hour: Int,
+    minute: Int,
+    onHourChanged: (Int) -> Unit,
+    onMinuteChanged: (Int) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("時：", style = MaterialTheme.typography.bodyMedium)
+            IconButton(onClick = { onHourChanged(if (hour > 0) hour - 1 else 23) }) {
+                Text("-", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+            Text(
+                DateFormatter.formatTwoDigits(hour),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconButton(onClick = { onHourChanged(if (hour < 23) hour + 1 else 0) }) {
+                Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("分：", style = MaterialTheme.typography.bodyMedium)
+            IconButton(onClick = { onMinuteChanged(if (minute >= 5) minute - 5 else 55) }) {
+                Text("-", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+            Text(
+                DateFormatter.formatTwoDigits(minute),
+                fontWeight = FontWeight.Bold,
+                style = MaterialTheme.typography.titleMedium
+            )
+            IconButton(onClick = { onMinuteChanged(if (minute <= 50) minute + 5 else 0) }) {
+                Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            }
+        }
+    }
+}
+
+/**
+ * 新增待辦事項共用對話框（支援規範 4.2：非空驗證、高/中/低優先級、截止日期分離管理）
+ */
+@Composable
+fun AddToDoDialog(
+    initialDueDateMillis: Long? = null,
+    dialogTitle: String = "新增待做事項",
+    onDismiss: () -> Unit,
+    onSave: (ToDo) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var tag by remember { mutableStateOf("日常") }
+    var selectedColor by remember { mutableLongStateOf(PRESET_COLORS.first().colorLong) }
+    var selectedPriority by remember { mutableStateOf(Priority.MEDIUM) }
+    var showTitleError by remember { mutableStateOf(false) }
+
+    val defaultCal = remember(initialDueDateMillis) {
+        Calendar.getInstance().apply {
+            if (initialDueDateMillis != null) {
+                timeInMillis = initialDueDateMillis
+            } else {
+                add(Calendar.DAY_OF_YEAR, 1)
+            }
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+    }
+
+    var hasDueDate by remember { mutableStateOf(initialDueDateMillis != null) }
+    var year by remember { mutableIntStateOf(defaultCal.get(Calendar.YEAR)) }
+    var month by remember { mutableIntStateOf(defaultCal.get(Calendar.MONTH) + 1) }
+    var day by remember { mutableIntStateOf(defaultCal.get(Calendar.DAY_OF_MONTH)) }
+    var showCalendarPicker by remember { mutableStateOf(false) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(18.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = dialogTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        if (it.isNotBlank()) showTitleError = false
+                    },
+                    label = { Text("任務名稱 *") },
+                    placeholder = { Text("例如: 準備簡報、繳費、購買日用品") },
+                    isError = showTitleError,
+                    supportingText = if (showTitleError) {
+                        { Text("任務名稱不得為空白", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("詳細說明 (選填)") },
+                    maxLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                PrioritySelectorRow(
+                    selectedPriority = selectedPriority,
+                    onPrioritySelected = { selectedPriority = it }
+                )
+
+                OutlinedTextField(
+                    value = tag,
+                    onValueChange = { tag = it },
+                    label = { Text("分類標籤 (如 工作/日常/學習)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // 截止日期快速選擇與自訂
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "📅 截止日期（與提醒時間獨立管理）：",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        item {
+                            FilterChip(
+                                selected = !hasDueDate,
+                                onClick = { hasDueDate = false },
+                                label = { Text("不設到期日", style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val today = Calendar.getInstance()
+                                    year = today.get(Calendar.YEAR)
+                                    month = today.get(Calendar.MONTH) + 1
+                                    day = today.get(Calendar.DAY_OF_MONTH)
+                                    hasDueDate = true
+                                },
+                                label = { Text("今天", style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = false,
+                                onClick = {
+                                    val tomorrow = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
+                                    year = tomorrow.get(Calendar.YEAR)
+                                    month = tomorrow.get(Calendar.MONTH) + 1
+                                    day = tomorrow.get(Calendar.DAY_OF_MONTH)
+                                    hasDueDate = true
+                                },
+                                label = { Text("明天（觸發呼吸警示）", style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
+
+                    if (hasDueDate) {
+                        Text(
+                            text = "已選到期日：${year}年${month}月${day}日",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        SingleDatePickerSection(
+                            year = year,
+                            month = month,
+                            day = day,
+                            showCalendarPicker = showCalendarPicker,
+                            onToggleCalendarPicker = { showCalendarPicker = !showCalendarPicker },
+                            onDateChanged = { newY, newM, newD ->
+                                year = newY
+                                month = newM
+                                day = newD
+                            }
+                        )
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "色彩標記：",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    ColorPickerRow(
+                        selectedColor = selectedColor,
+                        onColorSelected = { selectedColor = it }
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("取消")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            if (title.isBlank()) {
+                                showTitleError = true
+                            } else {
+                                val dueMillis = if (hasDueDate) {
+                                    Calendar.getInstance().apply {
+                                        set(year, month - 1, day, 0, 0, 0)
+                                        set(Calendar.MILLISECOND, 0)
+                                    }.timeInMillis
+                                } else null
+
+                                onSave(
+                                    ToDo(
+                                        title = title.trim(),
+                                        description = description.trim(),
+                                        dueDate = dueMillis,
+                                        tag = tag.trim().ifEmpty { "日常" },
+                                        color = selectedColor,
+                                        priority = selectedPriority
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Text("儲存")
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
  * Dialog for creating a Reminder that supports multi-day selection and custom notification time.
- * Date selection is unrestricted across any month or year.
+ * Date selection is unrestricted across any month or year, and past times are blocked per spec 4.4.
  */
 @Composable
 fun AddMultiDayReminderDialog(
     initialDateMillis: Long? = null,
+    initialTitle: String = "",
+    initialLinkedToDoId: Int? = null,
+    availableToDos: List<ToDo> = emptyList(),
+    notificationsEnabled: Boolean = true,
     onDismiss: () -> Unit,
     onSave: (List<Reminder>) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(initialTitle) }
     var message by remember { mutableStateOf("") }
     var tag by remember { mutableStateOf("提醒") }
     var selectedColor by remember { mutableLongStateOf(PRESET_COLORS[2].colorLong) } // Amber
+    var selectedLinkedToDoId by remember { mutableStateOf(initialLinkedToDoId) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     var hour by remember { mutableIntStateOf(9) }
     var minute by remember { mutableIntStateOf(0) }
@@ -250,7 +666,6 @@ fun AddMultiDayReminderDialog(
     var viewYear by remember { mutableIntStateOf(initialCal.get(Calendar.YEAR)) }
     var viewMonth by remember { mutableIntStateOf(initialCal.get(Calendar.MONTH) + 1) }
 
-    // Set of selected day timestamps
     val selectedDaysMillis = remember {
         mutableStateListOf<Long>().apply {
             add(initialCal.timeInMillis)
@@ -277,7 +692,7 @@ fun AddMultiDayReminderDialog(
                 modifier = Modifier
                     .padding(18.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = "🔔 新增多日提醒",
@@ -285,9 +700,27 @@ fun AddMultiDayReminderDialog(
                     fontWeight = FontWeight.Bold
                 )
 
+                if (!notificationsEnabled) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "⚠️ 全域「通知總開關」目前為關閉狀態，將僅儲存提醒紀錄而不會安排系統通知。",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        validationError = null
+                    },
                     label = { Text("提醒標題 *") },
                     placeholder = { Text("例如: 吃維他命、交報告、繳費") },
                     singleLine = true,
@@ -302,6 +735,38 @@ fun AddMultiDayReminderDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // 可選關聯待辦任務（規範 4.2 截止/提醒分離 & 4.4 任務完成連動取消提醒）
+                val activeTasks = remember(availableToDos) { availableToDos.filter { !it.isCompleted } }
+                if (activeTasks.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(
+                            text = "🔗 關聯待辦任務 (完成該任務時將自動取消通知)：",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            item {
+                                FilterChip(
+                                    selected = selectedLinkedToDoId == null,
+                                    onClick = { selectedLinkedToDoId = null },
+                                    label = { Text("不關聯", style = MaterialTheme.typography.labelSmall) }
+                                )
+                            }
+                            items(activeTasks, key = { it.id }) { task ->
+                                val isLinked = selectedLinkedToDoId == task.id
+                                FilterChip(
+                                    selected = isLinked,
+                                    onClick = {
+                                        selectedLinkedToDoId = task.id
+                                        if (title.isBlank()) title = task.title
+                                    },
+                                    label = { Text(task.title, style = MaterialTheme.typography.labelSmall) }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Time Selection Section
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
@@ -311,7 +776,6 @@ fun AddMultiDayReminderDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    // Quick time presets
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -323,48 +787,25 @@ fun AddMultiDayReminderDialog(
                                 onClick = {
                                     hour = pair.first
                                     minute = pair.second
+                                    validationError = null
                                 },
                                 label = { Text(label, style = MaterialTheme.typography.labelSmall) }
                             )
                         }
                     }
 
-                    // Stepper for custom Hour & Minute
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("時：", style = MaterialTheme.typography.bodyMedium)
-                            IconButton(onClick = { hour = if (hour > 0) hour - 1 else 23 }) {
-                                Text("-", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            }
-                            Text(
-                                DateFormatter.formatTwoDigits(hour),
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            IconButton(onClick = { hour = if (hour < 23) hour + 1 else 0 }) {
-                                Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            }
+                    HourMinuteStepperRow(
+                        hour = hour,
+                        minute = minute,
+                        onHourChanged = {
+                            hour = it
+                            validationError = null
+                        },
+                        onMinuteChanged = {
+                            minute = it
+                            validationError = null
                         }
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("分：", style = MaterialTheme.typography.bodyMedium)
-                            IconButton(onClick = { minute = if (minute >= 5) minute - 5 else 55 }) {
-                                Text("-", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            }
-                            Text(
-                                DateFormatter.formatTwoDigits(minute),
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            IconButton(onClick = { minute = if (minute <= 50) minute + 5 else 0 }) {
-                                Text("+", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                            }
-                        }
-                    }
+                    )
                 }
 
                 HorizontalDivider()
@@ -389,7 +830,6 @@ fun AddMultiDayReminderDialog(
                         )
                     }
 
-                    // Quick date presets
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -403,6 +843,7 @@ fun AddMultiDayReminderDialog(
                                     }
                                     viewYear = todayCal.get(Calendar.YEAR)
                                     viewMonth = todayCal.get(Calendar.MONTH) + 1
+                                    validationError = null
                                 },
                                 label = { Text("今天", style = MaterialTheme.typography.labelSmall) }
                             )
@@ -418,6 +859,7 @@ fun AddMultiDayReminderDialog(
                                     if (!selectedDaysMillis.contains(tomorrow)) {
                                         selectedDaysMillis.add(tomorrow)
                                     }
+                                    validationError = null
                                 },
                                 label = { Text("明天", style = MaterialTheme.typography.labelSmall) }
                             )
@@ -435,6 +877,7 @@ fun AddMultiDayReminderDialog(
                                             selectedDaysMillis.add(c)
                                         }
                                     }
+                                    validationError = null
                                 },
                                 label = { Text("未來 7 天", style = MaterialTheme.typography.labelSmall) }
                             )
@@ -452,6 +895,7 @@ fun AddMultiDayReminderDialog(
                                             selectedDaysMillis.add(c)
                                         }
                                     }
+                                    validationError = null
                                 },
                                 label = { Text("未來 30 天", style = MaterialTheme.typography.labelSmall) }
                             )
@@ -467,7 +911,6 @@ fun AddMultiDayReminderDialog(
                         }
                     }
 
-                    // Month navigator for the calendar
                     MonthNavigatorHeader(
                         year = viewYear,
                         month = viewMonth,
@@ -495,7 +938,6 @@ fun AddMultiDayReminderDialog(
                         }
                     )
 
-                    // Month Calendar Grid (Click any date to toggle on/off)
                     MonthCalendarGrid(
                         viewYear = viewYear,
                         viewMonth = viewMonth,
@@ -506,10 +948,10 @@ fun AddMultiDayReminderDialog(
                             } else {
                                 selectedDaysMillis.add(millis)
                             }
+                            validationError = null
                         }
                     )
 
-                    // List of currently selected dates with remove chips
                     if (selectedDaysMillis.isNotEmpty()) {
                         Text(
                             text = "已選定日期 (點擊 ✕ 移除，點擊文字跳至該月)：",
@@ -563,7 +1005,6 @@ fun AddMultiDayReminderDialog(
 
                 HorizontalDivider()
 
-                // Tag & Color
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = "色彩標記：",
@@ -573,6 +1014,15 @@ fun AddMultiDayReminderDialog(
                     ColorPickerRow(
                         selectedColor = selectedColor,
                         onColorSelected = { selectedColor = it }
+                    )
+                }
+
+                validationError?.let { errorMsg ->
+                    Text(
+                        text = "❌ $errorMsg",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
 
@@ -587,27 +1037,43 @@ fun AddMultiDayReminderDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (title.isNotBlank() && selectedDaysMillis.isNotEmpty()) {
-                                val reminders = selectedDaysMillis.map { dayMillis ->
-                                    val triggerCal = Calendar.getInstance().apply {
-                                        timeInMillis = dayMillis
-                                        set(Calendar.HOUR_OF_DAY, hour)
-                                        set(Calendar.MINUTE, minute)
-                                        set(Calendar.SECOND, 0)
-                                        set(Calendar.MILLISECOND, 0)
-                                    }
-                                    Reminder(
-                                        title = title.trim(),
-                                        message = message.trim(),
-                                        triggerAt = triggerCal.timeInMillis,
-                                        tag = tag.trim().ifEmpty { "提醒" },
-                                        color = selectedColor
-                                    )
-                                }
-                                onSave(reminders)
+                            val now = System.currentTimeMillis()
+                            if (title.isBlank()) {
+                                validationError = "請輸入提醒標題"
+                                return@Button
                             }
-                        },
-                        enabled = title.isNotBlank() && selectedDaysMillis.isNotEmpty()
+                            if (selectedDaysMillis.isEmpty()) {
+                                validationError = "請至少選擇一個提醒日期"
+                                return@Button
+                            }
+
+                            val futureTriggers = selectedDaysMillis.map { dayMillis ->
+                                Calendar.getInstance().apply {
+                                    timeInMillis = dayMillis
+                                    set(Calendar.HOUR_OF_DAY, hour)
+                                    set(Calendar.MINUTE, minute)
+                                    set(Calendar.SECOND, 0)
+                                    set(Calendar.MILLISECOND, 0)
+                                }.timeInMillis
+                            }.filter { it > now }
+
+                            if (futureTriggers.isEmpty()) {
+                                validationError = "提醒時間已過期，請選擇未來的日期與時間（系統不安排過去的通知）"
+                                return@Button
+                            }
+
+                            val reminders = futureTriggers.map { triggerAt ->
+                                Reminder(
+                                    title = title.trim(),
+                                    message = message.trim(),
+                                    triggerAt = triggerAt,
+                                    tag = tag.trim().ifEmpty { "提醒" },
+                                    color = selectedColor,
+                                    linkedToDoId = selectedLinkedToDoId
+                                )
+                            }
+                            onSave(reminders)
+                        }
                     ) {
                         Text("建立 ${selectedDaysMillis.size} 個提醒")
                     }
@@ -619,11 +1085,12 @@ fun AddMultiDayReminderDialog(
 
 /**
  * Dialog for editing an existing Reminder (content and date/time).
- * Date can be freely adjusted by year/month/day or directly picked from interactive calendar.
+ * Blocks past timestamps per spec 4.4 and resets isFired when rescheduled to a future time.
  */
 @Composable
 fun EditReminderDialog(
     reminder: Reminder,
+    notificationsEnabled: Boolean = true,
     onDismiss: () -> Unit,
     onSave: (Reminder) -> Unit
 ) {
@@ -631,6 +1098,7 @@ fun EditReminderDialog(
     var message by remember { mutableStateOf(reminder.message) }
     var tag by remember { mutableStateOf(reminder.tag) }
     var selectedColor by remember { mutableLongStateOf(reminder.color) }
+    var validationError by remember { mutableStateOf<String?>(null) }
 
     val initialCal = remember(reminder.triggerAt) {
         Calendar.getInstance().apply { timeInMillis = reminder.triggerAt }
@@ -641,9 +1109,7 @@ fun EditReminderDialog(
     var day by remember { mutableIntStateOf(initialCal.get(Calendar.DAY_OF_MONTH)) }
     var hour by remember { mutableIntStateOf(initialCal.get(Calendar.HOUR_OF_DAY)) }
     var minute by remember { mutableIntStateOf(initialCal.get(Calendar.MINUTE)) }
-
     var showCalendarPicker by remember { mutableStateOf(false) }
-    val todayCal = remember { Calendar.getInstance() }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -656,7 +1122,7 @@ fun EditReminderDialog(
                 modifier = Modifier
                     .padding(18.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = "✏️ 編輯提醒事項",
@@ -664,9 +1130,27 @@ fun EditReminderDialog(
                     fontWeight = FontWeight.Bold
                 )
 
+                if (!notificationsEnabled) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "⚠️ 全域通知總開關已關閉，重新開啟前將不會觸發系統通知。",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            modifier = Modifier.padding(10.dp)
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        validationError = null
+                    },
                     label = { Text("提醒標題 *") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -680,25 +1164,12 @@ fun EditReminderDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Date & Time Adjustment
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "📅 提醒日期與時間：",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        TextButton(onClick = { showCalendarPicker = !showCalendarPicker }) {
-                            Text(
-                                if (showCalendarPicker) "收起月曆" else "展開月曆選擇",
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        }
-                    }
+                    Text(
+                        text = "📅 提醒日期與時間：",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
 
                     Text(
                         text = "${year}年${month}月${day}日  ${DateFormatter.formatMinutesSeconds(hour, minute)}",
@@ -707,175 +1178,32 @@ fun EditReminderDialog(
                         fontWeight = FontWeight.Bold
                     )
 
-                    // Optional Interactive Calendar Picker
-                    if (showCalendarPicker) {
-                        MonthNavigatorHeader(
-                            year = year,
-                            month = month,
-                            onPrevYear = {
-                                year -= 1
-                                day = clampDay(year, month, day)
-                            },
-                            onPrevMonth = {
-                                if (month == 1) {
-                                    year -= 1
-                                    month = 12
-                                } else {
-                                    month -= 1
-                                }
-                                day = clampDay(year, month, day)
-                            },
-                            onNextMonth = {
-                                if (month == 12) {
-                                    year += 1
-                                    month = 1
-                                } else {
-                                    month += 1
-                                }
-                                day = clampDay(year, month, day)
-                            },
-                            onNextYear = {
-                                year += 1
-                                day = clampDay(year, month, day)
-                            },
-                            onTodayClick = {
-                                year = todayCal.get(Calendar.YEAR)
-                                month = todayCal.get(Calendar.MONTH) + 1
-                                day = todayCal.get(Calendar.DAY_OF_MONTH)
-                            }
-                        )
-
-                        val currentSelectedMillis = remember(year, month, day) {
-                            Calendar.getInstance().apply {
-                                set(year, month - 1, day, 0, 0, 0)
-                                set(Calendar.MILLISECOND, 0)
-                            }.timeInMillis
+                    SingleDatePickerSection(
+                        year = year,
+                        month = month,
+                        day = day,
+                        showCalendarPicker = showCalendarPicker,
+                        onToggleCalendarPicker = { showCalendarPicker = !showCalendarPicker },
+                        onDateChanged = { newY, newM, newD ->
+                            year = newY
+                            month = newM
+                            day = newD
+                            validationError = null
                         }
+                    )
 
-                        MonthCalendarGrid(
-                            viewYear = year,
-                            viewMonth = month,
-                            selectedDatesMillis = setOf(currentSelectedMillis),
-                            onDateToggled = { clickedMillis ->
-                                val c = Calendar.getInstance().apply { timeInMillis = clickedMillis }
-                                year = c.get(Calendar.YEAR)
-                                month = c.get(Calendar.MONTH) + 1
-                                day = c.get(Calendar.DAY_OF_MONTH)
-                            }
-                        )
-                    }
-
-                    // Stepper for Year, Month, Day
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Year
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("年：", style = MaterialTheme.typography.labelSmall)
-                            IconButton(onClick = {
-                                year -= 1
-                                day = clampDay(year, month, day)
-                            }, modifier = Modifier.size(28.dp)) {
-                                Text("-", fontWeight = FontWeight.Bold)
-                            }
-                            Text("$year", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                            IconButton(onClick = {
-                                year += 1
-                                day = clampDay(year, month, day)
-                            }, modifier = Modifier.size(28.dp)) {
-                                Text("+", fontWeight = FontWeight.Bold)
-                            }
+                    HourMinuteStepperRow(
+                        hour = hour,
+                        minute = minute,
+                        onHourChanged = {
+                            hour = it
+                            validationError = null
+                        },
+                        onMinuteChanged = {
+                            minute = it
+                            validationError = null
                         }
-
-                        // Month
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("月：", style = MaterialTheme.typography.labelSmall)
-                            IconButton(onClick = {
-                                if (month == 1) {
-                                    year -= 1
-                                    month = 12
-                                } else {
-                                    month -= 1
-                                }
-                                day = clampDay(year, month, day)
-                            }, modifier = Modifier.size(28.dp)) {
-                                Text("-", fontWeight = FontWeight.Bold)
-                            }
-                            Text(DateFormatter.formatTwoDigits(month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                            IconButton(onClick = {
-                                if (month == 12) {
-                                    year += 1
-                                    month = 1
-                                } else {
-                                    month += 1
-                                }
-                                day = clampDay(year, month, day)
-                            }, modifier = Modifier.size(28.dp)) {
-                                Text("+", fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        // Day
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("日：", style = MaterialTheme.typography.labelSmall)
-                            IconButton(onClick = {
-                                val c = Calendar.getInstance().apply {
-                                    set(year, month - 1, day)
-                                    add(Calendar.DAY_OF_MONTH, -1)
-                                }
-                                year = c.get(Calendar.YEAR)
-                                month = c.get(Calendar.MONTH) + 1
-                                day = c.get(Calendar.DAY_OF_MONTH)
-                            }, modifier = Modifier.size(28.dp)) {
-                                Text("-", fontWeight = FontWeight.Bold)
-                            }
-                            Text(DateFormatter.formatTwoDigits(day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                            IconButton(onClick = {
-                                val c = Calendar.getInstance().apply {
-                                    set(year, month - 1, day)
-                                    add(Calendar.DAY_OF_MONTH, 1)
-                                }
-                                year = c.get(Calendar.YEAR)
-                                month = c.get(Calendar.MONTH) + 1
-                                day = c.get(Calendar.DAY_OF_MONTH)
-                            }, modifier = Modifier.size(28.dp)) {
-                                Text("+", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-
-                    // Stepper for Hour, Minute
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Hour
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("時：", style = MaterialTheme.typography.labelSmall)
-                            IconButton(onClick = { hour = if (hour > 0) hour - 1 else 23 }, modifier = Modifier.size(28.dp)) {
-                                Text("-", fontWeight = FontWeight.Bold)
-                            }
-                            Text(DateFormatter.formatTwoDigits(hour), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                            IconButton(onClick = { hour = if (hour < 23) hour + 1 else 0 }, modifier = Modifier.size(28.dp)) {
-                                Text("+", fontWeight = FontWeight.Bold)
-                            }
-                        }
-
-                        // Minute
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("分：", style = MaterialTheme.typography.labelSmall)
-                            IconButton(onClick = { minute = if (minute >= 5) minute - 5 else 55 }, modifier = Modifier.size(28.dp)) {
-                                Text("-", fontWeight = FontWeight.Bold)
-                            }
-                            Text(DateFormatter.formatTwoDigits(minute), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                            IconButton(onClick = { minute = if (minute <= 50) minute + 5 else 0 }, modifier = Modifier.size(28.dp)) {
-                                Text("+", fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
+                    )
                 }
 
                 OutlinedTextField(
@@ -898,6 +1226,15 @@ fun EditReminderDialog(
                     )
                 }
 
+                validationError?.let { errorMsg ->
+                    Text(
+                        text = "❌ $errorMsg",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
@@ -909,23 +1246,29 @@ fun EditReminderDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (title.isNotBlank()) {
-                                val triggerCal = Calendar.getInstance().apply {
-                                    set(year, month - 1, day, hour, minute, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }
-                                onSave(
-                                    reminder.copy(
-                                        title = title.trim(),
-                                        message = message.trim(),
-                                        triggerAt = triggerCal.timeInMillis,
-                                        tag = tag.trim().ifEmpty { "提醒" },
-                                        color = selectedColor
-                                    )
-                                )
+                            if (title.isBlank()) {
+                                validationError = "提醒標題不得為空白"
+                                return@Button
                             }
-                        },
-                        enabled = title.isNotBlank()
+                            val triggerCal = Calendar.getInstance().apply {
+                                set(year, month - 1, day, hour, minute, 0)
+                                set(Calendar.MILLISECOND, 0)
+                            }
+                            if (triggerCal.timeInMillis <= System.currentTimeMillis()) {
+                                validationError = "提醒時間已過期，請設定未來的日期與時間（不安排過去通知）"
+                                return@Button
+                            }
+                            onSave(
+                                reminder.copy(
+                                    title = title.trim(),
+                                    message = message.trim(),
+                                    triggerAt = triggerCal.timeInMillis,
+                                    tag = tag.trim().ifEmpty { "提醒" },
+                                    color = selectedColor,
+                                    isFired = false
+                                )
+                            )
+                        }
                     ) {
                         Text("更新儲存")
                     }
@@ -936,8 +1279,7 @@ fun EditReminderDialog(
 }
 
 /**
- * Dialog for editing an existing To-Do (title, description, due date, tag, color).
- * Due date can be freely adjusted by year/month/day or directly picked from interactive calendar.
+ * Dialog for editing an existing To-Do (title, priority, description, due date, tag, color).
  */
 @Composable
 fun EditToDoDialog(
@@ -949,6 +1291,8 @@ fun EditToDoDialog(
     var description by remember { mutableStateOf(toDo.description) }
     var tag by remember { mutableStateOf(toDo.tag) }
     var selectedColor by remember { mutableLongStateOf(toDo.color) }
+    var selectedPriority by remember { mutableStateOf(toDo.priority) }
+    var showTitleError by remember { mutableStateOf(false) }
 
     val initialCal = remember(toDo.dueDate) {
         Calendar.getInstance().apply {
@@ -964,8 +1308,6 @@ fun EditToDoDialog(
     var day by remember { mutableIntStateOf(initialCal.get(Calendar.DAY_OF_MONTH)) }
     var showCalendarPicker by remember { mutableStateOf(false) }
 
-    val todayCal = remember { Calendar.getInstance() }
-
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -977,7 +1319,7 @@ fun EditToDoDialog(
                 modifier = Modifier
                     .padding(18.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
                     text = "✏️ 編輯待做事項",
@@ -987,8 +1329,15 @@ fun EditToDoDialog(
 
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        if (it.isNotBlank()) showTitleError = false
+                    },
                     label = { Text("事項名稱 *") },
+                    isError = showTitleError,
+                    supportingText = if (showTitleError) {
+                        { Text("任務名稱不得為空白", color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1001,29 +1350,22 @@ fun EditToDoDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                PrioritySelectorRow(
+                    selectedPriority = selectedPriority,
+                    onPrioritySelected = { selectedPriority = it }
+                )
+
                 // Due Date section
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = hasDueDate,
-                                onCheckedChange = { hasDueDate = it }
-                            )
-                            Text("設定到期日", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                        }
-
-                        if (hasDueDate) {
-                            TextButton(onClick = { showCalendarPicker = !showCalendarPicker }) {
-                                Text(
-                                    if (showCalendarPicker) "收起月曆" else "展開月曆選擇",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        }
+                        Checkbox(
+                            checked = hasDueDate,
+                            onCheckedChange = { hasDueDate = it }
+                        )
+                        Text("設定到期日", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     }
 
                     if (hasDueDate) {
@@ -1034,143 +1376,18 @@ fun EditToDoDialog(
                             color = MaterialTheme.colorScheme.primary
                         )
 
-                        if (showCalendarPicker) {
-                            MonthNavigatorHeader(
-                                year = year,
-                                month = month,
-                                onPrevYear = {
-                                    year -= 1
-                                    day = clampDay(year, month, day)
-                                },
-                                onPrevMonth = {
-                                    if (month == 1) {
-                                        year -= 1
-                                        month = 12
-                                    } else {
-                                        month -= 1
-                                    }
-                                    day = clampDay(year, month, day)
-                                },
-                                onNextMonth = {
-                                    if (month == 12) {
-                                        year += 1
-                                        month = 1
-                                    } else {
-                                        month += 1
-                                    }
-                                    day = clampDay(year, month, day)
-                                },
-                                onNextYear = {
-                                    year += 1
-                                    day = clampDay(year, month, day)
-                                },
-                                onTodayClick = {
-                                    year = todayCal.get(Calendar.YEAR)
-                                    month = todayCal.get(Calendar.MONTH) + 1
-                                    day = todayCal.get(Calendar.DAY_OF_MONTH)
-                                }
-                            )
-
-                            val currentSelectedMillis = remember(year, month, day) {
-                                Calendar.getInstance().apply {
-                                    set(year, month - 1, day, 0, 0, 0)
-                                    set(Calendar.MILLISECOND, 0)
-                                }.timeInMillis
+                        SingleDatePickerSection(
+                            year = year,
+                            month = month,
+                            day = day,
+                            showCalendarPicker = showCalendarPicker,
+                            onToggleCalendarPicker = { showCalendarPicker = !showCalendarPicker },
+                            onDateChanged = { newY, newM, newD ->
+                                year = newY
+                                month = newM
+                                day = newD
                             }
-
-                            MonthCalendarGrid(
-                                viewYear = year,
-                                viewMonth = month,
-                                selectedDatesMillis = setOf(currentSelectedMillis),
-                                onDateToggled = { clickedMillis ->
-                                    val c = Calendar.getInstance().apply { timeInMillis = clickedMillis }
-                                    year = c.get(Calendar.YEAR)
-                                    month = c.get(Calendar.MONTH) + 1
-                                    day = c.get(Calendar.DAY_OF_MONTH)
-                                }
-                            )
-                        }
-
-                        // Year, Month, Day steppers
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Year
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("年：", style = MaterialTheme.typography.labelSmall)
-                                IconButton(onClick = {
-                                    year -= 1
-                                    day = clampDay(year, month, day)
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Text("-", fontWeight = FontWeight.Bold)
-                                }
-                                Text("$year", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                                IconButton(onClick = {
-                                    year += 1
-                                    day = clampDay(year, month, day)
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Text("+", fontWeight = FontWeight.Bold)
-                                }
-                            }
-
-                            // Month
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("月：", style = MaterialTheme.typography.labelSmall)
-                                IconButton(onClick = {
-                                    if (month == 1) {
-                                        year -= 1
-                                        month = 12
-                                    } else {
-                                        month -= 1
-                                    }
-                                    day = clampDay(year, month, day)
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Text("-", fontWeight = FontWeight.Bold)
-                                }
-                                Text(DateFormatter.formatTwoDigits(month), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                                IconButton(onClick = {
-                                    if (month == 12) {
-                                        year += 1
-                                        month = 1
-                                    } else {
-                                        month += 1
-                                    }
-                                    day = clampDay(year, month, day)
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Text("+", fontWeight = FontWeight.Bold)
-                                }
-                            }
-
-                            // Day
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("日：", style = MaterialTheme.typography.labelSmall)
-                                IconButton(onClick = {
-                                    val c = Calendar.getInstance().apply {
-                                        set(year, month - 1, day)
-                                        add(Calendar.DAY_OF_MONTH, -1)
-                                    }
-                                    year = c.get(Calendar.YEAR)
-                                    month = c.get(Calendar.MONTH) + 1
-                                    day = c.get(Calendar.DAY_OF_MONTH)
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Text("-", fontWeight = FontWeight.Bold)
-                                }
-                                Text(DateFormatter.formatTwoDigits(day), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
-                                IconButton(onClick = {
-                                    val c = Calendar.getInstance().apply {
-                                        set(year, month - 1, day)
-                                        add(Calendar.DAY_OF_MONTH, 1)
-                                    }
-                                    year = c.get(Calendar.YEAR)
-                                    month = c.get(Calendar.MONTH) + 1
-                                    day = c.get(Calendar.DAY_OF_MONTH)
-                                }, modifier = Modifier.size(28.dp)) {
-                                    Text("+", fontWeight = FontWeight.Bold)
-                                }
-                            }
-                        }
+                        )
                     }
                 }
 
@@ -1205,7 +1422,9 @@ fun EditToDoDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (title.isNotBlank()) {
+                            if (title.isBlank()) {
+                                showTitleError = true
+                            } else {
                                 val dueMillis = if (hasDueDate) {
                                     Calendar.getInstance().apply {
                                         set(year, month - 1, day, 0, 0, 0)
@@ -1219,12 +1438,12 @@ fun EditToDoDialog(
                                         description = description.trim(),
                                         dueDate = dueMillis,
                                         tag = tag.trim().ifEmpty { "日常" },
-                                        color = selectedColor
+                                        color = selectedColor,
+                                        priority = selectedPriority
                                     )
                                 )
                             }
-                        },
-                        enabled = title.isNotBlank()
+                        }
                     ) {
                         Text("更新儲存")
                     }
@@ -1249,6 +1468,7 @@ fun EditTimeBlockDialog(
     var description by remember { mutableStateOf(timeBlock.description) }
     var tag by remember { mutableStateOf(timeBlock.tag) }
     var selectedColor by remember { mutableLongStateOf(timeBlock.color) }
+    var showTitleError by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1271,8 +1491,15 @@ fun EditTimeBlockDialog(
 
                 OutlinedTextField(
                     value = title,
-                    onValueChange = { title = it },
+                    onValueChange = {
+                        title = it
+                        if (it.isNotBlank()) showTitleError = false
+                    },
                     label = { Text("活動名稱 *") },
+                    isError = showTitleError,
+                    supportingText = if (showTitleError) {
+                        { Text("活動名稱不得為空白", color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1336,7 +1563,9 @@ fun EditTimeBlockDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (title.isNotBlank()) {
+                            if (title.isBlank()) {
+                                showTitleError = true
+                            } else {
                                 onSave(
                                     timeBlock.copy(
                                         title = title.trim(),
@@ -1348,8 +1577,7 @@ fun EditTimeBlockDialog(
                                     )
                                 )
                             }
-                        },
-                        enabled = title.isNotBlank()
+                        }
                     ) {
                         Text("更新儲存")
                     }

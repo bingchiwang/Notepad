@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.example.notepad.data.local.entity.Priority
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -117,6 +118,90 @@ fun ColorTag(
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Bold
         )
+    }
+}
+
+/**
+ * 待辦事項優先級徽章（規範 4.2：高、中、低）
+ */
+@Composable
+fun PriorityBadge(
+    priority: Priority,
+    modifier: Modifier = Modifier
+) {
+    val badgeColor = Color(priority.colorLong)
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(10.dp),
+        color = badgeColor.copy(alpha = 0.16f)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(badgeColor)
+            )
+            Text(
+                text = "優先級：${priority.label}",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = badgeColor
+            )
+        }
+    }
+}
+
+/**
+ * 待辦事項優先級選擇列（高、中、低），供新增與編輯對話框共用（遵守 DRY 原則）
+ */
+@Composable
+fun PrioritySelectorRow(
+    selectedPriority: Priority,
+    onPrioritySelected: (Priority) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = "優先級：",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Priority.entries.forEach { priority ->
+                val isSelected = selectedPriority == priority
+                val accentColor = Color(priority.colorLong)
+                FilterChip(
+                    selected = isSelected,
+                    onClick = { onPrioritySelected(priority) },
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(accentColor)
+                        )
+                    },
+                    label = {
+                        Text(
+                            text = priority.label,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -224,6 +309,7 @@ fun DeadlineAlertCard(
     tagColor: Color,
     isDueTomorrow: Boolean,
     modifier: Modifier = Modifier,
+    priority: Priority? = null,
     isCompleted: Boolean = false,
     dueDateText: String? = null,
     onCheckedChange: ((Boolean) -> Unit)? = null,
@@ -330,12 +416,23 @@ fun DeadlineAlertCard(
                     )
                 }
 
-                if (!dueDateText.isNullOrEmpty()) {
-                    Text(
-                        text = dueDateText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (showImminentAlert) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
-                    )
+                if (priority != null || !dueDateText.isNullOrEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (priority != null) {
+                            PriorityBadge(priority = priority)
+                        }
+                        if (!dueDateText.isNullOrEmpty()) {
+                            Text(
+                                text = dueDateText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (showImminentAlert) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline
+                            )
+                        }
+                    }
                 }
             }
         }

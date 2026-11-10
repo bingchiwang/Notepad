@@ -99,6 +99,18 @@
   - `NoteRepository`、`TaskRepository`、`PriorityAndConverters`、`ThemePreferences` 單元測試全數通過
   - `./gradlew build` 與 `./gradlew test` 驗證通過
 
+### Task_8_Phase2UIAndUXIntegration: 第二階段介面與操作連動（記事管理／草稿不遺失／分類搜尋／To-Do優先級／通知總開關／主題切換／導覽列防遮擋）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 建立記事管理畫面（`NotesScreen`）與草稿不遺失編輯器（`NoteEditorScreen` + `NoteDraftPreferences` DataStore 持久化），支援空白標題內文、一鍵釘選置頂、標題與內文全文搜尋（依修改時間排序、無結果提示）、分類增修防重與刪除分類連動歸類記事。
+  - 建立待辦優先級（高、中、低）選取器與色彩徽章（`PrioritySelectorRow` / `PriorityBadge`），預設隔離進行中與已完成任務，並確保新增與編輯對話框均驗證任務名稱不得為空白。
+  - 建立通知總開關持久化（`NotificationPreferences`）與系統權限管理（`AppSettingsDialog`），於 `ReminderScheduler` 與 `ReminderReceiver` 雙重攔截過期與關閉狀態通知，並在待辦任務完成時自動取消關聯之尚未觸發提醒。
+  - 透過全局頂部工具列整合 `AppSettingsDialog` 支援淺色、深色與跟隨系統三模式即時同步所有畫面並持久化，搭配 `MainActivity` 動態更新系統狀態欄與導覽列對比色。
+  - 於 `AppNavigation` 外層套用 `statusBarsPadding()`、`navigationBarsPadding()`、`displayCutoutPadding()` 與編輯器 `imePadding()`，全面防止手機系統導覽列、狀態欄、挖孔與鍵盤遮擋 APP 介面。
+- **驗收標準 (Acceptance Criteria):**
+  - 所有主要功能皆可由統一底部導覽及頂部快捷列即時存取
+  - 31 項單元測試與 `./gradlew build`（95 項任務）全部執行通過
+
 ## 程式碼管理規範 (Code Management Guidelines)
 1. **每個類別及函式應有明確用途**：保持單一職責，確保每個組件結構清晰且功能專一。
 2. **避免重複撰寫相同程式碼**：遵循 DRY 原則，重複出現的邏輯抽象為共用函式或元件。

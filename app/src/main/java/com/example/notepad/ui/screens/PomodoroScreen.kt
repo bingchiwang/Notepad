@@ -407,6 +407,10 @@ fun PomodoroScreen(
                 }
             }
         }
+
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+        }
     }
 
     // --- Dialog: Select or Input Focus Task ---

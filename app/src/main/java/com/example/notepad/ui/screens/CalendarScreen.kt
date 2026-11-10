@@ -42,7 +42,8 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     calendarFacade: LunarCalendarFacade,
-    taskRepository: TaskRepository
+    taskRepository: TaskRepository,
+    notificationsEnabled: Boolean = true
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -476,11 +477,24 @@ fun CalendarScreen(
                     tag = toDo.tag,
                     tagColor = Color(toDo.color),
                     isDueTomorrow = isTomorrow,
+                    priority = toDo.priority,
                     isCompleted = toDo.isCompleted,
                     dueDateText = "📅 ${currentMonth}月${selectedDay}日 到期",
                     onCheckedChange = { checked ->
                         coroutineScope.launch {
-                            taskRepository.updateToDo(toDo.copy(isCompleted = checked))
+                            try {
+                                val cancelled = ReminderScheduler.updateToDoCompletionAndSyncReminders(
+                                    context = context,
+                                    taskRepository = taskRepository,
+                                    toDo = toDo,
+                                    isCompleted = checked
+                                )
+                                if (checked && cancelled > 0) {
+                                    showFeedback(context, "已完成任務，並取消 $cancelled 個關聯提醒")
+                                }
+                            } catch (e: Exception) {
+                                showFeedback(context, "狀態更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                            }
                         }
                     },
                     onEdit = {
@@ -540,116 +554,41 @@ fun CalendarScreen(
 
     // --- Dialog: Add New To-Do for Selected Date ---
     if (showAddTaskDialog) {
-        var title by remember { mutableStateOf("") }
-        var description by remember { mutableStateOf("") }
-        var tag by remember { mutableStateOf("日常") }
-        var selectedColor by remember { mutableLongStateOf(PRESET_COLORS.first().colorLong) }
-
-        Dialog(onDismissRequest = { showAddTaskDialog = false }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Text(
-                        text = "新增待做事項 (${currentMonth}月${selectedDay}日)",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("事項標題 *") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("詳細說明 (選填)") },
-                        maxLines = 3,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = tag,
-                        onValueChange = { tag = it },
-                        label = { Text("分類標籤") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(
-                            text = "色彩標記：",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        ColorPickerRow(
-                            selectedColor = selectedColor,
-                            onColorSelected = { selectedColor = it }
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(onClick = { showAddTaskDialog = false }) {
-                            Text("取消")
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (title.isNotBlank()) {
-                                    coroutineScope.launch {
-                                        try {
-                                            taskRepository.insertToDo(
-                                                ToDo(
-                                                    title = title.trim(),
-                                                    description = description.trim(),
-                                                    dueDate = selectedDayStartMillis,
-                                                    tag = tag.trim().ifEmpty { "日常" },
-                                                    color = selectedColor
-                                                )
-                                            )
-                                            showFeedback(context, "已成功新增待辦事項")
-                                            showAddTaskDialog = false
-                                        } catch (e: Exception) {
-                                            showFeedback(context, "新增失敗: ${e.localizedMessage ?: "發生錯誤"}")
-                                        }
-                                    }
-                                }
-                            },
-                            enabled = title.isNotBlank()
-                        ) {
-                            Text("儲存")
-                        }
+        AddToDoDialog(
+            initialDueDateMillis = selectedDayStartMillis,
+            dialogTitle = "新增待做事項 (${currentMonth}月${selectedDay}日)",
+            onDismiss = { showAddTaskDialog = false },
+            onSave = { newToDo ->
+                coroutineScope.launch {
+                    try {
+                        taskRepository.insertToDo(newToDo)
+                        showFeedback(context, "已成功新增待辦事項")
+                        showAddTaskDialog = false
+                    } catch (e: Exception) {
+                        showFeedback(context, "新增失敗: ${e.localizedMessage ?: "發生錯誤"}")
                     }
                 }
             }
-        }
+        )
     }
 
     // --- Dialog: Add Reminder for Selected Date ---
     if (showAddReminderDialog) {
         AddMultiDayReminderDialog(
             initialDateMillis = selectedDayStartMillis,
+            availableToDos = allToDos,
+            notificationsEnabled = notificationsEnabled,
             onDismiss = { showAddReminderDialog = false },
             onSave = { reminderList ->
                 coroutineScope.launch {
                     try {
                         reminderList.forEach { reminder ->
                             val newId = taskRepository.insertReminder(reminder)
-                            ReminderScheduler.scheduleReminder(context, reminder.copy(id = newId.toInt()))
+                            ReminderScheduler.scheduleReminder(
+                                context = context,
+                                reminder = reminder.copy(id = newId.toInt()),
+                                notificationsEnabled = notificationsEnabled
+                            )
                         }
                         showFeedback(context, "已成功建立 ${reminderList.size} 個提醒事項")
                         showAddReminderDialog = false
@@ -684,13 +623,18 @@ fun CalendarScreen(
     editingReminder?.let { remToEdit ->
         EditReminderDialog(
             reminder = remToEdit,
+            notificationsEnabled = notificationsEnabled,
             onDismiss = { editingReminder = null },
             onSave = { updated ->
                 coroutineScope.launch {
                     try {
                         taskRepository.updateReminder(updated)
                         ReminderScheduler.cancelReminder(context, updated.id)
-                        ReminderScheduler.scheduleReminder(context, updated)
+                        ReminderScheduler.scheduleReminder(
+                            context = context,
+                            reminder = updated,
+                            notificationsEnabled = notificationsEnabled
+                        )
                         showFeedback(context, "提醒事項已更新")
                         editingReminder = null
                     } catch (e: Exception) {
@@ -708,6 +652,8 @@ fun CalendarScreen(
             onConfirm = {
                 coroutineScope.launch {
                     try {
+                        val pending = taskRepository.getPendingRemindersByToDoId(todo.id)
+                        pending.forEach { ReminderScheduler.cancelReminder(context, it.id) }
                         taskRepository.deleteToDo(todo)
                         showFeedback(context, "已刪除待辦事項")
                         deletingToDo = null

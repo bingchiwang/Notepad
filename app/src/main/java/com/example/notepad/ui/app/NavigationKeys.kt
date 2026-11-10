@@ -4,6 +4,12 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
+data object NotesRoute : NavKey
+
+@Serializable
+data class NoteEditorRoute(val noteId: Int? = null) : NavKey
+
+@Serializable
 data object TaskRoute : NavKey
 
 @Serializable

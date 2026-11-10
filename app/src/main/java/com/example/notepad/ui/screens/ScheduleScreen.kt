@@ -239,7 +239,7 @@ fun ScheduleScreen(
             }
 
             item {
-                Spacer(modifier = Modifier.height(60.dp))
+                Spacer(modifier = Modifier.height(80.dp))
             }
         }
     }

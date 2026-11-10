@@ -1,20 +1,26 @@
 package com.example.notepad
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.local.AppDatabase
+import com.example.notepad.data.preferences.NoteDraftPreferences
+import com.example.notepad.data.preferences.NotificationPreferences
 import com.example.notepad.data.preferences.ThemeMode
 import com.example.notepad.data.preferences.ThemePreferences
+import com.example.notepad.data.repository.NoteRepository
 import com.example.notepad.data.repository.TaskRepository
 import com.example.notepad.ui.app.AppNavigation
 import com.example.notepad.ui.theme.NotepadTheme
@@ -23,7 +29,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+
         val database = AppDatabase.getDatabase(this)
         val taskRepository = TaskRepository(
             toDoDao = database.toDoDao(),
@@ -31,12 +37,32 @@ class MainActivity : ComponentActivity() {
             timeBlockDao = database.timeBlockDao(),
             pomodoroDao = database.pomodoroDao()
         )
+        val noteRepository = NoteRepository(
+            noteDao = database.noteDao(),
+            categoryDao = database.categoryDao()
+        )
         val themePreferences = ThemePreferences(this)
+        val notificationPreferences = NotificationPreferences(this)
+        val noteDraftPreferences = NoteDraftPreferences(this)
         val calendarFacade = LunarCalendarFacade()
 
         setContent {
             val themeMode by themePreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
             val useDarkTheme = themeMode.shouldUseDarkTheme(isSystemInDarkTheme())
+
+            // 隨主題切換即時更新系統狀態欄與導覽列圖示對比色彩，確保深/淺色模式下皆清晰不反光
+            LaunchedEffect(useDarkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT
+                    ) { useDarkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(
+                        Color.TRANSPARENT,
+                        Color.TRANSPARENT
+                    ) { useDarkTheme }
+                )
+            }
 
             NotepadTheme(darkTheme = useDarkTheme) {
                 Surface(
@@ -45,7 +71,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         taskRepository = taskRepository,
-                        calendarFacade = calendarFacade
+                        noteRepository = noteRepository,
+                        calendarFacade = calendarFacade,
+                        themePreferences = themePreferences,
+                        notificationPreferences = notificationPreferences,
+                        noteDraftPreferences = noteDraftPreferences
                     )
                 }
             }

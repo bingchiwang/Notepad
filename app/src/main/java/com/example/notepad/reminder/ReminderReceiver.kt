@@ -1,5 +1,6 @@
 package com.example.notepad.reminder
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -11,10 +12,15 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.example.notepad.MainActivity
 import com.example.notepad.data.local.AppDatabase
+import com.example.notepad.data.preferences.NotificationPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * 提醒廣播接收器（規範 4.4）
+ * - 觸發前再次確認通知總開關與系統通知權限，確保關閉通知或無權限時不發送干擾
+ */
 class ReminderReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -22,18 +28,32 @@ class ReminderReceiver : BroadcastReceiver() {
         val title = intent.getStringExtra(EXTRA_REMINDER_TITLE) ?: "任務提醒"
         val message = intent.getStringExtra(EXTRA_REMINDER_MESSAGE) ?: "您的設定提醒時間到了！"
 
-        showNotification(context, reminderId, title, message)
-
-        // Mark as fired in Room DB
+        val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                val notificationPrefs = NotificationPreferences(context)
+                val isEnabled = notificationPrefs.isNotificationsEnabled()
+
+                if (isEnabled && ReminderScheduler.hasNotificationPermission(context)) {
+                    showNotification(context, reminderId, title, message)
+                }
+
+                // 標記資料庫狀態為已處理
                 val db = AppDatabase.getDatabase(context)
                 db.reminderDao().markAsFired(reminderId)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+            } finally {
+                pendingResult.finish()
+            }
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun showNotification(context: Context, reminderId: Int, title: String, message: String) {
+        if (!ReminderScheduler.hasNotificationPermission(context)) {
+            return
+        }
+
         val channelId = "notepad_reminder_channel"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
