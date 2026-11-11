@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.data.sync.CloudSyncUiState
+import com.example.notepad.ui.theme.LocalCustomButtonColors
 import java.util.UUID
 
 /**
@@ -342,6 +343,8 @@ fun CloudSyncDialog(
                             }
                         },
                         enabled = !uiState.isSyncing,
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp)
                     ) {
@@ -349,7 +352,7 @@ fun CloudSyncDialog(
                             CircularProgressIndicator(
                                 modifier = Modifier.size(18.dp),
                                 strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = LocalCustomButtonColors.current.contentColor
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("正在雙向同步...")

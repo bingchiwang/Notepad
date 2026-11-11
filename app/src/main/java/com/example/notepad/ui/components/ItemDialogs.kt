@@ -1,7 +1,9 @@
 package com.example.notepad.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -25,6 +27,8 @@ import com.example.notepad.data.local.entity.Priority
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
+import com.example.notepad.ui.theme.CalendarThemeResolver
+import com.example.notepad.ui.theme.LocalPersonalizationSettings
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -111,11 +115,33 @@ fun MonthCalendarGrid(
     val isTodayMonth = (todayCal.get(Calendar.YEAR) == viewYear && (todayCal.get(Calendar.MONTH) + 1) == viewMonth)
     val todayDay = todayCal.get(Calendar.DAY_OF_MONTH)
 
+    val personalization = LocalPersonalizationSettings.current
+    val useDarkTheme = personalization.themeMode.shouldUseDarkTheme(isSystemInDarkTheme())
+    val activeScheme = MaterialTheme.colorScheme
+    val calendarPalette = remember(
+        personalization.calendarStyle,
+        personalization.calendarAccentColorLong,
+        useDarkTheme,
+        activeScheme
+    ) {
+        CalendarThemeResolver.resolvePalette(
+            style = personalization.calendarStyle,
+            customAccentColorLong = personalization.calendarAccentColorLong,
+            darkTheme = useDarkTheme,
+            themeColorScheme = activeScheme
+        )
+    }
+
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
+            .background(calendarPalette.cardBgColor)
+            .then(
+                calendarPalette.cardBorderColor?.let {
+                    Modifier.border(1.dp, it, RoundedCornerShape(12.dp))
+                } ?: Modifier
+            )
             .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -129,14 +155,22 @@ fun MonthCalendarGrid(
                     text = name,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (index == 0 || index == 6) MaterialTheme.colorScheme.error.copy(alpha = 0.8f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = when (index) {
+                        0 -> calendarPalette.sundayHeaderColor
+                        6 -> calendarPalette.saturdayHeaderColor
+                        else -> calendarPalette.weekdayHeaderColor
+                    },
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp), thickness = 0.5.dp)
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 2.dp),
+            thickness = 0.5.dp,
+            color = calendarPalette.gridBorderColor
+        )
 
         val totalCells = offset + daysInMonth
         val numRows = (totalCells + 6) / 7
@@ -164,12 +198,19 @@ fun MonthCalendarGrid(
                                 .weight(1f)
                                 .height(34.dp)
                                 .padding(2.dp)
-                                .clip(RoundedCornerShape(8.dp))
+                                .clip(calendarPalette.cellShape)
                                 .background(
                                     when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
-                                        isToday -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                                        isSelected -> calendarPalette.selectedBgColor
+                                        isToday -> calendarPalette.todayBgColor
                                         else -> Color.Transparent
+                                    }
+                                )
+                                .then(
+                                    if (isToday && !isSelected) {
+                                        Modifier.border(1.dp, calendarPalette.todayBorderColor, calendarPalette.cellShape)
+                                    } else {
+                                        Modifier
                                     }
                                 )
                                 .clickable { onDateToggled(dayMillis) },
@@ -179,12 +220,10 @@ fun MonthCalendarGrid(
                                 text = "$dayNum",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
-                                color = when {
-                                    isSelected -> MaterialTheme.colorScheme.onPrimary
-                                    isToday -> MaterialTheme.colorScheme.primary
-                                    col == 0 || col == 6 -> MaterialTheme.colorScheme.error.copy(alpha = 0.85f)
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                }
+                                color = calendarPalette.resolveDayNumberColor(
+                                    isSelected = isSelected,
+                                    dayOfWeekIndex = col
+                                )
                             )
                         }
                     } else {
@@ -585,6 +624,8 @@ fun AddToDoDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         onClick = {
                             if (title.isBlank()) {
                                 showTitleError = true
@@ -1036,6 +1077,8 @@ fun AddMultiDayReminderDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         onClick = {
                             val now = System.currentTimeMillis()
                             if (title.isBlank()) {
@@ -1245,6 +1288,8 @@ fun EditReminderDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         onClick = {
                             if (title.isBlank()) {
                                 validationError = "提醒標題不得為空白"
@@ -1421,6 +1466,8 @@ fun EditToDoDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         onClick = {
                             if (title.isBlank()) {
                                 showTitleError = true
@@ -1562,6 +1609,8 @@ fun EditTimeBlockDialog(
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         onClick = {
                             if (title.isBlank()) {
                                 showTitleError = true

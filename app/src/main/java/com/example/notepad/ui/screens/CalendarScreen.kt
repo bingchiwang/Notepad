@@ -1,8 +1,10 @@
 package com.example.notepad.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,9 +32,12 @@ import androidx.compose.ui.window.Dialog
 import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
+import com.example.notepad.data.preferences.PersonalizationSettings
 import com.example.notepad.data.repository.TaskRepository
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.components.*
+import com.example.notepad.ui.theme.CalendarThemeResolver
+import com.example.notepad.ui.theme.LocalPersonalizationSettings
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -43,10 +48,26 @@ import java.util.Locale
 fun CalendarScreen(
     calendarFacade: LunarCalendarFacade,
     taskRepository: TaskRepository,
-    notificationsEnabled: Boolean = true
+    notificationsEnabled: Boolean = true,
+    personalization: PersonalizationSettings = LocalPersonalizationSettings.current
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val useDarkTheme = personalization.themeMode.shouldUseDarkTheme(isSystemInDarkTheme())
+    val activeColorScheme = MaterialTheme.colorScheme
+    val calendarPalette = remember(
+        personalization.calendarStyle,
+        personalization.calendarAccentColorLong,
+        useDarkTheme,
+        activeColorScheme
+    ) {
+        CalendarThemeResolver.resolvePalette(
+            style = personalization.calendarStyle,
+            customAccentColorLong = personalization.calendarAccentColorLong,
+            darkTheme = useDarkTheme,
+            themeColorScheme = activeColorScheme
+        )
+    }
 
     val allToDos by taskRepository.allToDos.collectAsState(initial = emptyList())
     val allReminders by taskRepository.allReminders.collectAsState(initial = emptyList())
@@ -130,7 +151,7 @@ fun CalendarScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                colors = CardDefaults.cardColors(containerColor = calendarPalette.headerBgColor),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Row(
@@ -152,7 +173,7 @@ fun CalendarScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                             contentDescription = "上個月",
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = calendarPalette.headerContentColor
                         )
                     }
 
@@ -161,12 +182,12 @@ fun CalendarScreen(
                             text = "${currentYear} 年 ${currentMonth} 月",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = calendarPalette.headerContentColor
                         )
                         Text(
                             text = selectedDateInfo.lunarDate.getYearCyclic(),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            color = calendarPalette.headerSubContentColor
                         )
                     }
 
@@ -179,7 +200,7 @@ fun CalendarScreen(
                             Icon(
                                 imageVector = Icons.Default.Today,
                                 contentDescription = "今天",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                tint = calendarPalette.headerContentColor
                             )
                         }
 
@@ -195,7 +216,7 @@ fun CalendarScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = "下個月",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                tint = calendarPalette.headerContentColor
                             )
                         }
                     }
@@ -207,7 +228,8 @@ fun CalendarScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = CardDefaults.cardColors(containerColor = calendarPalette.cardBgColor),
+                border = calendarPalette.cardBorderColor?.let { BorderStroke(1.dp, it) },
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -227,15 +249,18 @@ fun CalendarScreen(
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = when (index) {
-                                    0 -> Color(0xFFE53935)
-                                    6 -> Color(0xFF1E88E5)
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    0 -> calendarPalette.sundayHeaderColor
+                                    6 -> calendarPalette.saturdayHeaderColor
+                                    else -> calendarPalette.weekdayHeaderColor
                                 }
                             )
                         }
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(bottom = 6.dp))
+                    HorizontalDivider(
+                        modifier = Modifier.padding(bottom = 6.dp),
+                        color = calendarPalette.gridBorderColor
+                    )
 
                     val totalSlots = ((firstDayOfWeek - 1 + daysInMonth + 6) / 7) * 7
                     val rows = totalSlots / 7
@@ -274,7 +299,7 @@ fun CalendarScreen(
                                             .weight(1f)
                                             .aspectRatio(0.85f)
                                             .padding(2.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                                            .clip(calendarPalette.cellShape)
                                             .then(
                                                 if (isDueTomorrow) {
                                                     Modifier.breathingDashedBorder(
@@ -282,12 +307,20 @@ fun CalendarScreen(
                                                         cornerRadius = 8f,
                                                         strokeWidth = 2f
                                                     )
-                                                } else Modifier
+                                                } else if (calendarPalette.showCellGridBorder && !isSelected) {
+                                                    Modifier.border(
+                                                        0.5.dp,
+                                                        calendarPalette.gridBorderColor,
+                                                        calendarPalette.cellShape
+                                                    )
+                                                } else {
+                                                    Modifier
+                                                }
                                             )
                                             .background(
                                                 when {
-                                                    isSelected -> MaterialTheme.colorScheme.primaryContainer
-                                                    isToday -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+                                                    isSelected -> calendarPalette.selectedBgColor
+                                                    isToday -> calendarPalette.todayBgColor
                                                     else -> Color.Transparent
                                                 }
                                             )
@@ -295,8 +328,8 @@ fun CalendarScreen(
                                                 if (isToday && !isSelected) {
                                                     Modifier.border(
                                                         1.5.dp,
-                                                        MaterialTheme.colorScheme.primary,
-                                                        RoundedCornerShape(8.dp)
+                                                        calendarPalette.todayBorderColor,
+                                                        calendarPalette.cellShape
                                                     )
                                                 } else Modifier
                                             )
@@ -311,12 +344,10 @@ fun CalendarScreen(
                                                 text = dayNumber.toString(),
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
-                                                color = when {
-                                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
-                                                    col == 0 -> Color(0xFFE53935)
-                                                    col == 6 -> Color(0xFF1E88E5)
-                                                    else -> MaterialTheme.colorScheme.onSurface
-                                                }
+                                                color = calendarPalette.resolveDayNumberColor(
+                                                    isSelected = isSelected,
+                                                    dayOfWeekIndex = col
+                                                )
                                             )
 
                                             Text(
@@ -324,12 +355,11 @@ fun CalendarScreen(
                                                 fontSize = 9.sp,
                                                 maxLines = 1,
                                                 fontWeight = if (!info.festival.isNullOrEmpty() || !info.solarTerm.isNullOrEmpty()) FontWeight.Bold else FontWeight.Normal,
-                                                color = when {
-                                                    !info.festival.isNullOrEmpty() -> Color(0xFFD32F2F)
-                                                    !info.solarTerm.isNullOrEmpty() -> Color(0xFF388E3C)
-                                                    isSelected -> MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                                                    else -> MaterialTheme.colorScheme.outline
-                                                }
+                                                color = calendarPalette.resolveLunarLabelColor(
+                                                    isSelected = isSelected,
+                                                    hasFestival = !info.festival.isNullOrEmpty(),
+                                                    hasSolarTerm = !info.solarTerm.isNullOrEmpty()
+                                                )
                                             )
 
                                             // Task and Reminder dots
@@ -374,7 +404,7 @@ fun CalendarScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.cardColors(containerColor = calendarPalette.detailCardBgColor),
                 shape = RoundedCornerShape(14.dp)
             ) {
                 Column(
@@ -389,12 +419,13 @@ fun CalendarScreen(
                         Text(
                             text = "${currentYear}年${currentMonth}月${selectedDay}日",
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = calendarPalette.detailTextColor
                         )
                         Text(
                             text = selectedDateInfo.lunarDate.getFormattedString(),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = calendarPalette.detailPrimaryColor,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -407,7 +438,7 @@ fun CalendarScreen(
                             Text(
                                 text = "🏮 節慶：${selectedDateInfo.displayFestival}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFFD32F2F),
+                                color = calendarPalette.detailFestivalColor,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -415,7 +446,7 @@ fun CalendarScreen(
                             Text(
                                 text = "🌿 節氣：${selectedDateInfo.solarTerm}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF388E3C),
+                                color = calendarPalette.detailSolarTermColor,
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -449,6 +480,8 @@ fun CalendarScreen(
 
                     Button(
                         onClick = { showAddTaskDialog = true },
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))

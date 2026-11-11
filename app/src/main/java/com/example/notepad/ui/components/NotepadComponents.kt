@@ -1,6 +1,7 @@
 package com.example.notepad.ui.components
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,14 +28,16 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.ui.theme.ColorContrastUtils
+import com.example.notepad.ui.theme.LocalCustomButtonColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -82,7 +85,7 @@ fun ColorPickerRow(
                 contentAlignment = Alignment.Center
             ) {
                 if (isSelected) {
-                    val iconColor = if (item.color.luminance() > 0.5f) Color.Black else Color.White
+                    val iconColor = ColorContrastUtils.bestOnBackgroundColor(item.color)
                     Icon(
                         imageVector = Icons.Default.Check,
                         contentDescription = "Selected",
@@ -104,7 +107,7 @@ fun ColorTag(
     tagColor: Color,
     modifier: Modifier = Modifier
 ) {
-    val textColor = if (tagColor.luminance() > 0.5f) Color.Black else Color.White
+    val textColor = ColorContrastUtils.bestOnBackgroundColor(tagColor)
 
     Box(
         modifier = modifier
@@ -122,7 +125,7 @@ fun ColorTag(
 }
 
 /**
- * 待辦事項優先級徽章（規範 4.2：高、中、低）
+ * 待辦事項優先級徽章（規範 4.2：高、中、低，具備深淺背景自動對比修正）
  */
 @Composable
 fun PriorityBadge(
@@ -130,6 +133,8 @@ fun PriorityBadge(
     modifier: Modifier = Modifier
 ) {
     val badgeColor = Color(priority.colorLong)
+    val effectiveBg = badgeColor.copy(alpha = 0.16f).compositeOver(MaterialTheme.colorScheme.surface)
+    val readableInk = ColorContrastUtils.ensureReadableAccentOnSurface(badgeColor, effectiveBg)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(10.dp),
@@ -144,13 +149,13 @@ fun PriorityBadge(
                 modifier = Modifier
                     .size(7.dp)
                     .clip(CircleShape)
-                    .background(badgeColor)
+                    .background(readableInk)
             )
             Text(
                 text = "優先級：${priority.label}",
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
-                color = badgeColor
+                color = readableInk
             )
         }
     }
@@ -626,4 +631,34 @@ object DateFormatter {
  */
 fun showFeedback(context: android.content.Context, message: String) {
     android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * 統一套用使用者個人化按鍵配色與自動對比度保障之按鈕預設（遵循 DRY 原則）
+ */
+object AppButtonThemeDefaults {
+    @Composable
+    fun filledColors(): ButtonColors {
+        val custom = LocalCustomButtonColors.current
+        return ButtonDefaults.buttonColors(
+            containerColor = custom.containerColor,
+            contentColor = custom.contentColor
+        )
+    }
+
+    @Composable
+    fun filledBorder(): BorderStroke? {
+        val custom = LocalCustomButtonColors.current
+        return if (custom.needsBorder) {
+            BorderStroke(1.dp, custom.borderColor)
+        } else {
+            null
+        }
+    }
+
+    @Composable
+    fun fabContainerColor(): Color = LocalCustomButtonColors.current.containerColor
+
+    @Composable
+    fun fabContentColor(): Color = LocalCustomButtonColors.current.contentColor
 }

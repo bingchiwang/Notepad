@@ -17,7 +17,10 @@ import com.example.notepad.data.local.entity.SyncStatus
 import com.example.notepad.data.local.entity.SyncTombstone
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
+import com.example.notepad.data.preferences.AppFontScale
+import com.example.notepad.data.preferences.CalendarStyle
 import com.example.notepad.data.preferences.NotificationPreferences
+import com.example.notepad.data.preferences.PersonalizationSettings
 import com.example.notepad.data.preferences.SyncPreferences
 import com.example.notepad.data.preferences.SyncSettings
 import com.example.notepad.data.preferences.ThemeMode
@@ -811,7 +814,7 @@ class CloudSyncManager(
         remoteByDocId: Map<String, CloudSyncDocument>,
         settings: SyncSettings
     ): SettingsMergeOutcome {
-        val localTheme = themePreferences.themeModeFlow.first()
+        val localPersonalization = themePreferences.personalizationFlow.first()
         val localNotifications = notificationPreferences.isNotificationsEnabled()
         val localUpdatedAt = settings.settingsUpdatedAt
         val localSyncStatus = if (settings.settingsSyncPending) SyncStatus.PENDING_UPLOAD else SyncStatus.SYNCED
@@ -826,10 +829,7 @@ class CloudSyncManager(
                         syncId = "global",
                         updatedAt = uploadTime,
                         isDeleted = false,
-                        payload = mapOf(
-                            "themeMode" to localTheme.name,
-                            "notificationsEnabled" to localNotifications
-                        )
+                        payload = buildSettingsPayload(localPersonalization, localNotifications)
                     )
                 )
             }
@@ -845,10 +845,7 @@ class CloudSyncManager(
                         syncId = "global",
                         updatedAt = localUpdatedAt,
                         isDeleted = false,
-                        payload = mapOf(
-                            "themeMode" to localTheme.name,
-                            "notificationsEnabled" to localNotifications
-                        )
+                        payload = buildSettingsPayload(localPersonalization, localNotifications)
                     ),
                     conflict = conflict
                 )
@@ -856,8 +853,21 @@ class CloudSyncManager(
 
             EntityConflictDecision.ACCEPT_REMOTE -> {
                 val remoteTheme = ThemeMode.fromString(remote.payload["themeMode"] as? String)
+                val remoteButtonColor = (remote.payload["buttonColorLong"] as? Number)?.toLong()
+                val remoteCalendarStyle = CalendarStyle.fromString(remote.payload["calendarStyle"] as? String)
+                val remoteCalendarAccent = (remote.payload["calendarAccentColorLong"] as? Number)?.toLong()
+                val remoteFontScale = AppFontScale.fromString(remote.payload["fontScale"] as? String)
                 val remoteNotif = (remote.payload["notificationsEnabled"] as? Boolean) ?: localNotifications
-                themePreferences.setThemeMode(remoteTheme)
+
+                themePreferences.applyPersonalization(
+                    PersonalizationSettings(
+                        themeMode = remoteTheme,
+                        buttonColorLong = remoteButtonColor,
+                        calendarStyle = remoteCalendarStyle,
+                        calendarAccentColorLong = remoteCalendarAccent,
+                        fontScale = remoteFontScale
+                    )
+                )
                 notificationPreferences.setNotificationsEnabled(remoteNotif)
                 syncPreferences.markSettingsSynced(remote.updatedAt)
                 SettingsMergeOutcome(downloaded = true, conflict = settings.settingsSyncPending)
@@ -867,6 +877,18 @@ class CloudSyncManager(
             EntityConflictDecision.NO_OP -> SettingsMergeOutcome()
         }
     }
+
+    private fun buildSettingsPayload(
+        personalization: PersonalizationSettings,
+        notificationsEnabled: Boolean
+    ): Map<String, Any?> = mapOf(
+        "themeMode" to personalization.themeMode.name,
+        "buttonColorLong" to personalization.buttonColorLong,
+        "calendarStyle" to personalization.calendarStyle.name,
+        "calendarAccentColorLong" to personalization.calendarAccentColorLong,
+        "fontScale" to personalization.fontScale.name,
+        "notificationsEnabled" to notificationsEnabled
+    )
 
     // === 實體 <-> 雲端文件序列化轉換器 ===
 

@@ -30,7 +30,7 @@
 ### 2.2 偏好設定持久化（DataStore Preferences）
 | 類別 | DataStore 檔名 | 儲存鍵值與預設狀態 | 功能說明 |
 | :--- | :--- | :--- | :--- |
-| `ThemePreferences` | `theme_preferences` | `theme_mode`（預設 `ThemeMode.SYSTEM`） | 支援 `LIGHT`（淺色）、`DARK`（深色）、`SYSTEM`（跟隨系統），跨頁面一致且重開 App 維持有效 |
+| `ThemePreferences` | `theme_preferences` | `PersonalizationSettings`（`themeMode`, `buttonColorLong`, `calendarStyle`, `calendarAccentColorLong`, `fontScale`） | 支援淺／深／系統模式、自訂按鍵顏色、6 款月曆樣式／選色及全局字體大小倍率（`0.85x ~ 1.30x`），跨頁面一致且重開 App 維持有效 |
 | `NotificationPreferences` | `notification_preferences` | `notifications_enabled`（預設 `true`） | 全域通知總開關；關閉時取消所有待觸發鬧鐘且接收器不再顯示通知 |
 | `NoteDraftPreferences` | `note_draft_preferences` | `NoteDraft`（`hasActiveDraft`, `editingNoteId`, `title`, `content`, `categoryId`, `color`, `isPinned`） | 即時保存尚未儲存之記事編輯內容，避免切換分頁或系統回收遺失草稿 |
 | `SyncPreferences` | `cloud_sync_preferences` | `SyncSettings`（`syncEnabled`, `syncAccountId`, `firebaseProjectId`, `firebaseAppId`, `firebaseApiKey`, `lastSyncAt`, `lastSyncMessage`, `settingsUpdatedAt`, `settingsSyncPending`） | 保存雲端同步開關、跨裝置空間代碼、選填手動 Firebase 參數、待同步設定時間戳與最後同步時間 (`lastSyncAt`) |
@@ -88,6 +88,12 @@
 4. **網路恢復自動上傳**：透過 `AndroidNetworkMonitor`（`ConnectivityManager.NetworkCallback` + `ACCESS_NETWORK_STATE`）偵測網路連線恢復，自動節流觸發 `CloudSyncManager.syncNow` 上傳排隊異動；雲端拉回提醒異動時透過 `onReminderSyncedFromCloud` 同步重整 `ReminderScheduler` 鬧鐘排程。
 5. **最後同步時間記錄**：同步成功後立即寫入 `SyncPreferences.lastSyncAt` 與狀態摘要，並將本機狀態重設為 `SYNCED` 與清除已推播的墓碑；若離線或發生錯誤，保留既有的成功同步時間不覆寫。
 6. **智慧合併與最新修改優先衝突解決（`SyncConflictResolver`）**：雙向比對 `updatedAt` 時間戳記（與刪除時間 `deletedAt`），以最新修改時間勝出（Last-Write-Wins）；若離線雙邊修改同一資料且本機於雲端刪除後仍有更新編輯，智慧保留本機修改並復原雲端版本。
+
+### 3.7 個人化設定管理（`AppSettingsDialog` / `ColorContrastUtils` / `CalendarThemeResolver`）
+- **主題設定與按鍵顏色自訂**：支援淺色／深色／跟隨系統模式，並可自訂全應用按鍵顏色（12 款色票或 `#RRGGBB` 色碼，亦可恢復主題預設）。透過 `AppButtonThemeDefaults` 與 `ColorContrastUtils` 依照 WCAG 對比度演算法自動計算按鍵文字與表面重點色（若文字色與背景過近或同色，自動切換深墨 `#121316` 或純白 `#FFFFFF`，並於近底色按鈕補齊邊框）。
+- **月曆樣式自訂**：支援 `CalendarStyle` 6 款視覺風格與可選自訂選日底色，透過 `CalendarThemeResolver` 套用至 `CalendarScreen` 及 `MonthCalendarGrid`，自動偵測並切換週末／節慶／節氣與農曆標籤之文字反色，避免節慶紅字或節氣綠字於同色底上隱形。
+- **字體大小**：透過 `AppFontScale` 提供 `0.85x`、`1.0x`、`1.15x`、`1.30x` 四段即時縮放倍率，於 `NotepadTheme` 調整 `LocalDensity.fontScale` 一致生效至全頁面。
+- **通知開關與同步狀態統整**：於同一設定中心內直接切換全域通知總開關（即時檢查 Android 8.0+ 通知授權與 `ON_RESUME` 重整），並即時展示網路連線、Firebase 就緒、待同步異動筆數與 `lastSyncAt` 同步摘要，支援一鍵手動同步與開啟詳細雲端設定。所有個人化偏好皆透過 `ThemePreferences` 持久化並納入 `CloudSyncManager` 跨裝置同步範圍。
 
 ---
 

@@ -25,7 +25,9 @@ import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.repository.TaskRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.example.notepad.ui.components.AppButtonThemeDefaults
 import com.example.notepad.ui.components.DateFormatter
+import com.example.notepad.ui.theme.ColorContrastUtils
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -266,7 +268,10 @@ fun PomodoroScreen(
                 Button(
                     onClick = { isRunning = !isRunning },
                     modifier = Modifier.height(56.dp).width(140.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = currentMode.color),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = currentMode.color,
+                        contentColor = ColorContrastUtils.bestOnBackgroundColor(currentMode.color)
+                    ),
                     shape = RoundedCornerShape(28.dp)
                 ) {
                     Icon(
@@ -487,6 +492,8 @@ fun PomodoroScreen(
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
+                            colors = AppButtonThemeDefaults.filledColors(),
+                            border = AppButtonThemeDefaults.filledBorder(),
                             onClick = {
                                 if (customInput.isNotBlank()) {
                                     taskTitle = customInput.trim()

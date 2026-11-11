@@ -19,8 +19,8 @@ import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.local.AppDatabase
 import com.example.notepad.data.preferences.NoteDraftPreferences
 import com.example.notepad.data.preferences.NotificationPreferences
+import com.example.notepad.data.preferences.PersonalizationSettings
 import com.example.notepad.data.preferences.SyncPreferences
-import com.example.notepad.data.preferences.ThemeMode
 import com.example.notepad.data.preferences.ThemePreferences
 import com.example.notepad.data.repository.NoteRepository
 import com.example.notepad.data.repository.TaskRepository
@@ -90,8 +90,10 @@ class MainActivity : ComponentActivity() {
         val calendarFacade = LunarCalendarFacade()
 
         setContent {
-            val themeMode by themePreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
-            val useDarkTheme = themeMode.shouldUseDarkTheme(isSystemInDarkTheme())
+            val personalization by themePreferences.personalizationFlow.collectAsState(
+                initial = PersonalizationSettings()
+            )
+            val useDarkTheme = personalization.themeMode.shouldUseDarkTheme(isSystemInDarkTheme())
 
             // 隨主題切換即時更新系統狀態欄與導覽列圖示對比色彩，確保深/淺色模式下皆清晰不反光
             LaunchedEffect(useDarkTheme) {
@@ -107,7 +109,10 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            NotepadTheme(darkTheme = useDarkTheme) {
+            NotepadTheme(
+                darkTheme = useDarkTheme,
+                personalization = personalization
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

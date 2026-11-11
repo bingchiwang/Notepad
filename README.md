@@ -58,9 +58,12 @@
 - **呼吸發光虛線外框**：次日到期的任務卡片與月曆視圖同步觸發橘紅漸層呼吸發光動態。
 - **跳動徽章**：伴隨 `⚠️ 明日到期！` 動態徽章，提醒使用者優先處理。
 
-### 8. 🎨 專屬手繪風自適應圖示與自訂主題 (Adaptive Icon & Custom Themes)
+### 8. 🎨 專屬手繪風自適應圖示與個人化設定中心 (Adaptive Icon & Personalization)
 - **符合 Android 官方規範**：手繪筆記本與鉛筆插圖，精準縮放置中於 72dp 安全可視區內，提供完整 `mdpi`–`xxxhdpi` 解析度資源。
-- **三模式即時主題**：支援淺色（Light）、深色（Dark）與跟隨系統（System）模式並透過 DataStore 永久保存。
+- **個人化設定管理 (`AppSettingsDialog`)**：
+  - **主題、按鍵顏色與月曆樣式自訂**：支援淺色／深色／跟隨系統模式、自訂按鍵色彩（12 款精選色票＋`#RRGGBB` 色碼輸入）與 6 款月曆樣式（`CLASSIC`、`INK_WASH`、`FOREST_ZEN`、`OCEAN_NIGHT`、`SUNSET_WARM`、`HIGH_CONTRAST`）。
+  - **WCAG 自動防重色對比保護 (`ColorContrastUtils`)**：自動比對按鍵／月曆底色與文字、圖示、節慶標籤之對比度，若文字色接近或同色背景，即時翻轉為高對比深墨／純白文字並補齊邊框，維持清晰可讀。
+  - **字體大小、通知開關與同步狀態**：支援 4 段全局字體縮放（85%–130%）、通知總開關與系統授權即時檢查，以及同步狀態檢視與一鍵雲端同步，全部設定並同步支援 DataStore 持久化與雲端跨裝置同步。
 
 ---
 
@@ -173,9 +176,9 @@ com.example.notepad/
 │   └── ReminderScheduler.kt    # 精確鬧鐘排定、取消與任務連動取消
 └── ui/                         # 視覺介面層 (Jetpack Compose)
     ├── app/                    # Navigation 3 導航與系統欄防遮擋安全容器
-    ├── components/             # CloudSyncDialog、優先級徽章、設定彈窗、色彩標籤、呼吸邊框、多日彈窗、反饋工具
+    ├── components/             # CloudSyncDialog、個人化設定管理、優先級徽章、色彩標籤、呼吸邊框、多日彈窗、反饋工具
     ├── screens/                # NotesScreen, NoteEditorScreen, TaskScreen, CalendarScreen, ScheduleScreen, PomodoroScreen
-    └── theme/                  # M3 主題設定、色彩調色盤與字型規範
+    └── theme/                  # M3 主題設定、ColorContrastUtils 自動防重色、CalendarThemeResolver 月曆樣式與字型縮放
 ```
 
 ---

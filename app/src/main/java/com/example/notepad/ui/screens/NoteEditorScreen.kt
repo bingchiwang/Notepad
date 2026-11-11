@@ -26,6 +26,7 @@ import com.example.notepad.data.local.entity.Note
 import com.example.notepad.data.preferences.NoteDraft
 import com.example.notepad.data.preferences.NoteDraftPreferences
 import com.example.notepad.data.repository.NoteRepository
+import com.example.notepad.ui.components.AppButtonThemeDefaults
 import com.example.notepad.ui.components.ColorPickerRow
 import com.example.notepad.ui.components.ConfirmDeleteDialog
 import com.example.notepad.ui.components.DateFormatter
@@ -232,6 +233,8 @@ fun NoteEditorScreen(
                     }
 
                     Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
                         onClick = {
                             coroutineScope.launch {
                                 try {

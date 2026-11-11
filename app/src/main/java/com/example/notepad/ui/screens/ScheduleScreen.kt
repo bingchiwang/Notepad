@@ -78,6 +78,8 @@ fun ScheduleScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
+                containerColor = AppButtonThemeDefaults.fabContainerColor(),
+                contentColor = AppButtonThemeDefaults.fabContentColor(),
                 icon = { Icon(Icons.Default.Add, contentDescription = "新增時間段") },
                 text = { Text("安排行程") }
             )
@@ -377,7 +379,9 @@ fun ScheduleScreen(
                                     }
                                 }
                             },
-                            enabled = title.isNotBlank()
+                            enabled = title.isNotBlank(),
+                            colors = AppButtonThemeDefaults.filledColors(),
+                            border = AppButtonThemeDefaults.filledBorder()
                         ) {
                             Text("儲存")
                         }

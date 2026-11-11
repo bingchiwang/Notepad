@@ -18,6 +18,8 @@ import com.example.notepad.data.local.entity.SyncStatus
 import com.example.notepad.data.local.entity.SyncTombstone
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
+import com.example.notepad.data.preferences.AppFontScale
+import com.example.notepad.data.preferences.CalendarStyle
 import com.example.notepad.data.preferences.NotificationPreferences
 import com.example.notepad.data.preferences.SyncPreferences
 import com.example.notepad.data.preferences.SyncSettings
@@ -295,6 +297,10 @@ class CloudSyncManagerTest {
                 )
             )
             deviceB.themePreferences.setThemeMode(ThemeMode.DARK)
+            deviceB.themePreferences.setButtonColor(0xFF009688L)
+            deviceB.themePreferences.setCalendarStyle(CalendarStyle.OCEAN_NIGHT)
+            deviceB.themePreferences.setCalendarAccentColor(0xFFFFEB3BL)
+            deviceB.themePreferences.setFontScale(AppFontScale.LARGE)
             deviceB.notificationPreferences.setNotificationsEnabled(false)
             deviceB.syncPreferences.markSettingsPending(updatedAt = 6000L)
 
@@ -317,11 +323,16 @@ class CloudSyncManagerTest {
             assertEquals(downloadedToDoB?.id, downloadedRemB?.linkedToDoId)
             assertTrue(reminderHooksOnB.any { it.first == "shared-rem" && !it.second })
 
-            // 5. Device A 再度同步，應收到 B 勝出的 shared-note 以及 B 較新的主題與通知設定
+            // 5. Device A 再度同步，應收到 B 勝出的 shared-note 以及 B 較新的主題、個人化外觀與通知設定
             val syncResultA = deviceA.syncManager.syncNow()
             assertTrue(syncResultA.succeeded)
             assertEquals("裝置 B 較新勝出", deviceA.noteDao.getNoteBySyncIdOnce("shared-note")?.title)
-            assertEquals(ThemeMode.DARK, deviceA.themePreferences.themeModeFlow.first())
+            val syncedPersonalizationA = deviceA.themePreferences.personalizationFlow.first()
+            assertEquals(ThemeMode.DARK, syncedPersonalizationA.themeMode)
+            assertEquals(0xFF009688L, syncedPersonalizationA.buttonColorLong)
+            assertEquals(CalendarStyle.OCEAN_NIGHT, syncedPersonalizationA.calendarStyle)
+            assertEquals(0xFFFFEB3BL, syncedPersonalizationA.calendarAccentColorLong)
+            assertEquals(AppFontScale.LARGE, syncedPersonalizationA.fontScale)
             assertFalse(deviceA.notificationPreferences.isNotificationsEnabled())
         } finally {
             deviceA.close()

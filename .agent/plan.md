@@ -133,6 +133,18 @@
   - Android Lint SARIF 報告之 `NewApi` 與 `ObsoleteSdkInt` 問題數為 `0`
   - 43 項單元測試與 `./gradlew build`（Debug / Release APK + R8 + Lint）全數通過
 
+### Task_11_PersonalizationSettings: 實作個人化設定管理（自訂按鍵顏色／月曆樣式＋自動文字對比防護／字體大小／通知開關／同步狀態）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 建立 `ColorContrastUtils` 與 `CalendarThemeResolver`，提供 WCAG 相對亮度對比偵測：無論使用者選擇明亮黃、純白、深靛或曜石黑作為按鍵或月曆底色，文字、圖示、優先級徽章與農曆／節慶／節氣標籤皆自動維持高對比清晰可見。
+  - 擴充 `ThemePreferences` 與 `NotepadTheme`，持久化並全域套用 `PersonalizationSettings`（自訂按鍵顏色、`CalendarStyle` 6 款月曆樣式與可選底色、`AppFontScale` 4 段字體縮放倍率 `0.85x ~ 1.30x`）。
+  - 升級 `AppSettingsDialog` 為整合「主題設定（按鍵色／月曆樣式即時預覽）」、「字體大小」、「通知開關」與「同步狀態（含一鍵立即同步與連線設定入口）」之個人化設定管理中心，並將個人化欄位納入 `CloudSyncManager` 雲端雙向同步。
+  - 更新 `NoteRepositoryTest`、`ThemePreferencesTest`、`CloudSyncManagerTest` 並新增 `ColorContrastUtilsTest`（5 項），全專案 12 個測試套件共 50 項單元測試與 `./gradlew build` 皆通過。
+- **驗收標準 (Acceptance Criteria):**
+  - 按鍵顏色與月曆樣式切換即時套用全應用且任何同色文字皆自動轉為清晰可讀高對比色
+  - 字體大小、通知開關與同步狀態集中管理並支援 DataStore 持久化與雲端同步
+  - 50 項單元測試與 `./gradlew build` 全數通過
+
 ## 程式碼管理規範 (Code Management Guidelines)
 1. **每個類別及函式應有明確用途**：保持單一職責，確保每個組件結構清晰且功能專一。
 2. **避免重複撰寫相同程式碼**：遵循 DRY 原則，重複出現的邏輯抽象為共用函式或元件。

@@ -34,6 +34,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.preferences.NoteDraftPreferences
 import com.example.notepad.data.preferences.NotificationPreferences
+import com.example.notepad.data.preferences.PersonalizationSettings
 import com.example.notepad.data.preferences.SyncPreferences
 import com.example.notepad.data.preferences.ThemeMode
 import com.example.notepad.data.preferences.ThemePreferences
@@ -74,11 +75,27 @@ fun AppNavigation(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    val currentThemeMode by themePreferences.themeModeFlow.collectAsState(initial = ThemeMode.SYSTEM)
+    val personalization by themePreferences.personalizationFlow.collectAsState(
+        initial = PersonalizationSettings()
+    )
+    val currentThemeMode = personalization.themeMode
     val notificationsEnabled by notificationPreferences.notificationsEnabledFlow.collectAsState(initial = true)
     val syncUiState by cloudSyncManager.uiState.collectAsState()
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showCloudSyncDialog by remember { mutableStateOf(false) }
+
+    fun updatePersonalization(feedbackText: String, action: suspend () -> Unit) {
+        coroutineScope.launch {
+            try {
+                action()
+                syncPreferences.markSettingsPending()
+                cloudSyncManager.requestSyncOnDataChanged()
+                showFeedback(context, feedbackText)
+            } catch (e: Exception) {
+                showFeedback(context, "個人化設定更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+            }
+        }
+    }
 
     val topLevelRoutes = remember {
         setOf(NotesRoute, TaskRoute, CalendarRoute, ScheduleRoute, PomodoroRoute)
@@ -160,7 +177,8 @@ fun AppNavigation(
             CalendarScreen(
                 calendarFacade = calendarFacade,
                 taskRepository = taskRepository,
-                notificationsEnabled = notificationsEnabled
+                notificationsEnabled = notificationsEnabled,
+                personalization = personalization
             )
         }
 
@@ -367,18 +385,39 @@ fun AppNavigation(
 
     if (showSettingsDialog) {
         AppSettingsDialog(
-            currentThemeMode = currentThemeMode,
+            personalization = personalization,
             notificationsEnabled = notificationsEnabled,
+            syncUiState = syncUiState,
             onThemeModeSelected = { mode ->
-                coroutineScope.launch {
-                    try {
-                        themePreferences.setThemeMode(mode)
-                        syncPreferences.markSettingsPending()
-                        cloudSyncManager.requestSyncOnDataChanged()
-                        showFeedback(context, "已切換為${mode.label}")
-                    } catch (e: Exception) {
-                        showFeedback(context, "主題切換失敗: ${e.localizedMessage ?: "發生錯誤"}")
-                    }
+                updatePersonalization("已切換為${mode.label}") {
+                    themePreferences.setThemeMode(mode)
+                }
+            },
+            onButtonColorSelected = { colorLong ->
+                val feedback = if (colorLong == null) "已恢復預設按鍵顏色" else "已套用自訂按鍵顏色（文字對比已同步優化）"
+                updatePersonalization(feedback) {
+                    themePreferences.setButtonColor(colorLong)
+                }
+            },
+            onCalendarStyleSelected = { style ->
+                updatePersonalization("已切換月曆樣式為「${style.label}」") {
+                    themePreferences.setCalendarStyle(style)
+                }
+            },
+            onCalendarAccentColorSelected = { colorLong ->
+                val feedback = if (colorLong == null) "月曆選色已恢復依樣式預設" else "已更新月曆選取色（文字對比已同步保護）"
+                updatePersonalization(feedback) {
+                    themePreferences.setCalendarAccentColor(colorLong)
+                }
+            },
+            onFontScaleSelected = { fontScale ->
+                updatePersonalization("已調整字體大小為「${fontScale.label}」") {
+                    themePreferences.setFontScale(fontScale)
+                }
+            },
+            onResetPersonalization = {
+                updatePersonalization("已重設外觀、月曆樣式與字體大小為預設值") {
+                    themePreferences.resetPersonalizationDefaults()
                 }
             },
             onNotificationsToggled = { enabled ->
@@ -400,6 +439,20 @@ fun AppNavigation(
                         showFeedback(context, "通知設定更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
                     }
                 }
+            },
+            onSyncNow = {
+                coroutineScope.launch {
+                    try {
+                        val result = cloudSyncManager.syncNow(isManual = true)
+                        showFeedback(context, result.message)
+                    } catch (e: Exception) {
+                        showFeedback(context, "雲端同步失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
+                }
+            },
+            onOpenCloudSyncSettings = {
+                showSettingsDialog = false
+                showCloudSyncDialog = true
             },
             onDismiss = { showSettingsDialog = false }
         )

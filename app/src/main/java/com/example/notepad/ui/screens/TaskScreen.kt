@@ -117,6 +117,8 @@ fun TaskScreen(
                         showAddReminderDialog = true
                     }
                 },
+                containerColor = AppButtonThemeDefaults.fabContainerColor(),
+                contentColor = AppButtonThemeDefaults.fabContentColor(),
                 icon = { Icon(Icons.Default.Add, contentDescription = "新增") },
                 text = { Text(if (selectedTrack == 0) "新增待辦" else "新增提醒") }
             )

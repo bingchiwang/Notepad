@@ -34,6 +34,7 @@ import com.example.notepad.data.local.entity.Note
 import com.example.notepad.data.preferences.NoteDraft
 import com.example.notepad.data.preferences.NoteDraftPreferences
 import com.example.notepad.data.repository.NoteRepository
+import com.example.notepad.ui.components.AppButtonThemeDefaults
 import com.example.notepad.ui.components.ColorPickerRow
 import com.example.notepad.ui.components.ColorTag
 import com.example.notepad.ui.components.ConfirmDeleteDialog
@@ -100,6 +101,8 @@ fun NotesScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddNoteClick,
+                containerColor = AppButtonThemeDefaults.fabContainerColor(),
+                contentColor = AppButtonThemeDefaults.fabContentColor(),
                 icon = { Icon(Icons.Default.Add, contentDescription = "新增記事") },
                 text = { Text("新增記事") }
             )
@@ -233,6 +236,8 @@ fun NotesScreen(
                                         onAddNoteClick()
                                     }
                                 },
+                                colors = AppButtonThemeDefaults.filledColors(),
+                                border = AppButtonThemeDefaults.filledBorder(),
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text("繼續編輯")
@@ -592,7 +597,9 @@ fun CategoryManagerDialog(
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = AppButtonThemeDefaults.filledColors(),
+                    border = AppButtonThemeDefaults.filledBorder()
                 ) {
                     Text("新增分類")
                 }
@@ -718,8 +725,11 @@ fun CategoryManagerDialog(
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    coroutineScope.launch {
+                Button(
+                    colors = AppButtonThemeDefaults.filledColors(),
+                    border = AppButtonThemeDefaults.filledBorder(),
+                    onClick = {
+                        coroutineScope.launch {
                         try {
                             noteRepository.updateCategory(
                                 cat.copy(name = editName, color = editColor)

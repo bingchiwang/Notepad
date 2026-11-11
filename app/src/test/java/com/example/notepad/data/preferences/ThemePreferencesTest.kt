@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -84,5 +85,60 @@ class ThemePreferencesTest {
         assertEquals(ThemeMode.LIGHT, ThemeMode.fromString(" LIGHT "))
         assertEquals(ThemeMode.SYSTEM, ThemeMode.fromString("unknown"))
         assertEquals(ThemeMode.SYSTEM, ThemeMode.fromString(null))
+    }
+
+    @Test
+    fun `personalization settings persist button color calendar style and font scale and reset cleanly`() = runTest {
+        val file = File(tempFolder.root, "personalization_persist.preferences_pb")
+        val testDispatcher = UnconfinedTestDispatcher(testScheduler)
+        val storeScope1 = CoroutineScope(Job() + testDispatcher)
+        val prefs1 = ThemePreferences(
+            PreferenceDataStoreFactory.create(scope = storeScope1, produceFile = { file })
+        )
+
+        val initial = prefs1.personalizationFlow.first()
+        assertEquals(ThemeMode.SYSTEM, initial.themeMode)
+        assertNull(initial.buttonColorLong)
+        assertEquals(CalendarStyle.CLASSIC, initial.calendarStyle)
+        assertNull(initial.calendarAccentColorLong)
+        assertEquals(AppFontScale.MEDIUM, initial.fontScale)
+
+        prefs1.setThemeMode(ThemeMode.DARK)
+        prefs1.setButtonColor(0xFFFFEB3BL)
+        prefs1.setCalendarStyle(CalendarStyle.FOREST_ZEN)
+        prefs1.setCalendarAccentColor(0xFFF44336L)
+        prefs1.setFontScale(AppFontScale.EXTRA_LARGE)
+        storeScope1.cancel()
+
+        val storeScope2 = CoroutineScope(Job() + testDispatcher)
+        val prefs2 = ThemePreferences(
+            PreferenceDataStoreFactory.create(scope = storeScope2, produceFile = { file })
+        )
+        val restored = prefs2.personalizationFlow.first()
+        assertEquals(ThemeMode.DARK, restored.themeMode)
+        assertEquals(0xFFFFEB3BL, restored.buttonColorLong)
+        assertEquals(CalendarStyle.FOREST_ZEN, restored.calendarStyle)
+        assertEquals(0xFFF44336L, restored.calendarAccentColorLong)
+        assertEquals(AppFontScale.EXTRA_LARGE, restored.fontScale)
+
+        prefs2.resetPersonalizationDefaults()
+        val afterReset = prefs2.personalizationFlow.first()
+        assertEquals(ThemeMode.DARK, afterReset.themeMode)
+        assertNull(afterReset.buttonColorLong)
+        assertEquals(CalendarStyle.CLASSIC, afterReset.calendarStyle)
+        assertNull(afterReset.calendarAccentColorLong)
+        assertEquals(AppFontScale.MEDIUM, afterReset.fontScale)
+        storeScope2.cancel()
+    }
+
+    @Test
+    fun `CalendarStyle and AppFontScale fromString handle invalid values cleanly`() {
+        assertEquals(CalendarStyle.INK_WASH, CalendarStyle.fromString("ink_wash"))
+        assertEquals(CalendarStyle.CLASSIC, CalendarStyle.fromString("non_existent"))
+        assertEquals(CalendarStyle.CLASSIC, CalendarStyle.fromString(null))
+
+        assertEquals(AppFontScale.LARGE, AppFontScale.fromString(" large "))
+        assertEquals(AppFontScale.MEDIUM, AppFontScale.fromString("invalid"))
+        assertEquals(AppFontScale.MEDIUM, AppFontScale.fromString(null))
     }
 }

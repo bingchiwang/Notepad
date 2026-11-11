@@ -4,6 +4,17 @@
 
 ---
 
+## [1.5.0] - 2026-11-11
+### 新增 (Added)
+- **個人化設定管理中心（`AppSettingsDialog`）**：整合「主題設定」、「字體大小」、「通知開關」與「雲端同步狀態」四大管理區段，可於頂部導覽列一鍵開啟，並支援「重設」為系統預設風格。
+- **自訂按鍵顏色與自動高對比防重色引擎（`ColorContrastUtils` / `Theme.kt` / `AppButtonThemeDefaults`）**：提供 12 款精選按鍵色票（含純白、明亮黃、深靛與曜石黑）及 `#RRGGBB` Hex 色碼自訂輸入；依據 WCAG 相對亮度演算法自動切換按鍵內文、圖示、優先級徽章及表面連結之墨黑／純白文字（對比度低於閾值時自動加註外框並調整表面重點色），徹底杜絕文字與背景同色隱形問題。
+- **自訂月曆樣式（`CalendarThemeResolver`）**：新增 `CalendarStyle` 六款月曆視覺風格（經典簡約、水墨東方、青翠森境、湛藍晴空、暖陽暮靄、極簡高對比）與可選自訂選日底色，同步套用至 `CalendarScreen` 與多日提醒選日網格（`MonthCalendarGrid`），並對星期／節慶／節氣與農曆字色進行自動高對比反色計算。
+- **全局字體大小設定（`AppFontScale`）**：支援「精巧小 (85%)」、「標準中 (100%)」、「舒適大 (115%)」與「特大清晰 (130%)」四段縮放，透過 `LocalDensity` 即時套用至全應用頁面與對話框。
+- **個人化設定雲端同步**：擴充 `CloudSyncManager` 與 `AppNavigation`，使用者修改按鍵色、月曆樣式或字體大小時自動標記待同步並跨裝置雙向合併。
+- **測試覆蓋擴充**：新增 `ColorContrastUtilsTest`（5 項對比度、Hex 解析與月曆調色測試）並擴充 `ThemePreferencesTest` 與 `CloudSyncManagerTest`，全專案單元測試擴充至 **50 項**（12 個測試套件，0 失敗、0 略過）。
+
+---
+
 ## [1.4.1] - 2026-11-11
 ### 調整與修復 (Changed / Fixed)
 - **向下支援 Android 8.0（API 26）**：將 `app/build.gradle.kts` 之 `minSdk` 由 `30` 調整為 `26`，驗證所有依賴套件（Firebase BOM 35.1.0、Room 2.8.4、Navigation 3、Compose M3 Adaptive、CameraX 等）與 Manifest 合併相容，且 Android Lint `NewApi` 相容性錯誤數為 `0`。
