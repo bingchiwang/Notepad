@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
@@ -37,10 +38,10 @@ object ReminderScheduler {
     }
 
     /**
-     * 檢查目前是否具備系統通知權限（Android 13+ 需 POST_NOTIFICATIONS）
+     * 檢查目前是否具備系統通知權限（Android 13+ 需 POST_NOTIFICATIONS，Android 8.0+ 同步檢查系統通知開關狀態）
      */
     fun hasNotificationPermission(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val runtimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.POST_NOTIFICATIONS
@@ -48,6 +49,7 @@ object ReminderScheduler {
         } else {
             true
         }
+        return runtimeGranted && NotificationManagerCompat.from(context).areNotificationsEnabled()
     }
 
     /**

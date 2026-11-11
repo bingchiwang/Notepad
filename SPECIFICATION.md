@@ -4,7 +4,7 @@
 - **應用程式名稱**：Lunar To-Do & Notepad App（農曆萬年曆與雙軌待辦提醒記事）
 - **套件識別碼 (`applicationId`)**：`com.example.notepad`
 - **開發語言與框架**：Kotlin、Jetpack Compose（Material Design 3）、Jetpack Navigation 3、Compose Material Adaptive
-- **SDK 支援範圍**：`minSdk = 30`、`compileSdk = 37`、`targetSdk = 37`
+- **SDK 支援範圍**：`minSdk = 26`（Android 8.0 Oreo）、`compileSdk = 37`、`targetSdk = 37`
 - **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Firebase Cloud Sync（`CloudSyncManager`）
 - **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 5`
 

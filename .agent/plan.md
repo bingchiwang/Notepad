@@ -123,6 +123,16 @@
   - 成功同步後更新 `lastSyncAt` 且衝突時依最新修改時間優先智慧合併
   - 43 項單元測試與 `./gradlew build`（含 `lint` 與 `assembleRelease` R8）全部執行通過
 
+### Task_10_Android8Compatibility: 向下支援 Android 8.0（API 26）並驗證相容性與通知授權行為。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 將 `app/build.gradle.kts` 之 `minSdk` 由 `30` 調整為 `26`（Android 8.0 Oreo），確認所有依賴套件清單合併與執行期相容性無礙。
+  - 移除 `ReminderReceiver` 過時的 `SDK_INT >= O` 判斷（消除 `ObsoleteSdkInt` Lint 警告），並於 `ReminderScheduler.hasNotificationPermission` 整合 `NotificationManagerCompat.areNotificationsEnabled()` 以涵蓋 Android 8.0–12 系統通知開關檢測。
+  - 於 `AppSettingsDialog` 加入 `ON_RESUME` 生命週期刷新通知授權狀態，提升從系統設定返回時的使用體驗。
+- **驗收標準 (Acceptance Criteria):**
+  - Android Lint SARIF 報告之 `NewApi` 與 `ObsoleteSdkInt` 問題數為 `0`
+  - 43 項單元測試與 `./gradlew build`（Debug / Release APK + R8 + Lint）全數通過
+
 ## 程式碼管理規範 (Code Management Guidelines)
 1. **每個類別及函式應有明確用途**：保持單一職責，確保每個組件結構清晰且功能專一。
 2. **避免重複撰寫相同程式碼**：遵循 DRY 原則，重複出現的邏輯抽象為共用函式或元件。

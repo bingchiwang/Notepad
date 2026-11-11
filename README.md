@@ -4,7 +4,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-purple.svg)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-M3-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
-[![Min SDK](https://img.shields.io/badge/Min%20SDK-30-lightgrey.svg)](https://developer.android.com)
+[![Min SDK](https://img.shields.io/badge/Min%20SDK-26-lightgrey.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -203,7 +203,7 @@ com.example.notepad/
 ### 系統需求
 - Android Studio Ladybug (2024.2.1) 或更新版本
 - JDK 17
-- Android SDK 30 ~ 37
+- Android SDK 26（Android 8.0） ~ 37
 
 ### 建置指令
 ```bash

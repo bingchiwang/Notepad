@@ -4,6 +4,16 @@
 
 ---
 
+## [1.4.1] - 2026-11-11
+### 調整與修復 (Changed / Fixed)
+- **向下支援 Android 8.0（API 26）**：將 `app/build.gradle.kts` 之 `minSdk` 由 `30` 調整為 `26`，驗證所有依賴套件（Firebase BOM 35.1.0、Room 2.8.4、Navigation 3、Compose M3 Adaptive、CameraX 等）與 Manifest 合併相容，且 Android Lint `NewApi` 相容性錯誤數為 `0`。
+- **Android 8.0+ 通知權限與狀態連動優化**：
+  - 於 `ReminderScheduler.hasNotificationPermission` 結合 `NotificationManagerCompat.areNotificationsEnabled()`，讓 Android 8.0–12（API 26–32）裝置亦可準確偵測系統通知開關狀態。
+  - 於 `AppSettingsDialog` 加入 `ON_RESUME` 生命週期監聽，使用者從系統通知設定返回 App 時自動刷新授權狀態。
+  - 於 `ReminderReceiver` 移除不再需要的 `SDK_INT >= Build.VERSION_CODES.O` 條件判斷（消除 Lint `ObsoleteSdkInt` 警告），統一以 `NotificationChannel` 派送高優先級通知。
+
+---
+
 ## [1.4.0] - 2026-11-10
 ### 新增 (Added)
 - **Firebase 雲端資料同步架構（本地優先 + 雙向合併）**：整合 Firebase BOM (`35.1.0`) 與 Cloud Firestore（支援有 `google-services.json` 自動初始化，亦可在 UI 手動輸入 Project ID / App ID / Web API Key 動態連線），同步範圍涵蓋記事、分類、待辦事項、提醒、每日時間規劃、番茄鐘紀錄及主題／通知偏好設定。
