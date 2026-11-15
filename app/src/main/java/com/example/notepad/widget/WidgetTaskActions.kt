@@ -41,6 +41,7 @@ object WidgetTaskActions {
         // 同步即時刷新所有受影響的小工具（await 確保 Broadcast goAsync() 結束前完成刷新）
         ToDoWidgetUpdater.refreshAllBlocking(appContext)
         TodayScheduleWidgetUpdater.refreshAllBlocking(appContext)
+        CalendarWidgetUpdater.refreshAllBlocking(appContext)
 
         Handler(Looper.getMainLooper()).post {
             runCatching {

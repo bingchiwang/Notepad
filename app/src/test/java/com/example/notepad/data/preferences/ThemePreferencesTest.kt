@@ -1,6 +1,5 @@
 package com.example.notepad.data.preferences
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -29,7 +28,7 @@ class ThemePreferencesTest {
     @Test
     fun `default theme mode is SYSTEM`() = runTest {
         val dataStoreFile = File(tempFolder.root, "test_default.preferences_pb")
-        val dataStore = PreferenceDataStoreFactory.create(
+        val dataStore = TestPreferenceDataStore.create(
             scope = backgroundScope,
             produceFile = { dataStoreFile }
         )
@@ -43,7 +42,7 @@ class ThemePreferencesTest {
         val dataStoreFile = File(tempFolder.root, "test_persist.preferences_pb")
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val storeScope1 = CoroutineScope(Job() + testDispatcher)
-        val dataStore1 = PreferenceDataStoreFactory.create(
+        val dataStore1 = TestPreferenceDataStore.create(
             scope = storeScope1,
             produceFile = { dataStoreFile }
         )
@@ -58,7 +57,7 @@ class ThemePreferencesTest {
 
         // 建立新實例讀取同一持久化檔案，驗證重開 App 後設定仍有效
         val storeScope2 = CoroutineScope(Job() + testDispatcher)
-        val dataStore2 = PreferenceDataStoreFactory.create(
+        val dataStore2 = TestPreferenceDataStore.create(
             scope = storeScope2,
             produceFile = { dataStoreFile }
         )
@@ -93,7 +92,7 @@ class ThemePreferencesTest {
         val testDispatcher = UnconfinedTestDispatcher(testScheduler)
         val storeScope1 = CoroutineScope(Job() + testDispatcher)
         val prefs1 = ThemePreferences(
-            PreferenceDataStoreFactory.create(scope = storeScope1, produceFile = { file })
+            TestPreferenceDataStore.create(scope = storeScope1, produceFile = { file })
         )
 
         val initial = prefs1.personalizationFlow.first()
@@ -112,7 +111,7 @@ class ThemePreferencesTest {
 
         val storeScope2 = CoroutineScope(Job() + testDispatcher)
         val prefs2 = ThemePreferences(
-            PreferenceDataStoreFactory.create(scope = storeScope2, produceFile = { file })
+            TestPreferenceDataStore.create(scope = storeScope2, produceFile = { file })
         )
         val restored = prefs2.personalizationFlow.first()
         assertEquals(ThemeMode.DARK, restored.themeMode)

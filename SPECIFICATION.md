@@ -115,15 +115,28 @@
 
 ### 3.10 今日行程桌面小工具（`TodayScheduleWidgetProvider` / `TodayScheduleWidgetService` / `TodayScheduleWidgetLogic`）
 - **今日完成進度統計**：透過 `TodayScheduleWidgetLogic.resolveTodaySchedule` 彙整今日所有 `TimeBlock`（`date` 落於當日）與今天到期的 `ToDo`（`dueDate` 落於當日），計算已完成項數／總項數與百分比，以頂部進度條（`ProgressBar`）與摘要文字即時呈現；點擊進度卡片或日期膠囊直接開啟 `ScheduleRoute`。
-- **今天到期的待辦**：重用 `ToDoWidgetLogic` 與 `ToDoWidgetRowBinder` 呈現今天到期且未完成的任務清單，並透過共用 `WidgetTaskActions.completeToDo` 支援直接在桌面勾選完成、取消關聯提醒並同步重整「待辦事項小工具」與「今日行程小工具」；當今日到期任務全數完成時顯示「今日到期任務已全數完成 ✓」。
+- **今天到期的待辦**：重用 `ToDoWidgetLogic` 與 `ToDoWidgetRowBinder` 呈現今天到期且未完成的任務清單，並透過共用 `WidgetTaskActions.completeToDo` 支援直接在桌面勾選完成、取消關聯提醒並同步重整「待辦事項小工具」、「今日行程小工具」與「月曆小工具」；當今日到期任務全數完成時顯示「今日到期任務已全數完成 ✓」。
 - **即將到來的提醒**：過濾尚未觸發且未過期的 `Reminder`（`!isFired && triggerAt > now`），依觸發時間升冪排序並依距離呈現「`今天 HH:mm`」、「`明天 HH:mm`」或「`MM/dd HH:mm`」；點擊可直達 `TaskRoute` 之「提醒事項」分軌。
 - **即時聯動刷新**：`ReminderReceiver`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆即時觸發 `TodayScheduleWidgetUpdater.notifyDataChanged`。
+
+### 3.11 月曆桌面小工具（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences`）
+- **完整月份與星期顯示**：透過 `CalendarWidgetLogic.resolveMonthGrid` 產生固定 6 週 × 7 天（42 格，週日為首日）月曆格網與「`YYYY年 M月`」標題，今天日期以藍色底色與藍色外框（`widget_cal_today_bg.xml`）及藍字日號標示；透過 `CalendarWidgetPreferences` 為每個 `appWidgetId` 獨立保存當前顯示年月，支援點擊左右箭頭切換上／下個月及點擊標題回到當月。
+- **直接顯示文字標籤與多筆截斷規則（不使用小圓點）**：
+  - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
+  - 每個日期格最多直接顯示 2 筆事項（`MAX_VISIBLE_EVENTS = 2`）；當同一天超過 2 筆事項時，自動計算剩餘筆數並顯示「`＋N 項`」標籤（例如共 5 筆時顯示前 2 筆及「`＋3 項`」）。
+- **點擊互動與深層連結**：
+  - 點擊日期格或「`＋N 項`」：透過 `WidgetDeepLink.OpenCalendarDay(dateMillis, openQuickAdd = false)` 開啟 `CalendarRoute` 並跳轉至該日期，同時顯示該日記事清單、待辦清單與提醒清單。
+  - 點擊格內記事膠囊：透過 `WidgetDeepLink.EditNote(noteId)` 直接開啟 `NoteEditorRoute` 編輯該篇記事。
+  - 點擊格內待辦膠囊：透過 `WidgetDeepLink.OpenToDoDetail(taskId)` 直接開啟 `TaskDetailRoute` 查看或修改該筆待辦事項。
+  - 點擊左右箭頭：發送廣播 `ACTION_PREV_MONTH` / `ACTION_NEXT_MONTH` 切換顯示月份。
+  - 點擊「`+ 新增`」按鈕：透過 `WidgetDeepLink.OpenCalendarDay(dateMillis, openQuickAdd = true)` 開啟月曆快速建立對話框，一鍵選擇建立該日記事（帶入 `initialCreatedAtMillis`）或建立該日待辦事項。
+- **即時聯動刷新**：`NoteRepository.onLocalDataChanged`、`TaskRepository.onLocalDataChanged`、`WidgetTaskActions.completeToDo` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `CalendarWidgetUpdater.notifyDataChanged` / `refreshAllBlocking`。
 
 ---
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **15 個測試類別、67 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **16 個測試類別、73 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
@@ -140,6 +153,7 @@
 13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
 14. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
 15. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
+16. `CalendarWidgetLogicTest`（6 項）：驗證月曆小工具跨年月份進退位、42 格週日對齊與今日標示、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則及深度連結解析。
 
 ---
 

@@ -1,6 +1,5 @@
 package com.example.notepad.data.preferences
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -29,7 +28,7 @@ class NotificationPreferencesTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val scope1 = CoroutineScope(Job() + dispatcher)
         val prefs1 = NotificationPreferences(
-            PreferenceDataStoreFactory.create(scope = scope1, produceFile = { file })
+            TestPreferenceDataStore.create(scope = scope1, produceFile = { file })
         )
 
         assertTrue(prefs1.isNotificationsEnabled())
@@ -39,7 +38,7 @@ class NotificationPreferencesTest {
 
         val scope2 = CoroutineScope(Job() + dispatcher)
         val prefs2 = NotificationPreferences(
-            PreferenceDataStoreFactory.create(scope = scope2, produceFile = { file })
+            TestPreferenceDataStore.create(scope = scope2, produceFile = { file })
         )
         assertFalse(prefs2.isNotificationsEnabled())
         prefs2.setNotificationsEnabled(true)

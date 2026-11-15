@@ -12,7 +12,8 @@ data object NotesRoute : NavKey
 @Serializable
 data class NoteEditorRoute(
     val noteId: Int? = null,
-    val initialCategoryId: Int? = null
+    val initialCategoryId: Int? = null,
+    val initialCreatedAtMillis: Long? = null
 ) : NavKey
 
 @Serializable

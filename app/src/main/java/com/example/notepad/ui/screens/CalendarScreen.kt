@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
@@ -26,18 +27,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.calendar.LunarCalendarFacade
+import com.example.notepad.data.local.entity.Note
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.preferences.PersonalizationSettings
+import com.example.notepad.data.repository.NoteRepository
 import com.example.notepad.data.repository.TaskRepository
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.components.*
 import com.example.notepad.ui.theme.CalendarThemeResolver
 import com.example.notepad.ui.theme.LocalPersonalizationSettings
+import com.example.notepad.widget.ToDoWidgetLogic
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -49,7 +54,15 @@ fun CalendarScreen(
     calendarFacade: LunarCalendarFacade,
     taskRepository: TaskRepository,
     notificationsEnabled: Boolean = true,
-    personalization: PersonalizationSettings = LocalPersonalizationSettings.current
+    personalization: PersonalizationSettings = LocalPersonalizationSettings.current,
+    noteRepository: NoteRepository? = null,
+    onNoteClick: (Int) -> Unit = {},
+    onToDoClick: (Int) -> Unit = {},
+    onQuickCreateNoteForDate: (Long) -> Unit = {},
+    initialSelectedDateMillis: Long? = null,
+    onConsumeInitialDate: () -> Unit = {},
+    openQuickAddOnLaunch: Boolean = false,
+    onConsumeOpenQuickAdd: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -124,6 +137,32 @@ fun CalendarScreen(
     }
     val selectedDayEndMillis = remember(selectedDayStartMillis) {
         selectedDayStartMillis + 86400000L - 1
+    }
+
+    var showQuickAddChooser by remember { mutableStateOf(false) }
+
+    val allNotes by (noteRepository?.allNotes?.collectAsState(initial = emptyList())
+        ?: remember { mutableStateOf(emptyList<Note>()) })
+
+    // 接收來自月曆桌面小工具的日期跳轉與快速新增指令
+    LaunchedEffect(initialSelectedDateMillis, openQuickAddOnLaunch) {
+        if (initialSelectedDateMillis != null) {
+            val targetCal = Calendar.getInstance().apply { timeInMillis = initialSelectedDateMillis }
+            currentYear = targetCal.get(Calendar.YEAR)
+            currentMonth = targetCal.get(Calendar.MONTH) + 1
+            selectedDay = targetCal.get(Calendar.DAY_OF_MONTH)
+            onConsumeInitialDate()
+        }
+        if (openQuickAddOnLaunch) {
+            showQuickAddChooser = true
+            onConsumeOpenQuickAdd()
+        }
+    }
+
+    val selectedDayNotes = remember(allNotes, selectedDayStartMillis) {
+        allNotes
+            .filter { ToDoWidgetLogic.normalizeToLocalMidnight(it.createdAt) == selectedDayStartMillis }
+            .sortedWith(compareByDescending<Note> { it.isPinned }.thenByDescending { it.updatedAt })
     }
 
     val selectedDayToDos = remember(allToDos, selectedDayStartMillis) {
@@ -455,6 +494,99 @@ fun CalendarScreen(
             }
         }
 
+        // --- Selected Date Notes Section ---
+        if (noteRepository != null) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "📝 該日記事 (${selectedDayNotes.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    FilledTonalButton(
+                        onClick = { onQuickCreateNoteForDate(selectedDayStartMillis) },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                    ) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("加記事", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+
+            if (selectedDayNotes.isEmpty()) {
+                item {
+                    Text(
+                        text = "此日尚無建立記事",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
+            } else {
+                items(selectedDayNotes, key = { "cal_note_${it.id}" }) { note ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNoteClick(note.id) },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .width(4.dp)
+                                    .height(34.dp)
+                                    .clip(RoundedCornerShape(2.dp))
+                                    .background(Color(note.color))
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = note.title.ifBlank { "（無標題）" },
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (note.content.isNotBlank()) {
+                                    Text(
+                                        text = note.content.replace('\n', ' '),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                Text(
+                                    text = "更新於 ${DateFormatter.formatTime(note.updatedAt)}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.outline
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "編輯記事",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         // --- Selected Date To-Do Items Section ---
         item {
             Row(
@@ -513,6 +645,7 @@ fun CalendarScreen(
                     priority = toDo.priority,
                     isCompleted = toDo.isCompleted,
                     dueDateText = "📅 ${currentMonth}月${selectedDay}日 到期",
+                    onClick = { onToDoClick(toDo.id) },
                     onCheckedChange = { checked ->
                         coroutineScope.launch {
                             try {
@@ -720,6 +853,53 @@ fun CalendarScreen(
                 }
             },
             onDismiss = { deletingReminder = null }
+        )
+    }
+
+    // --- Dialog: Quick Create Note or To-Do (Triggered from Calendar Widget '+ 新增') ---
+    if (showQuickAddChooser) {
+        AlertDialog(
+            onDismissRequest = { showQuickAddChooser = false },
+            title = {
+                Text(
+                    text = "快速建立 (${currentMonth}月${selectedDay}日)",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("請選擇要為此日期快速建立記事或待辦事項：")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showQuickAddChooser = false
+                        showAddTaskDialog = true
+                    },
+                    colors = AppButtonThemeDefaults.filledColors(),
+                    border = AppButtonThemeDefaults.filledBorder()
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("新增待辦")
+                }
+            },
+            dismissButton = {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { showQuickAddChooser = false }) {
+                        Text("取消")
+                    }
+                    FilledTonalButton(
+                        onClick = {
+                            showQuickAddChooser = false
+                            onQuickCreateNoteForDate(selectedDayStartMillis)
+                        }
+                    ) {
+                        Icon(Icons.Default.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("新增記事")
+                    }
+                }
+            }
         )
     }
 }

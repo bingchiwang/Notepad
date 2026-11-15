@@ -25,6 +25,12 @@ sealed interface WidgetDeepLink {
 
     /** 點擊今日行程小工具內即將到來的提醒後切換至提醒事項分頁 */
     data object OpenRemindersTrack : WidgetDeepLink
+
+    /** 點擊月曆小工具日期格、「＋N 項」或「新增」按鈕後切換至月曆並跳至指定日期（可選直接開啟快速新增選單） */
+    data class OpenCalendarDay(
+        val dateMillis: Long,
+        val openQuickAdd: Boolean = false
+    ) : WidgetDeepLink
 }
 
 object QuickNoteWidgetContract {
@@ -33,6 +39,8 @@ object QuickNoteWidgetContract {
     const val EXTRA_WIDGET_CATEGORY_ID = "com.example.notepad.EXTRA_WIDGET_CATEGORY_ID"
     const val EXTRA_WIDGET_TODO_ID = "com.example.notepad.EXTRA_WIDGET_TODO_ID"
     const val EXTRA_WIDGET_OPEN_ADD_TODO = "com.example.notepad.EXTRA_WIDGET_OPEN_ADD_TODO"
+    const val EXTRA_WIDGET_CALENDAR_DATE_MILLIS = "com.example.notepad.EXTRA_WIDGET_CALENDAR_DATE_MILLIS"
+    const val EXTRA_WIDGET_CALENDAR_QUICK_ADD = "com.example.notepad.EXTRA_WIDGET_CALENDAR_QUICK_ADD"
 
     const val ACTION_CREATE_NOTE = "CREATE_NOTE"
     const val ACTION_EDIT_NOTE = "EDIT_NOTE"
@@ -40,8 +48,10 @@ object QuickNoteWidgetContract {
     const val ACTION_OPEN_TODO_DETAIL = "OPEN_TODO_DETAIL"
     const val ACTION_OPEN_SCHEDULE_TAB = "OPEN_SCHEDULE_TAB"
     const val ACTION_OPEN_REMINDERS_TRACK = "OPEN_REMINDERS_TRACK"
+    const val ACTION_OPEN_CALENDAR_DAY = "OPEN_CALENDAR_DAY"
 
     const val INVALID_ID = -1
+    const val INVALID_DATE_MILLIS = -1L
 
     /**
      * 建立開啟主程式「新增記事編輯器」的明確 Intent
@@ -52,6 +62,17 @@ object QuickNoteWidgetContract {
             if (categoryId != null && categoryId > 0) {
                 putExtra(EXTRA_WIDGET_CATEGORY_ID, categoryId)
             }
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+    }
+
+    /**
+     * 建立開啟主程式「編輯指定記事」的明確 Intent（供月曆小工具記事膠囊直接啟動）
+     */
+    fun buildEditNoteIntent(context: Context, noteId: Int): Intent {
+        return Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_WIDGET_ACTION, ACTION_EDIT_NOTE)
+            putExtra(EXTRA_WIDGET_NOTE_ID, noteId)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
     }
@@ -109,6 +130,22 @@ object QuickNoteWidgetContract {
     }
 
     /**
+     * 建立開啟主程式「月曆＞指定日期清單（可選直接開啟快速新增選單）」的明確 Intent
+     */
+    fun buildOpenCalendarDayIntent(
+        context: Context,
+        dateMillis: Long,
+        openQuickAdd: Boolean = false
+    ): Intent {
+        return Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_WIDGET_ACTION, ACTION_OPEN_CALENDAR_DAY)
+            putExtra(EXTRA_WIDGET_CALENDAR_DATE_MILLIS, dateMillis)
+            putExtra(EXTRA_WIDGET_CALENDAR_QUICK_ADD, openQuickAdd)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+    }
+
+    /**
      * 由啟動 MainActivity 之 Intent 解析來自桌面小工具的導航請求
      */
     fun parseWidgetDeepLink(intent: Intent?): WidgetDeepLink? {
@@ -118,12 +155,16 @@ object QuickNoteWidgetContract {
         val categoryId = intent.getIntExtra(EXTRA_WIDGET_CATEGORY_ID, INVALID_ID)
         val todoId = intent.getIntExtra(EXTRA_WIDGET_TODO_ID, INVALID_ID)
         val openAddToDo = intent.getBooleanExtra(EXTRA_WIDGET_OPEN_ADD_TODO, false)
+        val calendarDateMillis = intent.getLongExtra(EXTRA_WIDGET_CALENDAR_DATE_MILLIS, INVALID_DATE_MILLIS)
+        val calendarQuickAdd = intent.getBooleanExtra(EXTRA_WIDGET_CALENDAR_QUICK_ADD, false)
         return parseWidgetDeepLink(
             action = action,
             noteId = noteId,
             categoryId = categoryId,
             todoId = todoId,
-            openAddToDo = openAddToDo
+            openAddToDo = openAddToDo,
+            calendarDateMillis = calendarDateMillis,
+            calendarQuickAdd = calendarQuickAdd
         )
     }
 
@@ -135,7 +176,9 @@ object QuickNoteWidgetContract {
         noteId: Int = INVALID_ID,
         categoryId: Int = INVALID_ID,
         todoId: Int = INVALID_ID,
-        openAddToDo: Boolean = false
+        openAddToDo: Boolean = false,
+        calendarDateMillis: Long = INVALID_DATE_MILLIS,
+        calendarQuickAdd: Boolean = false
     ): WidgetDeepLink? {
         return when (action) {
             ACTION_CREATE_NOTE -> WidgetDeepLink.CreateNote(
@@ -146,6 +189,12 @@ object QuickNoteWidgetContract {
             ACTION_OPEN_TODO_DETAIL -> todoId.takeIf { it > 0 }?.let { WidgetDeepLink.OpenToDoDetail(it) }
             ACTION_OPEN_SCHEDULE_TAB -> WidgetDeepLink.OpenScheduleTab
             ACTION_OPEN_REMINDERS_TRACK -> WidgetDeepLink.OpenRemindersTrack
+            ACTION_OPEN_CALENDAR_DAY -> calendarDateMillis.takeIf { it > 0L }?.let {
+                WidgetDeepLink.OpenCalendarDay(
+                    dateMillis = it,
+                    openQuickAdd = calendarQuickAdd
+                )
+            }
             else -> null
         }
     }

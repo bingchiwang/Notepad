@@ -31,6 +31,7 @@ import com.example.notepad.data.sync.FirebaseFirestoreDataSource
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.app.AppNavigation
 import com.example.notepad.ui.theme.NotepadTheme
+import com.example.notepad.widget.CalendarWidgetUpdater
 import com.example.notepad.widget.QuickNoteWidgetContract
 import com.example.notepad.widget.QuickNoteWidgetUpdater
 import com.example.notepad.widget.ToDoWidgetUpdater
@@ -95,6 +96,7 @@ class MainActivity : ComponentActivity() {
                 QuickNoteWidgetUpdater.notifyDataChanged(this@MainActivity)
                 ToDoWidgetUpdater.notifyDataChanged(this@MainActivity)
                 TodayScheduleWidgetUpdater.notifyDataChanged(this@MainActivity)
+                CalendarWidgetUpdater.notifyDataChanged(this@MainActivity)
             }
         )
 
@@ -102,10 +104,12 @@ class MainActivity : ComponentActivity() {
         taskRepository.onLocalDataChanged = {
             ToDoWidgetUpdater.notifyDataChanged(this)
             TodayScheduleWidgetUpdater.notifyDataChanged(this)
+            CalendarWidgetUpdater.notifyDataChanged(this)
             cloudSyncManager.requestSyncOnDataChanged()
         }
         noteRepository.onLocalDataChanged = {
             QuickNoteWidgetUpdater.notifyDataChanged(this)
+            CalendarWidgetUpdater.notifyDataChanged(this)
             cloudSyncManager.requestSyncOnDataChanged()
         }
         cloudSyncManager.startObserving(lifecycleScope)

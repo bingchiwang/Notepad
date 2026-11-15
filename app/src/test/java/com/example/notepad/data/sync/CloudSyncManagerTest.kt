@@ -1,6 +1,5 @@
 package com.example.notepad.data.sync
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.example.notepad.data.local.dao.CategoryDao
 import com.example.notepad.data.local.dao.NoteDao
 import com.example.notepad.data.local.dao.PomodoroDao
@@ -23,6 +22,7 @@ import com.example.notepad.data.preferences.CalendarStyle
 import com.example.notepad.data.preferences.NotificationPreferences
 import com.example.notepad.data.preferences.SyncPreferences
 import com.example.notepad.data.preferences.SyncSettings
+import com.example.notepad.data.preferences.TestPreferenceDataStore
 import com.example.notepad.data.preferences.ThemeMode
 import com.example.notepad.data.preferences.ThemePreferences
 import com.example.notepad.data.repository.NoteRepository
@@ -349,13 +349,13 @@ class CloudSyncManagerTest {
         val dir = tempFolder.newFolder(name)
         val storeScope = CoroutineScope(Job() + UnconfinedTestDispatcher(testScheduler))
         val syncPrefs = SyncPreferences(
-            PreferenceDataStoreFactory.create(scope = storeScope) { File(dir, "sync.preferences_pb") }
+            TestPreferenceDataStore.create(scope = storeScope) { File(dir, "sync.preferences_pb") }
         )
         val themePrefs = ThemePreferences(
-            PreferenceDataStoreFactory.create(scope = storeScope) { File(dir, "theme.preferences_pb") }
+            TestPreferenceDataStore.create(scope = storeScope) { File(dir, "theme.preferences_pb") }
         )
         val notifPrefs = NotificationPreferences(
-            PreferenceDataStoreFactory.create(scope = storeScope) { File(dir, "notif.preferences_pb") }
+            TestPreferenceDataStore.create(scope = storeScope) { File(dir, "notif.preferences_pb") }
         )
         syncPrefs.updateConfiguration(
             syncEnabled = true,

@@ -1,6 +1,5 @@
 package com.example.notepad.data.preferences
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -31,7 +30,7 @@ class NoteDraftPreferencesTest {
         val dispatcher = UnconfinedTestDispatcher(testScheduler)
         val scope1 = CoroutineScope(Job() + dispatcher)
         val prefs1 = NoteDraftPreferences(
-            PreferenceDataStoreFactory.create(scope = scope1, produceFile = { file })
+            TestPreferenceDataStore.create(scope = scope1, produceFile = { file })
         )
 
         val initial = prefs1.getDraftOnce()
@@ -51,7 +50,7 @@ class NoteDraftPreferencesTest {
 
         val scope2 = CoroutineScope(Job() + dispatcher)
         val prefs2 = NoteDraftPreferences(
-            PreferenceDataStoreFactory.create(scope = scope2, produceFile = { file })
+            TestPreferenceDataStore.create(scope = scope2, produceFile = { file })
         )
         val restored = prefs2.getDraftOnce()
         assertTrue(restored.hasActiveDraft)

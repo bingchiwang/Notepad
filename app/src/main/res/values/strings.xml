@@ -6,4 +6,6 @@
     <string name="widget_todo_description">在桌面直接檢視尚未完成的待辦任務、截止日期與高／中／低優先級，並直接勾選完成項目。</string>
     <string name="widget_today_schedule_name">今日行程小工具</string>
     <string name="widget_today_schedule_description">在桌面查看今天到期的待辦任務、今日完成進度百分比與即將到來的提醒通知。</string>
+    <string name="widget_calendar_name">月曆桌面小工具</string>
+    <string name="widget_calendar_description">顯示完整月份與每日記事／待辦事項文字標籤，支援月份切換、查看該日清單與快速新增。</string>
 </resources>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_cal_cell_root"
+    android:layout_width="0dp"
+    android:layout_height="match_parent"
+    android:layout_margin="1.5dp"
+    android:layout_weight="1"
+    android:background="@drawable/widget_cal_cell_bg"
+    android:orientation="vertical"
+    android:padding="2.5dp">
+
+    <TextView
+        android:id="@+id/widget_cal_day_number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="start"
+        android:maxLines="1"
+        android:paddingHorizontal="2dp"
+        android:text="1"
+        android:textColor="@color/widget_text_primary"
+        android:textSize="10.5sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_cal_event_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1.5dp"
+        android:background="@drawable/widget_cal_note_pill_bg"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingHorizontal="3dp"
+        android:paddingVertical="1dp"
+        android:textColor="@color/widget_cal_note_text"
+        android:textSize="8.5sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_cal_event_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1.5dp"
+        android:background="@drawable/widget_cal_todo_pill_bg"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:paddingHorizontal="3dp"
+        android:paddingVertical="1dp"
+        android:textColor="@color/widget_cal_todo_text"
+        android:textSize="8.5sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_cal_more_badge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1.5dp"
+        android:background="@drawable/widget_cal_more_pill_bg"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:paddingHorizontal="2dp"
+        android:paddingVertical="0.5dp"
+        android:textColor="@color/widget_cal_more_text"
+        android:textSize="8sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+</LinearLayout>

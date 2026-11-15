@@ -114,6 +114,8 @@ fun AppNavigation(
     var activePomodoroTask by remember { mutableStateOf<String?>("自由專注") }
     var openAddToDoFromWidget by remember { mutableStateOf(false) }
     var initialTaskTrackFromWidget by remember { mutableStateOf<Int?>(null) }
+    var calendarDateFromWidget by remember { mutableStateOf<Long?>(null) }
+    var openCalendarQuickAddFromWidget by remember { mutableStateOf(false) }
 
     val currentTopRoute = navigationState.topLevelRoute
     val currentLeafRoute = navigationState.backStacks[currentTopRoute]?.lastOrNull() ?: currentTopRoute
@@ -182,6 +184,16 @@ fun AppNavigation(
                 }
                 initialTaskTrackFromWidget = 1
             }
+            is WidgetDeepLink.OpenCalendarDay -> {
+                navigationState.topLevelRoute = CalendarRoute
+                navigationState.backStacks[CalendarRoute]?.let { calendarStack ->
+                    while (calendarStack.size > 1) {
+                        calendarStack.removeLastOrNull()
+                    }
+                }
+                calendarDateFromWidget = deepLink.dateMillis
+                openCalendarQuickAddFromWidget = deepLink.openQuickAdd
+            }
         }
         onConsumeWidgetDeepLink()
     }
@@ -212,7 +224,8 @@ fun AppNavigation(
                 noteRepository = noteRepository,
                 noteDraftPreferences = noteDraftPreferences,
                 onNavigateBack = { navigator.goBack() },
-                initialCategoryId = key.initialCategoryId
+                initialCategoryId = key.initialCategoryId,
+                initialCreatedAtMillis = key.initialCreatedAtMillis
             )
         }
 
@@ -255,7 +268,26 @@ fun AppNavigation(
                 calendarFacade = calendarFacade,
                 taskRepository = taskRepository,
                 notificationsEnabled = notificationsEnabled,
-                personalization = personalization
+                personalization = personalization,
+                noteRepository = noteRepository,
+                onNoteClick = { noteId ->
+                    navigator.navigate(NoteEditorRoute(noteId = noteId))
+                },
+                onToDoClick = { taskId ->
+                    navigator.navigate(TaskDetailRoute(taskId = taskId))
+                },
+                onQuickCreateNoteForDate = { targetDateMillis ->
+                    navigator.navigate(
+                        NoteEditorRoute(
+                            noteId = null,
+                            initialCreatedAtMillis = targetDateMillis
+                        )
+                    )
+                },
+                initialSelectedDateMillis = calendarDateFromWidget,
+                onConsumeInitialDate = { calendarDateFromWidget = null },
+                openQuickAddOnLaunch = openCalendarQuickAddFromWidget,
+                onConsumeOpenQuickAdd = { openCalendarQuickAddFromWidget = false }
             )
         }
 

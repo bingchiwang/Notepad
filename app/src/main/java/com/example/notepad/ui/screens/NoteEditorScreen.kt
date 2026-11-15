@@ -48,7 +48,8 @@ fun NoteEditorScreen(
     noteRepository: NoteRepository,
     noteDraftPreferences: NoteDraftPreferences,
     onNavigateBack: () -> Unit,
-    initialCategoryId: Int? = null
+    initialCategoryId: Int? = null,
+    initialCreatedAtMillis: Long? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -265,7 +266,7 @@ fun NoteEditorScreen(
                                                 isPinned = isPinned,
                                                 categoryId = selectedCategoryId,
                                                 color = selectedColor,
-                                                createdAt = now,
+                                                createdAt = initialCreatedAtMillis ?: now,
                                                 updatedAt = now
                                             )
                                         )

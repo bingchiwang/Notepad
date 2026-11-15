@@ -38,4 +38,22 @@
     <color name="widget_progress_track">#FFE2E8F0</color>
     <color name="widget_reminder_today_bg">#FFDBEAFE</color>
     <color name="widget_reminder_today_text">#FF1D4ED8</color>
+
+    <!-- 月曆桌面小工具配色（淺色模式） -->
+    <color name="widget_cal_today_bg">#FFEBF2FF</color>
+    <color name="widget_cal_today_border">#FF2563EB</color>
+    <color name="widget_cal_today_text">#FF1D4ED8</color>
+    <color name="widget_cal_cell_bg">#FFFFFFFF</color>
+    <color name="widget_cal_cell_border">#FFE5E7EB</color>
+    <color name="widget_cal_cell_other_bg">#FFF8FAFC</color>
+    <color name="widget_cal_text_other">#FF9CA3AF</color>
+    <color name="widget_cal_note_bg">#FFFEF3C7</color>
+    <color name="widget_cal_note_text">#FF92400E</color>
+    <color name="widget_cal_todo_bg">#FFDBEAFE</color>
+    <color name="widget_cal_todo_text">#FF1E40AF</color>
+    <color name="widget_cal_todo_done_bg">#FFD1FAE5</color>
+    <color name="widget_cal_todo_done_text">#FF065F46</color>
+    <color name="widget_cal_more_bg">#FFE5E7EB</color>
+    <color name="widget_cal_more_text">#FF374151</color>
+    <color name="widget_cal_nav_bg">#FFF1F5F9</color>
 </resources>

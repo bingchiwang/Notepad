@@ -83,6 +83,7 @@ class QuickNoteWidgetProvider : AppWidgetProvider() {
                     prefillCategoryId = resolved.prefillCategoryId
                 )
                 appWidgetManager.updateAppWidget(appWidgetId, views)
+                @Suppress("DEPRECATION")
                 appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_notes_list)
             }
         }
