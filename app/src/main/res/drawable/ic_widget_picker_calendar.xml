@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- 圓角底塊（皇家藍） -->
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M12,4h24c4.42,0 8,3.58 8,8v24c0,4.42 -3.58,8 -8,8H12c-4.42,0 -8,-3.58 -8,-8V12c0,-4.42 3.58,-8 8,-8z" />
+    <!-- 月曆網格白色圖示 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M32,13h-1v-2h-2v2H19v-2h-2v2h-1c-1.66,0 -3,1.34 -3,3v17c0,1.66 1.34,3 3,3h16c1.66,0 3,-1.34 3,-3V16C35,14.34 33.66,13 32,13zM32,33H16V20h16V33zM18,22h3v3h-3V22zM22.5,22h3v3h-3V22zM27,22h3v3h-3V22zM18,27h3v3h-3V27zM22.5,27h3v3h-3V27zM27,27h3v3h-3V27z" />
+</vector>

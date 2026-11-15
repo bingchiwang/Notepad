@@ -119,11 +119,13 @@
 - **即將到來的提醒**：過濾尚未觸發且未過期的 `Reminder`（`!isFired && triggerAt > now`），依觸發時間升冪排序並依距離呈現「`今天 HH:mm`」、「`明天 HH:mm`」或「`MM/dd HH:mm`」；點擊可直達 `TaskRoute` 之「提醒事項」分軌。
 - **即時聯動刷新**：`ReminderReceiver`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆即時觸發 `TodayScheduleWidgetUpdater.notifyDataChanged`。
 
-### 3.11 月曆桌面小工具（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences`）
-- **完整月份與星期顯示**：透過 `CalendarWidgetLogic.resolveMonthGrid` 產生固定 6 週 × 7 天（42 格，週日為首日）月曆格網與「`YYYY年 M月`」標題，今天日期以藍色底色與藍色外框（`widget_cal_today_bg.xml`）及藍字日號標示；透過 `CalendarWidgetPreferences` 為每個 `appWidgetId` 獨立保存當前顯示年月，支援點擊左右箭頭切換上／下個月及點擊標題回到當月。
-- **直接顯示文字標籤與多筆截斷規則（不使用小圓點）**：
-  - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
+### 3.11 月曆桌面小工具與全小工具圖示系統（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences`）
+- **完整月份與星期顯示**：透過 `CalendarWidgetLogic.resolveMonthGrid` 產生固定 6 週 × 7 天（42 格，週日為首日）月曆格網與「`YYYY年 M月`」標題（搭配 `ic_widget_calendar.xml` 標頭圖示），今天日期以藍色底色與藍色外框（`widget_cal_today_bg.xml`）及藍字日號標示；透過 `CalendarWidgetPreferences` 為每個 `appWidgetId` 獨立保存當前顯示年月，支援點擊左右箭頭切換上／下個月及點擊標題回到當月。
+- **直接顯示圖示＋文字標籤與多筆截斷規則（不使用小圓點）**：
+  - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以附帶類型圖示（`ic_widget_cal_event_note` / `ic_widget_cal_event_todo` / `ic_widget_cal_event_todo_done`）之單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
   - 每個日期格最多直接顯示 2 筆事項（`MAX_VISIBLE_EVENTS = 2`）；當同一天超過 2 筆事項時，自動計算剩餘筆數並顯示「`＋N 項`」標籤（例如共 5 筆時顯示前 2 筆及「`＋3 項`」）。
+- **四大桌面小工具圖示與預覽圖（Widget Picker Icons & Previews）**：
+  - 於 `AndroidManifest.xml` 為四大桌面小工具配置獨立高識別度圖示（`ic_widget_picker_note`、`ic_widget_picker_todo`、`ic_widget_picker_today`、`ic_widget_picker_calendar`），並於 `res/xml/*_widget_info.xml` 配置對應向量預覽圖（`widget_preview_*`）；小工具內部同步配備分類、記事文件、時間、截止日、標籤與進度統計圖示。
 - **點擊互動與深層連結**：
   - 點擊日期格或「`＋N 項`」：透過 `WidgetDeepLink.OpenCalendarDay(dateMillis, openQuickAdd = false)` 開啟 `CalendarRoute` 並跳轉至該日期，同時顯示該日記事清單、待辦清單與提醒清單。
   - 點擊格內記事膠囊：透過 `WidgetDeepLink.EditNote(noteId)` 直接開啟 `NoteEditorRoute` 編輯該篇記事。

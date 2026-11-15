@@ -307,16 +307,29 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             cellViews.setViewVisibility(pillViewId, View.VISIBLE)
             cellViews.setTextViewText(pillViewId, event.title)
 
-            val (bgRes, textColorRes) = when (event.type) {
-                CalendarEventType.NOTE -> R.drawable.widget_cal_note_pill_bg to R.color.widget_cal_note_text
+            val (bgRes, textColorRes, iconRes) = when (event.type) {
+                CalendarEventType.NOTE -> Triple(
+                    R.drawable.widget_cal_note_pill_bg,
+                    R.color.widget_cal_note_text,
+                    R.drawable.ic_widget_cal_event_note
+                )
                 CalendarEventType.TODO -> if (event.isCompleted) {
-                    R.drawable.widget_cal_todo_done_pill_bg to R.color.widget_cal_todo_done_text
+                    Triple(
+                        R.drawable.widget_cal_todo_done_pill_bg,
+                        R.color.widget_cal_todo_done_text,
+                        R.drawable.ic_widget_cal_event_todo_done
+                    )
                 } else {
-                    R.drawable.widget_cal_todo_pill_bg to R.color.widget_cal_todo_text
+                    Triple(
+                        R.drawable.widget_cal_todo_pill_bg,
+                        R.color.widget_cal_todo_text,
+                        R.drawable.ic_widget_cal_event_todo
+                    )
                 }
             }
             cellViews.setInt(pillViewId, "setBackgroundResource", bgRes)
             cellViews.setTextColor(pillViewId, ContextCompat.getColor(context, textColorRes))
+            cellViews.setTextViewCompoundDrawablesRelative(pillViewId, iconRes, 0, 0, 0)
 
             val clickIntent = when (event.type) {
                 CalendarEventType.NOTE -> QuickNoteWidgetContract.buildEditNoteIntent(

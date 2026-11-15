@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- 圓角底塊（暖琥珀金） -->
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M12,4h24c4.42,0 8,3.58 8,8v24c0,4.42 -3.58,8 -8,8H12c-4.42,0 -8,-3.58 -8,-8V12c0,-4.42 3.58,-8 8,-8z" />
+    <!-- 記事本與畫筆白色圖示 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M14,30.5V34h3.5l10.32,-10.32l-3.5,-3.5L14,30.5zM30.71,20.29c0.39,-0.39 0.39,-1.02 0,-1.41l-2.09,-2.09c-0.39,-0.39 -1.02,-0.39 -1.41,0l-1.71,1.71l3.5,3.5L30.71,20.29zM14,14h12v3H14V14z" />
+</vector>

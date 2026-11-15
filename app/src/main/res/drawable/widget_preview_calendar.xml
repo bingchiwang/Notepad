@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="180dp"
+    android:viewportWidth="240"
+    android:viewportHeight="180">
+    <!-- 卡片外框 -->
+    <path
+        android:fillColor="#FFF8FAFC"
+        android:strokeColor="#FFD8E0EC"
+        android:strokeWidth="1.5"
+        android:pathData="M16,4h208c6.63,0 12,5.37 12,12v148c0,6.63 -5.37,12 -12,12H16c-6.63,0 -12,-5.37 -12,-12V16C4,9.37 9.37,4 16,4z" />
+    <!-- 頂部月份導覽與新增 -->
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M16,14h14v14H16V14z" />
+    <path
+        android:fillColor="#FF1F2937"
+        android:pathData="M76,16h70v10H76V16z" />
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M186,12h38v18h-38V12z" />
+    <!-- 月曆格網示意（含藍色今日格與暖琥珀記事／湛藍待辦文字膠囊） -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M16,40h64v40H16V40zM88,40h64v40H88V40zM160,40h64v40H160V40zM16,86h64v40H16V86zM160,86h64v40H160V86zM16,132h64v36H16V132zM88,132h64v36H88V132zM160,132h64v36H160V132z" />
+    <!-- 今天日期格（藍色底＋藍色邊框） -->
+    <path
+        android:fillColor="#FFEBF2FF"
+        android:strokeColor="#FF2563EB"
+        android:strokeWidth="1.5"
+        android:pathData="M88,86h64v40H88V86z" />
+    <!-- 格內文字膠囊（記事琥珀底／待辦藍底／＋3項） -->
+    <path
+        android:fillColor="#FFFEF3C7"
+        android:pathData="M20,54h56v9H20V54zM92,100h56v9H92V100z" />
+    <path
+        android:fillColor="#FFDBEAFE"
+        android:pathData="M20,66h56v9H20V66zM92,112h56v9H92V112zM164,54h56v9H164V54z" />
+</vector>

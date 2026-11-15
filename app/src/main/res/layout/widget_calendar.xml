@@ -15,6 +15,13 @@
         android:orientation="horizontal"
         android:paddingBottom="6dp">
 
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="@string/widget_calendar_name"
+            android:src="@drawable/ic_widget_calendar" />
+
         <LinearLayout
             android:id="@+id/widget_cal_prev_button"
             android:layout_width="28dp"

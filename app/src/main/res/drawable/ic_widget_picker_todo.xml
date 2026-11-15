@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- 圓角底塊（翡翠綠） -->
+    <path
+        android:fillColor="#FF10B981"
+        android:pathData="M12,4h24c4.42,0 8,3.58 8,8v24c0,4.42 -3.58,8 -8,8H12c-4.42,0 -8,-3.58 -8,-8V12c0,-4.42 3.58,-8 8,-8z" />
+    <!-- 待辦勾選清單白色圖示 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M35,17H23v3h12V17zM35,28H23v3h12V28zM15.5,21L12,17.5l1.41,-1.41l2.09,2.09l4.24,-4.24l1.41,1.41L15.5,21zM15.5,32L12,28.5l1.41,-1.41l2.09,2.09l4.24,-4.24l1.41,1.41L15.5,32z" />
+</vector>

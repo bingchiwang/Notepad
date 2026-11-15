@@ -53,6 +53,7 @@
         <receiver
             android:name=".widget.QuickNoteWidgetProvider"
             android:exported="true"
+            android:icon="@drawable/ic_widget_picker_note"
             android:label="@string/widget_quick_note_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -71,6 +72,7 @@
         <receiver
             android:name=".widget.ToDoWidgetProvider"
             android:exported="true"
+            android:icon="@drawable/ic_widget_picker_todo"
             android:label="@string/widget_todo_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -89,6 +91,7 @@
         <receiver
             android:name=".widget.TodayScheduleWidgetProvider"
             android:exported="true"
+            android:icon="@drawable/ic_widget_picker_today"
             android:label="@string/widget_today_schedule_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -107,6 +110,7 @@
         <receiver
             android:name=".widget.CalendarWidgetProvider"
             android:exported="true"
+            android:icon="@drawable/ic_widget_picker_calendar"
             android:label="@string/widget_calendar_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

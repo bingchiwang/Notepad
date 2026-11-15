@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="150dp"
+    android:viewportWidth="240"
+    android:viewportHeight="150">
+    <!-- 卡片外框 -->
+    <path
+        android:fillColor="#FFF8FAFC"
+        android:strokeColor="#FFD8E0EC"
+        android:strokeWidth="1.5"
+        android:pathData="M16,4h208c6.63,0 12,5.37 12,12v118c0,6.63 -5.37,12 -12,12H16c-6.63,0 -12,-5.37 -12,-12V16C4,9.37 9.37,4 16,4z" />
+    <!-- 頂部圖示與標題 -->
+    <path
+        android:fillColor="#FF6366F1"
+        android:pathData="M18,15h14v14H18V15z" />
+    <path
+        android:fillColor="#FF1F2937"
+        android:pathData="M38,17h56v10H38V17z" />
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M182,13h42v18h-42V13z" />
+    <!-- 今日完成進度條卡片 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M16,38h208v32H16V38z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M24,44h70v6H24V44z" />
+    <path
+        android:fillColor="#FFE2E8F0"
+        android:pathData="M24,56h192v7H24V56z" />
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M24,56h130v7H24V56z" />
+    <!-- 今日到期待辦與即將到來提醒 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M16,78h208v28H16V78z" />
+    <path
+        android:fillColor="#FFEF4444"
+        android:pathData="M20,82h4v20h-4V82z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M32,87h110v8H32V87z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M16,112h208v26H16V112z" />
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M20,116h4v18h-4V116z" />
+    <path
+        android:fillColor="#FFDBEAFE"
+        android:pathData="M168,119h46v12h-46V119z" />
+</vector>

@@ -9,6 +9,13 @@
     android:paddingHorizontal="12dp"
     android:paddingVertical="10dp">
 
+    <ImageView
+        android:layout_width="15dp"
+        android:layout_height="15dp"
+        android:layout_marginEnd="6dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_widget_checklist" />
+
     <TextView
         android:id="@+id/widget_today_empty_row_text"
         android:layout_width="match_parent"

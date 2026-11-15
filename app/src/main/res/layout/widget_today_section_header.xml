@@ -8,6 +8,14 @@
     android:paddingTop="4dp"
     android:paddingBottom="2dp">
 
+    <ImageView
+        android:id="@+id/widget_today_section_icon"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginEnd="5dp"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_widget_checklist" />
+
     <TextView
         android:id="@+id/widget_today_section_title"
         android:layout_width="0dp"

@@ -40,6 +40,8 @@
             android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:background="@drawable/widget_chip_bg"
+            android:drawableStart="@drawable/ic_widget_category"
+            android:drawablePadding="4dp"
             android:ellipsize="end"
             android:gravity="center_vertical"
             android:maxLines="1"
@@ -101,6 +103,13 @@
             android:orientation="vertical"
             android:padding="16dp"
             android:visibility="gone">
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginBottom="6dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_note" />
 
             <TextView
                 android:id="@+id/widget_empty_title"

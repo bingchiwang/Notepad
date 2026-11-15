@@ -27,7 +27,13 @@ object TodayScheduleWidgetRowBinder {
     fun bindRow(context: Context, row: TodayScheduleRow): RemoteViews {
         return when (row) {
             is TodayScheduleRow.SectionHeader -> {
+                val sectionIconRes = if (row.title.contains("提醒")) {
+                    R.drawable.ic_widget_alarm
+                } else {
+                    R.drawable.ic_widget_checklist
+                }
                 RemoteViews(context.packageName, R.layout.widget_today_section_header).apply {
+                    setImageViewResource(R.id.widget_today_section_icon, sectionIconRes)
                     setTextViewText(R.id.widget_today_section_title, row.title)
                     setTextViewText(R.id.widget_today_section_count, row.countText)
                 }

@@ -100,6 +100,13 @@
             android:padding="16dp"
             android:visibility="gone">
 
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginBottom="6dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_checklist" />
+
             <TextView
                 android:id="@+id/widget_todo_empty_title"
                 android:layout_width="wrap_content"

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="120dp"
+    android:viewportWidth="240"
+    android:viewportHeight="120">
+    <!-- 卡片外框 -->
+    <path
+        android:fillColor="#FFF8FAFC"
+        android:strokeColor="#FFD8E0EC"
+        android:strokeWidth="1.5"
+        android:pathData="M16,4h208c6.63,0 12,5.37 12,12v88c0,6.63 -5.37,12 -12,12H16c-6.63,0 -12,-5.37 -12,-12V16C4,9.37 9.37,4 16,4z" />
+    <!-- 頂部圖示與標題 -->
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M18,16h14v14H18V16z" />
+    <path
+        android:fillColor="#FF1F2937"
+        android:pathData="M38,18h54v10H38V18z" />
+    <!-- 新增按鈕 -->
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M182,14h42v18h-42V14z" />
+    <!-- 記事卡片 1 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M16,40h208v32H16V40z" />
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M20,44h4v24h-4V44z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M30,46h95v7H30V46z" />
+    <path
+        android:fillColor="#FF9CA3AF"
+        android:pathData="M30,58h150v6H30V58z" />
+    <!-- 記事卡片 2 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE5E7EB"
+        android:strokeWidth="1"
+        android:pathData="M16,78h208v30H16V78z" />
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M20,82h4v22h-4V82z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M30,84h80v7H30V84z" />
+    <path
+        android:fillColor="#FF9CA3AF"
+        android:pathData="M30,95h130v6H30V95z" />
+</vector>
