@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -23,27 +24,32 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.repository.TaskRepository
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import com.example.notepad.ui.components.AppButtonThemeDefaults
 import com.example.notepad.ui.components.DateFormatter
+import com.example.notepad.ui.components.showFeedback
 import com.example.notepad.ui.theme.ColorContrastUtils
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
+/**
+ * 番茄鐘工作模式列舉（專注工作 25 分鐘、短暫休息 5 分鐘、深度休息 15 分鐘）
+ */
 enum class PomodoroMode(val title: String, val minutes: Int, val color: Color) {
     FOCUS("專注工作", 25, Color(0xFFE53935)),
     SHORT_BREAK("短暫休息", 5, Color(0xFF43A047)),
     LONG_BREAK("深度休息", 15, Color(0xFF1E88E5))
 }
 
+/**
+ * 專注番茄鐘主畫面（支援三段式計時、待辦目標綁定、今日完成統計與自動記錄）
+ */
 @Composable
 fun PomodoroScreen(
     taskRepository: TaskRepository,
     initialTaskTitle: String? = null
 ) {
+    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
     // Today's midnight millis
@@ -92,21 +98,26 @@ fun PomodoroScreen(
         } else if (isRunning && timeLeftSeconds <= 0) {
             isRunning = false
             if (currentMode == PomodoroMode.FOCUS) {
-                // Save completed pomodoro record
+                // 自動儲存已完成之專注番茄紀錄並提供即時提示反饋
                 coroutineScope.launch {
-                    taskRepository.insertPomodoroRecord(
-                        PomodoroRecord(
-                            timestamp = System.currentTimeMillis(),
-                            durationMinutes = PomodoroMode.FOCUS.minutes,
-                            taskTitle = taskTitle,
-                            date = todayMillis
+                    try {
+                        taskRepository.insertPomodoroRecord(
+                            PomodoroRecord(
+                                timestamp = System.currentTimeMillis(),
+                                durationMinutes = PomodoroMode.FOCUS.minutes,
+                                taskTitle = taskTitle,
+                                date = todayMillis
+                            )
                         )
-                    )
+                        showFeedback(context, "🍅 專注時段完成！已自動記錄 ${PomodoroMode.FOCUS.minutes} 分鐘")
+                    } catch (e: Exception) {
+                        showFeedback(context, "紀錄儲存失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
                 }
-                // Switch to short break
+                // 自動切換至短暫休息模式
                 selectMode(PomodoroMode.SHORT_BREAK)
             } else {
-                // Switch back to focus
+                showFeedback(context, "☕ 休息結束，準備開始下一輪專注！")
                 selectMode(PomodoroMode.FOCUS)
             }
         }

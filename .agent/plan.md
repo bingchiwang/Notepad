@@ -1,40 +1,49 @@
-# 專案計劃 (Project Plan)
+# 專案開發計劃 (Project Plan)
 
-雙軌分類：獨立劃分 📋 待做事件（可設到期日、勾選完成）與 🔔 提醒事項（可選提醒日期）。
-農曆萬年曆：完整離線演算 1900–2100 年農曆日、天干地支生肖、二十四節氣與傳統節慶。
-自選色彩標記：提供 8 款經典色票與原生色彩選盤，膠囊標籤自動計算最佳字體對比度。
-🚨 到期日前一天特殊邊框警示：針對明日到期的待辦事項，卡片與月曆同步觸發橘紅呼吸動態發光虛線外框與 ⚠️ 明日到期！ 跳動徽章。
-做成手機軟體
-用Facade 與 Repository規則寫
-上傳到github，往後修改檔案後自動上傳到github
+## 專案簡介：農曆萬年曆與雙軌待辦提醒記事 App (Lunar To-Do & Notepad App)
 
-## 專案簡介 (Project Brief)
+### 專案願景與核心目標 (Project Vision & Goals)
+- **記事與分類全文搜尋**：提供支援草稿自動保存、釘選置頂、分類防重管理與標題／內文即時搜尋的記事系統。
+- **雙軌任務與提醒管理**：獨立劃分 📋 **待做事件**（高／中／低優先級、截止日設定、進行中與已完成分離）與 🔔 **提醒事項**（跨年月自由多選提醒日期、精確系統通知、任務完成自動取消關聯提醒）。
+- **離線農曆萬年曆**：完整離線演算 1900–2100 年農曆日、天干地支生肖、二十四節氣與傳統節慶，支援 6 款自訂月曆樣式。
+- **即將到期特殊邊框警示**：針對明日到期的待辦事項，於卡片與月曆同步觸發橘紅呼吸動態發光虛線外框與 `⚠️ 明日到期！` 跳動徽章。
+- **個人化設定與 WCAG 防重色保護**：支援淺色／深色／系統主題、自訂按鍵顏色、月曆樣式、4 段字體大小、通知開關與同步狀態管理；當文字與背景顏色相近或一致時自動切換高對比文字顏色。
+- **本地優先 Firebase 雲端資料同步**：離線優先寫入本機 Room v5，連網時自動與 Firebase Cloud Firestore 雙向同步並採最新修改時間優先（LWW）智慧合併。
+- **廣泛系統相容與自動化交付**：向下相容 **Android 8.0（API 26）**，採用 Facade 與 Repository 模式，每次修改檔案後通過測試並同步推送至 GitHub。
 
-# 專案簡介：農曆萬年曆與雙軌任務提醒 App (Lunar To-Do & Reminder App)
+---
 
-## 核心功能 (Features)
-1. **雙軌任務管理 (Dual-Track Task Management)**：獨立處理待辦事項（可設到期日與完成勾選框）與提醒事項（可指定通知時間）。
-2. **離線農曆萬年曆 (Offline Lunar Perpetual Calendar)**：完整功能之離線萬年曆，支援計算 1900–2100 年農曆日期、天干地支生肖、二十四節氣與傳統節日。支援月曆視覺化網格、當月/當日待做事項清單、日期快速跳轉。
-3. **智慧自訂色彩標記 (Smart Custom Color Tagging)**：提供 8 款經典預設色彩（經典藍、森林綠、琥珀橙、珊瑚紅、典雅紫、蒂芬妮、明亮黃、質感灰），膠囊標籤依背景明度自動計算並套用最佳文字對比度。
-4. **即將到期 UI 警示 (Imminent Deadline UI Alerts)**：針對次日到期之項目提供進階視覺提示，任務卡片與月曆視圖同步觸發橘紅色「呼吸」發光虛線外框與彈跳「⚠️ 明日到期！」徽章。
-5. **每日時間規劃表 (Daily Time Planner)**：時間軸視覺化日程安排，支援開始/結束時間區塊、分類標籤、完成打勾與每日進度百分比。
-6. **番茄鐘專注計時器 (Pomodoro Timer)**：支援專注工作 (25m)、短暫休息 (5m)、深度休息 (15m)，搭配環狀動態倒數進度條、目標任務連動、今日番茄數統計與歷史紀錄。
-7. **自動化 GitHub 工作流 (CI/CD)**：專案已推送到 GitHub 儲存庫，每次修改後自動 commit 並同步 push。
+## 核心功能模組 (Core Feature Modules)
+1. **記事管理與分類搜尋 (`NotesScreen` / `NoteEditorScreen`)**：唯一識別碼、空白標題／內文支援、釘選置頂、DataStore 草稿防遺失、分類防重與刪除轉移、標題與內文全文檢索。
+2. **雙軌任務與多日提醒 (`TaskScreen` / `TaskDetailScreen` / `ReminderScheduler`)**：待辦非空驗證、高／中／低優先級、進行中與已完成分離、截止日與提醒日分離管理、完成任務連動取消未觸發提醒、跨年月多日提醒排程。
+3. **離線農曆萬年曆 (`LunarCalendarFacade` / `CalendarScreen`)**：1900–2100 年農曆日期、干支生肖、二十四節氣與中西節慶離線換算，連動當日待辦與提醒。
+4. **即將到期 UI 警示 (`breathingDashedBorder` / `BouncingBadge`)**：針對次日到期未完成項目觸發橘紅呼吸發光虛線外框與彈跳徽章。
+5. **每日時間規劃表 (`ScheduleScreen`)**：時間軸視覺化日程安排、分類色彩標記、完成打勾與當日完成率進度條、一鍵連動番茄鐘。
+6. **番茄鐘專注計時器 (`PomodoroScreen`)**：支援專注工作 (25m)、短暫休息 (5m)、深度休息 (15m)，搭配環狀動態倒數、目標任務綁定、今日番茄數統計與歷史紀錄。
+7. **Firebase 雲端雙向同步 (`CloudSyncManager` / `FirebaseFirestoreDataSource`)**：Offline-First 本地優先儲存、離線刪除墓碑（`SyncTombstone`）、網路恢復自動上傳、`lastSyncAt` 記錄與 `SyncConflictResolver` 最新修改優先合併。
+8. **個人化設定管理中心 (`AppSettingsDialog` / `ColorContrastUtils` / `CalendarThemeResolver`)**：自訂按鍵顏色、6 款月曆樣式、WCAG 自動文字對比防重色、4 段字體大小、通知開關與同步狀態儀表板。
+
+---
 
 ## 核心技術棧 (High-Level Tech Stack)
-* **開發語言 (Language)**：Kotlin
-* **UI 框架 (UI Framework)**：Jetpack Compose (Material 3)
-* **導航與自適應策略 (Navigation & Adaptive Strategy)**：**Jetpack Navigation 3** 與 **Compose Material Adaptive** 函式庫。
-* **架構設計 (Architecture)**：**外觀模式 (Facade Pattern)** 與 **倉儲模式 (Repository Pattern)**。
-* **核心相依套件 (Core Dependencies)**：Kotlin Coroutines / Flow。
-* **資料持久化 (Persistence)**：Room Database（包含 ToDo、Reminder、TimeBlock、PomodoroRecord 實體與 DAO）。
-* **版本控制 (Version Control)**：Git 與 GitHub Actions。
+* **開發語言 (Language)**：Kotlin 2.0+ (Coroutines / Flow)
+* **系統版本支援 (SDK Support)**：`minSdk = 26` (Android 8.0 Oreo) ~ `targetSdk = 37`
+* **UI 框架 (UI Framework)**：Jetpack Compose (Material Design 3)
+* **導航與自適應策略 (Navigation & Adaptive Strategy)**：**Jetpack Navigation 3** 與 **Compose Material Adaptive** (`NavigationSuiteScaffold`)
+* **架構設計 (Architecture)**：**外觀模式 (Facade Pattern)** + **倉儲模式 (Repository Pattern)** + **Offline-First Cloud Sync**
+* **資料持久化 (Persistence)**：
+  * **Room Database v5**：包含 `Note`、`Category`、`ToDo`、`Reminder`、`TimeBlock`、`PomodoroRecord`、`SyncTombstone` 共 7 個實體與對應 DAO（含 `MIGRATION_3_4` 與 `MIGRATION_4_5`）。
+  * **DataStore Preferences**：包含 `ThemePreferences`、`NotificationPreferences`、`NoteDraftPreferences`、`SyncPreferences`。
+* **雲端服務 (Cloud Backend)**：Firebase BOM (`35.1.0`) + Cloud Firestore
+* **品質驗證與 CI/CD**：12 個單元測試套件（50 項測試）、Android Lint 靜態檢查、GitHub Actions (`.github/workflows/android.yml`)
 
-## 實作步驟 (Implementation Steps)
+---
+
+## 實作階段與任務紀錄 (Implementation Tasks)
 
 ### Task_1_DataLayer: 設定 Room 資料庫，包含 ToDo、Reminder、TimeBlock、PomodoroRecord 實體、DAO，並為雙軌任務與日程實作 Repository 模式。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** 建立 Room Database (v2)，包含 ToDo (含到期日、色彩、標籤)、Reminder、TimeBlock (每日排程)、PomodoroRecord (番茄鐘紀錄)，並完成 TaskRepository 抽象化封裝。
+- **更新記錄 (Updates):** 建立 Room Database，包含 `ToDo`、`Reminder`、`TimeBlock`、`PomodoroRecord`，並完成 `TaskRepository` 抽象化封裝。
 - **驗收標準 (Acceptance Criteria):**
   - Room 資料庫設定完成且支援 migration
   - 各模組實體與 DAO 完整支援 CRUD 與響應式 Flow
@@ -56,12 +65,12 @@
 
 ### Task_4_ScreensNav: 實作畫面與導航：待辦清單、農曆月曆、每日時間規劃表、番茄鐘。
 - **狀態 (Status):** COMPLETED (已完成)
-- **更新記錄 (Updates):** 
-  - 待辦清單 (TaskScreen)：支援篩選狀態、新增待辦（設定到期日、色彩標籤、明日到期警示）。
-  - 農曆月曆 (CalendarScreen)：月曆月份切換、日期網格、農曆/節氣/節慶顯示、當日待辦事項連動與打勾。
-  - 每日時間規劃表 (ScheduleScreen)：日期切換、進度百分比、時間區塊清單、新增區塊、一鍵開啟番茄鐘。
-  - 番茄鐘 (PomodoroScreen)：25/5/15 分鐘三模式、環狀進度倒數、任務連動、今日番茄數統計與歷史紀錄。
-  - 導航系統 (AppNavigation)：使用 Navigation 3 + NavigationSuiteScaffold，支援自適應排版。
+- **更新記錄 (Updates):**
+  - 待辦清單 (`TaskScreen`)：支援篩選狀態、新增待辦（設定到期日、色彩標籤、明日到期警示）。
+  - 農曆月曆 (`CalendarScreen`)：月曆月份切換、日期網格、農曆/節氣/節慶顯示、當日待辦事項連動與打勾。
+  - 每日時間規劃表 (`ScheduleScreen`)：日期切換、進度百分比、時間區塊清單、新增區塊、一鍵開啟番茄鐘。
+  - 番茄鐘 (`PomodoroScreen`)：25/5/15 分鐘三模式、環狀進度倒數、任務連動、今日番茄數統計與歷史紀錄。
+  - 導航系統 (`AppNavigation`)：使用 Navigation 3 + `NavigationSuiteScaffold`，支援自適應排版。
 - **驗收標準 (Acceptance Criteria):**
   - 月曆完整展示該月日曆與當日/當月待做事項
   - 每日時間規劃表與番茄鐘正常運作
@@ -78,8 +87,8 @@
 ### Task_6_RemindersAndEditConfirm: 實作多日精確提醒系統、事件內容與日期編輯功能、刪除前二次確認對話框。
 - **狀態 (Status):** COMPLETED (已完成)
 - **更新記錄 (Updates):**
-  - 多日提醒與時間設定：支援一次勾選多天或自訂未來 14 天任選日期，結合自訂通知時/分與快速預設時段，透過 `AlarmManager` 與 `ReminderReceiver` 實現精確系統通知。
-  - 事件編輯功能：支援待做事項（To-Do）、提醒事項（Reminder）與排程（TimeBlock）隨時編輯標題、備註、到期日期/時間、分類標籤與色彩標記。
+  - 多日提醒與時間設定：支援跨年月自由多選日期，結合自訂通知時/分與快速預設時段，透過 `AlarmManager` 與 `ReminderReceiver` 實現精確系統通知。
+  - 事件編輯功能：支援待做事項（`ToDo`）、提醒事項（`Reminder`）與排程（`TimeBlock`）隨時編輯標題、備註、到期日期/時間、分類標籤與色彩標記。
   - 刪除前二次確認：所有待做、提醒與行程刪除按鈕皆綁定 `ConfirmDeleteDialog`，防範誤觸刪除。
 - **驗收標準 (Acceptance Criteria):**
   - 提醒事項支援多天多選與自訂時間
@@ -145,74 +154,22 @@
   - 字體大小、通知開關與同步狀態集中管理並支援 DataStore 持久化與雲端同步
   - 50 項單元測試與 `./gradlew build` 全數通過
 
-## 程式碼管理規範 (Code Management Guidelines)
-1. **每個類別及函式應有明確用途**：保持單一職責，確保每個組件結構清晰且功能專一。
-2. **避免重複撰寫相同程式碼**：遵循 DRY 原則，重複出現的邏輯抽象為共用函式或元件。
-3. **重要邏輯應加入適當註解**：在關鍵計算、狀態轉換、業務規則及演算法處加上清晰的繁體中文註解。
-4. **不得使用不明確的變數名稱**：嚴禁使用無語意的單字母或模糊縮寫，命名需能明確表達變數用途。
-5. **不得隨意刪除其他模組正在使用的程式碼**：尊重現有程式相依性，避免破壞其他模組或功能。
-6. **修改程式時必須確認相關功能仍可正常運作**：異動後執行測試與編譯檢查，確保回歸測試通過、穩定運作。
-7. **每次修改檔案皆須上傳 GitHub**：遵守專案規範，每次修改檔案後皆執行 commit 並推送至 GitHub 儲存庫。
+### Task_12_RuleAuditAndMarkdownOptimization: 全專案規則合規性檢查、程式碼註解與操作回饋強化、以及全部 Markdown 文件優化。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 逐一檢視全專案 Kotlin 原始碼，補齊 `LunarCalendarEngine`、`LunarCalendarFacade`、`LunarDate`、實體、DAO、導覽與共用 UI 元件之繁體中文 KDoc 註解並移除多餘匯入。
+  - 於 `TaskDetailScreen` 補齊關聯提醒之直接編輯與刪除二次確認對話框，並強化 `ScheduleScreen`、`CalendarScreen`、`PomodoroScreen` 狀態變更即時 `showFeedback` 回饋。
+  - 全面翻新與優化 `AGENTS.md`、`README.md`、`SPECIFICATION.md`、`CHANGELOG.md` 與 `.agent/plan.md`，確保所有規範、架構圖、資料模型與 50 項測試矩陣同步一致。
+- **驗收標準 (Acceptance Criteria):**
+  - 全專案原始碼與 `.md` 文件 100% 符合 `AGENTS.md` 所有規範
+  - 50 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
-## 操作規範 (Operation & UX Guidelines)
-1. **所有主要功能應容易找到**：介面佈局清晰直觀，核心功能分區明確，並在首頁及主要導覽直接呈現。
-2. **新增記事按鈕應保持明顯**：提供高識別度的懸浮按鈕（Floating Action Button）或顯著行動呼籲（CTA），確保使用者能即時新增待辦、提醒與行程。
-3. **刪除資料前應顯示確認訊息**：所有刪除行為（待辦、提醒、排程）皆需觸發二次確認對話框（`ConfirmDeleteDialog`），防止誤觸遺失資料。
-4. **儲存成功時應提供提示**：資料新增或編輯儲存成功後，立即提供清晰的即時提示反饋（如 Toast 或 Snackbar）。
-5. **錯誤發生時應顯示清楚訊息**：當輸入驗證未通過或執行異常時，應提供明確、易懂的錯誤訊息與引導說明，避免無反饋或靜默失敗。
-6. **不同頁面應保留一致的底部導覽方式**：採用全局統一的底部導覽（`NavigationSuiteScaffold`），在所有主要頁面保持相同標籤順序、圖示與導覽切換體驗。
-7. **重要操作應避免過多點擊步驟**：優化使用者操作路徑，提供快速預設選項（如今天、明天、常用時間段、一鍵勾選），減少繁瑣層級與點擊次數。
+---
 
-## 功能操作規範 (Functional & Operational Specifications)
-### 記事管理規範
-- 每篇記事必須具有唯一識別碼。
-- 標題及內容可以為空白。
-- 新增記事後必須保存資料。
-- 修改記事後必須更新修改時間。
-- 刪除記事必須同步更新資料狀態。
-- 釘選記事應顯示於列表前方。
-- 不得因切換頁面而遺失尚未保存的內容。
+## 專案規範索引 (Guidelines Reference)
 
-### 待辦事項規範
-- 每項任務必須具有唯一識別碼。
-- 任務名稱不得為空白。
-- 任務優先級分為高、中、低。
-- 完成任務後必須更新完成狀態。
-- 已完成任務不得繼續顯示為未完成。
-- 任務截止日期及提醒日期應分開管理。
-
-### 分類搜尋規範
-- 每個分類必須具有唯一識別碼。
-- 分類名稱不得重複。
-- 刪除分類時，必須處理該分類下的記事。
-- 搜尋必須支援標題及內文。
-- 搜尋結果應依照最新修改時間排序。
-- 搜尋無結果時必須顯示提示。
-
-### 提醒通知規範
-- 提醒時間必須符合有效日期及時間格式。
-- 提醒時間已過時，不應安排過去的通知。
-- 關閉通知功能後，不得繼續發送新提醒。
-- 任務完成後應取消尚未觸發的相關提醒。
-- 修改提醒時間時，必須更新原本的通知排程。
-- 必須處理 Android 通知權限。
-
-### 自訂主題規範
-- 支援淺色模式。
-- 支援深色模式。
-- 支援跟隨系統模式。
-- 主題切換後所有頁面必須保持一致。
-- 使用者設定必須保存，重新開啟 App 後仍然有效。
-
-## 功能異動與變更管理規範 (Change Management Guidelines)
-如果需要增加或修改功能，必須：
-1. **確認修改目的**
-2. **確認是否影響其他功能**
-3. **更新相關程式碼**
-4. **執行必要測試**
-5. **更新專案規格書及版本紀錄**（同步更新 `SPECIFICATION.md`、`CHANGELOG.md` 與 `README.md` 並推送 GitHub）
-
-
-
-
-
+本專案之完整規範請參閱根目錄 [`AGENTS.md`](../AGENTS.md)：
+- **一、程式碼管理規範**：單一職責、DRY 共用封裝、繁體中文註解、具語意命名、相依性保護、測試驗證、每次修改必上傳 GitHub。
+- **二、操作規範**：主要功能易找、明顯新增按鈕、刪除前二次確認、儲存成功即時提示、錯誤清楚提示、統一底部導覽、減少點擊步驟。
+- **三、功能操作規範**：涵蓋記事管理、待辦事項、分類搜尋、提醒通知、個人化設定與防重色、Firebase 雲端資料同步、Android 8.0（API 26）相容性。
+- **四、功能異動與變更管理規範**：1. 確認修改目的 → 2. 確認是否影響其他功能 → 3. 更新相關程式碼 → 4. 執行必要測試 → 5. 更新專案規格書及版本紀錄並推送 GitHub。

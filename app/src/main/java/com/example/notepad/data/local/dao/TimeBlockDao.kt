@@ -9,6 +9,9 @@ import androidx.room.Update
 import com.example.notepad.data.local.entity.TimeBlock
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * 每日時間規劃區塊資料存取介面（支援依日期排序查詢與雲端同步狀態追蹤）
+ */
 @Dao
 interface TimeBlockDao {
     @Query("SELECT * FROM time_blocks WHERE date = :date ORDER BY startTime ASC")

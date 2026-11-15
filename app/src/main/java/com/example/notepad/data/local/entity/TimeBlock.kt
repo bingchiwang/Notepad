@@ -5,6 +5,11 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.UUID
 
+/**
+ * 每日時間規劃區塊資料實體
+ * - 每筆行程具有唯一識別碼 (id) 與跨裝置同步識別碼 (syncId)
+ * - 支援開始/結束時段、完成狀態、分類標籤與色彩標記
+ */
 @Entity(
     tableName = "time_blocks",
     indices = [Index(value = ["syncId"], unique = true)]

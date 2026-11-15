@@ -7,6 +7,9 @@ import androidx.room.Query
 import com.example.notepad.data.local.entity.PomodoroRecord
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * 番茄鐘專注紀錄資料存取介面（支援當日專注顆數統計與雲端同步狀態追蹤）
+ */
 @Dao
 interface PomodoroDao {
     @Query("SELECT * FROM pomodoro_records WHERE date = :date ORDER BY timestamp DESC")

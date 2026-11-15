@@ -10,6 +10,9 @@ import com.example.notepad.data.local.entity.Priority
 import com.example.notepad.data.local.entity.ToDo
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * 待辦事項資料存取介面（規範 4.2：支援完成狀態分流、優先級排序與雲端同步狀態追蹤）
+ */
 @Dao
 interface ToDoDao {
     @Query("SELECT * FROM todos ORDER BY isCompleted ASC, priority DESC, dueDate ASC, createdAt DESC")

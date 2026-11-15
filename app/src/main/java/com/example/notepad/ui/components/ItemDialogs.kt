@@ -35,7 +35,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Header navigator for month and year navigation in custom calendar pickers.
+ * 自訂月曆選擇器之年／月快速切換導覽標題列（支援上/下一年、上/下一月與一鍵返回本月）
  */
 @Composable
 fun MonthNavigatorHeader(
@@ -89,7 +89,7 @@ fun MonthNavigatorHeader(
 }
 
 /**
- * 7-column Monthly Calendar Grid for flexible multi-date or single-date selection.
+ * 7 欄式月曆網格選擇元件（支援單日或多日彈性點選，並同步套用使用者自訂月曆樣式與高對比文字保護）
  */
 @Composable
 fun MonthCalendarGrid(
@@ -659,8 +659,7 @@ fun AddToDoDialog(
 }
 
 /**
- * Dialog for creating a Reminder that supports multi-day selection and custom notification time.
- * Date selection is unrestricted across any month or year, and past times are blocked per spec 4.4.
+ * 新增多日提醒對話框（遵循規範 4.4：支援跨年月自由多選日期、自訂通知時間、待辦任務連動與過期時間攔截）
  */
 @Composable
 fun AddMultiDayReminderDialog(
@@ -1127,8 +1126,7 @@ fun AddMultiDayReminderDialog(
 }
 
 /**
- * Dialog for editing an existing Reminder (content and date/time).
- * Blocks past timestamps per spec 4.4 and resets isFired when rescheduled to a future time.
+ * 編輯既有提醒事項對話框（遵循規範 4.4：驗證未來時間並於儲存後重置觸發狀態以重新排程通知）
  */
 @Composable
 fun EditReminderDialog(
@@ -1324,7 +1322,7 @@ fun EditReminderDialog(
 }
 
 /**
- * Dialog for editing an existing To-Do (title, priority, description, due date, tag, color).
+ * 編輯既有待辦事項對話框（支援修改名稱、優先級、說明、獨立截止日期、分類標籤與色彩標記）
  */
 @Composable
 fun EditToDoDialog(
@@ -1501,7 +1499,7 @@ fun EditToDoDialog(
 }
 
 /**
- * Dialog for editing an existing Schedule Time Block.
+ * 編輯每日時間規劃區塊對話框（支援修改活動名稱、起訖時間、標籤、色彩與備註）
  */
 @Composable
 fun EditTimeBlockDialog(

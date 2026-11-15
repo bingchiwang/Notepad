@@ -26,6 +26,9 @@ import com.example.notepad.ui.components.*
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
+/**
+ * 每日時間規劃主畫面（支援日期切換、進度統計、行程區塊增刪改與一鍵連動番茄鐘專注）
+ */
 @Composable
 fun ScheduleScreen(
     taskRepository: TaskRepository,
@@ -224,7 +227,15 @@ fun ScheduleScreen(
                         timeBlock = block,
                         onCheckedChange = { checked ->
                             coroutineScope.launch {
-                                taskRepository.updateTimeBlock(block.copy(isCompleted = checked))
+                                try {
+                                    taskRepository.updateTimeBlock(block.copy(isCompleted = checked))
+                                    showFeedback(
+                                        context,
+                                        if (checked) "已完成行程「${block.title}」" else "已將「${block.title}」標記為未完成"
+                                    )
+                                } catch (e: Exception) {
+                                    showFeedback(context, "狀態更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                                }
                             }
                         },
                         onEdit = {

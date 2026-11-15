@@ -1,15 +1,24 @@
 package com.example.notepad.calendar
 
+/**
+ * 農曆日期資料結構（包含天干地支生肖年、農曆月份、初一至三十名稱及閏月標記）
+ */
 data class LunarDate(
     val year: Int,
     val month: Int,
     val day: Int,
     val isLeapMonth: Boolean
 ) {
+    /**
+     * 取得完整農曆格式化字串（例如：「甲辰龍年正月初一」）
+     */
     fun getFormattedString(): String {
         return "${getYearCyclic()}${if (isLeapMonth) "閏" else ""}${getLunarMonthName()}${getLunarDayName()}"
     }
 
+    /**
+     * 取得農曆日中文名稱（初一至三十）
+     */
     fun getLunarDayName(): String {
         val dayNames = arrayOf(
             "", "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",

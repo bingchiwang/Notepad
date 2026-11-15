@@ -4,10 +4,18 @@ import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
 
+/**
+ * 農曆萬年曆核心演算法引擎（支援西元 1900 年至 2100 年）
+ * - 透過 16 進位位元遮罩表 (lunarInfo) 解算農曆大月 (30天)、小月 (29天) 與閏月月份
+ * - 結合太陽黃經分鐘偏移量計算二十四節氣與傳統／國曆節慶
+ */
 class LunarCalendarEngine {
 
     companion object {
-        // Lunar calendar data from 1900 to 2100
+        // 西元 1900 年至 2100 年農曆大小月與閏月位元編碼表（共 201 年）
+        // Bit 16: 閏月是否為大月 (1=30天, 0=29天)
+        // Bit 15..4: 農曆 1~12 月大小月標記 (1=30天, 0=29天)
+        // Bit 3..0: 當年閏月月份 (0 表示無閏月，1~12 表示閏幾月)
         private val lunarInfo = intArrayOf(
             0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2, // 1900-1909
             0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977, // 1910-1919
@@ -44,7 +52,7 @@ class LunarCalendarEngine {
             263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758
         )
 
-        // Maps MMDD of solar date to festival name
+        // 國曆固定節日對照表 (MMDD -> 節日識別鍵)
         private val solarFestivals = mapOf(
             "0101" to "New Year's Day",
             "0214" to "Valentine's Day",
@@ -52,7 +60,7 @@ class LunarCalendarEngine {
             "1225" to "Christmas"
         )
 
-        // Maps MMDD of lunar date to festival name
+        // 農曆傳統節日對照表 (MMDD -> 節日識別鍵)
         private val lunarFestivals = mapOf(
             "0101" to "Spring Festival",
             "0115" to "Lantern Festival",
@@ -62,7 +70,9 @@ class LunarCalendarEngine {
             "0909" to "Double Ninth Festival"
         )
 
-        // Calculate total days in a lunar year
+        /**
+         * 計算指定農曆年份之總天數（基礎 348 天加上各月大小月與閏月天數）
+         */
         fun getYearDays(year: Int): Int {
             var sum = 348
             var i = 0x8000
@@ -75,7 +85,9 @@ class LunarCalendarEngine {
             return sum + getLeapMonthDays(year)
         }
 
-        // Calculate days in leap month of a year
+        /**
+         * 計算指定農曆年份之閏月天數（無閏月則回傳 0）
+         */
         fun getLeapMonthDays(year: Int): Int {
             if (getLeapMonth(year) != 0) {
                 return if ((lunarInfo[year - 1900] and 0x10000) != 0) 30 else 29
@@ -83,17 +95,24 @@ class LunarCalendarEngine {
             return 0
         }
 
-        // Return leap month of a year (1-12). 0 if no leap month.
+        /**
+         * 取得指定農曆年份之閏月月份（1~12，若當年無閏月則回傳 0）
+         */
         fun getLeapMonth(year: Int): Int {
             return lunarInfo[year - 1900] and 0xf
         }
 
-        // Calculate days in a regular lunar month
+        /**
+         * 計算指定農曆年份與月份之當月天數（30 天或 29 天）
+         */
         fun getMonthDays(year: Int, month: Int): Int {
             return if ((lunarInfo[year - 1900] and (0x10000 shr month)) != 0) 30 else 29
         }
 
-        // Get lunar date from a standard java.util.Date
+        /**
+         * 將西曆日期 (Date) 轉換為農曆日期 (LunarDate)
+         * 以西元 1900 年 1 月 31 日（農曆正月初一）為基準日計算相差天數並逐年逐月推算
+         */
         fun getLunarDate(date: Date): LunarDate {
             val dateCal = Calendar.getInstance().apply { 
                 time = date

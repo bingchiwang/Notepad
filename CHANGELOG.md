@@ -1,6 +1,18 @@
 # 版本紀錄 (Changelog)
 
-本文件依據專案實際異動與建置驗證紀錄維護。所有功能變更均遵循專案程式碼管理規範、操作規範與變更管理流程。
+本文件依據專案實際異動與建置驗證紀錄維護。所有功能變更均遵循 [`AGENTS.md`](AGENTS.md) 之程式碼管理規範、操作規範與變更管理流程。
+
+---
+
+## [1.5.1] - 2026-11-15
+### 優化與規範稽核 (Changed / Improved)
+- **全專案規範合規稽核與 UX 回饋強化**：
+  - 於 `TaskDetailScreen` 補齊關聯提醒之直接編輯（`EditReminderDialog`）與刪除前二次確認對話框（`ConfirmDeleteDialog`），確保詳情頁操作體驗與主列表完全一致。
+  - 於 `ScheduleScreen`、`CalendarScreen` 與 `PomodoroScreen` 完善勾選完成狀態切換與番茄鐘專注完成之即時 `showFeedback` 提示與異常保護。
+  - 為 `LunarCalendarEngine`、`LunarCalendarFacade`、`LunarDate`、各資料實體、DAO、導覽元件與共用 UI 元件補齊結構化繁體中文 KDoc 註解，並清理未使用的多餘匯入。
+- **全面優化專案 Markdown 文件體系**：
+  - 更新 [`AGENTS.md`](AGENTS.md)：完整納入「自訂主題與個人化設定管理規範（含 WCAG 文字防重色）」、「雲端資料同步規範（6 大準則）」與「Android 8.0 (API 26) 系統相容與防遮擋規範」。
+  - 優化 [`README.md`](README.md)、[`SPECIFICATION.md`](SPECIFICATION.md)、[`CHANGELOG.md`](CHANGELOG.md) 與 [`.agent/plan.md`](.agent/plan.md)：新增快速導覽目錄、WCAG 對比度公式說明、12 個測試套件／50 項單元測試驗證矩陣，並修正 `.agent/plan.md` 重複標題與過期技術棧描述。
 
 ---
 

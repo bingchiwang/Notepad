@@ -18,6 +18,9 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.runtime.serialization.NavKeySerializer
 import androidx.savedstate.compose.serialization.serializers.MutableStateSerializer
 
+/**
+ * 建立並保存多堆疊導覽狀態，確保切換底部導覽分頁時保留各分頁之返回堆疊與畫面狀態
+ */
 @Composable
 fun rememberNavigationState(
     startRoute: NavKey,

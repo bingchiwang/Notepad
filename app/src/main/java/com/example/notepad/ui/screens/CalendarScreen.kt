@@ -39,11 +39,11 @@ import com.example.notepad.ui.components.*
 import com.example.notepad.ui.theme.CalendarThemeResolver
 import com.example.notepad.ui.theme.LocalPersonalizationSettings
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
-import java.util.Locale
 
+/**
+ * 農曆萬年曆主畫面（支援 6 種自訂月曆樣式、高對比文字保護、節氣節慶顯示與當日待辦／提醒快速管理）
+ */
 @Composable
 fun CalendarScreen(
     calendarFacade: LunarCalendarFacade,
@@ -522,9 +522,13 @@ fun CalendarScreen(
                                     toDo = toDo,
                                     isCompleted = checked
                                 )
-                                if (checked && cancelled > 0) {
-                                    showFeedback(context, "已完成任務，並取消 $cancelled 個關聯提醒")
+                                val feedback = when {
+                                    checked && cancelled > 0 ->
+                                        "已完成「${toDo.title}」，並取消 $cancelled 個關聯提醒"
+                                    checked -> "已完成「${toDo.title}」"
+                                    else -> "已將「${toDo.title}」標記為進行中"
                                 }
+                                showFeedback(context, feedback)
                             } catch (e: Exception) {
                                 showFeedback(context, "狀態更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
                             }

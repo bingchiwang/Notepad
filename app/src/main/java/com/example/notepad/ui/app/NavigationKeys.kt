@@ -3,6 +3,9 @@ package com.example.notepad.ui.app
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
+/**
+ * 應用程式全局導覽路由鍵值定義（採用 Navigation 3 型別安全路由，遵循操作規範 6）
+ */
 @Serializable
 data object NotesRoute : NavKey
 

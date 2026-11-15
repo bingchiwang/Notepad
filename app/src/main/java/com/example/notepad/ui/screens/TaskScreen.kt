@@ -547,6 +547,8 @@ fun TaskDetailScreen(
 
     var editingTask by remember { mutableStateOf<ToDo?>(null) }
     var deletingTask by remember { mutableStateOf<ToDo?>(null) }
+    var editingLinkedReminder by remember { mutableStateOf<Reminder?>(null) }
+    var deletingLinkedReminder by remember { mutableStateOf<Reminder?>(null) }
     var showAddLinkedReminder by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -687,7 +689,9 @@ fun TaskDetailScreen(
                                 triggerTimeText = DateFormatter.formatDateTime(rem.triggerAt),
                                 tag = rem.tag,
                                 tagColor = Color(rem.color),
-                                isFired = rem.isFired
+                                isFired = rem.isFired,
+                                onEdit = { editingLinkedReminder = rem },
+                                onDelete = { deletingLinkedReminder = rem }
                             )
                         }
                     }
@@ -738,6 +742,53 @@ fun TaskDetailScreen(
                 }
             },
             onDismiss = { deletingTask = null }
+        )
+    }
+
+    editingLinkedReminder?.let { remToEdit ->
+        EditReminderDialog(
+            reminder = remToEdit,
+            notificationsEnabled = notificationsEnabled,
+            onDismiss = { editingLinkedReminder = null },
+            onSave = { updatedReminder ->
+                coroutineScope.launch {
+                    try {
+                        taskRepository.updateReminder(updatedReminder)
+                        ReminderScheduler.cancelReminder(context, updatedReminder.id)
+                        val scheduled = ReminderScheduler.scheduleReminder(
+                            context = context,
+                            reminder = updatedReminder,
+                            notificationsEnabled = notificationsEnabled
+                        )
+                        showFeedback(
+                            context,
+                            if (scheduled) "關聯提醒已更新並重新排程" else "關聯提醒已更新（通知目前暫停）"
+                        )
+                        editingLinkedReminder = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
+                }
+            }
+        )
+    }
+
+    deletingLinkedReminder?.let { remToDelete ->
+        ConfirmDeleteDialog(
+            itemName = remToDelete.title.ifEmpty { "關聯提醒" },
+            onConfirm = {
+                coroutineScope.launch {
+                    try {
+                        ReminderScheduler.cancelReminder(context, remToDelete.id)
+                        taskRepository.deleteReminder(remToDelete)
+                        showFeedback(context, "已刪除關聯提醒")
+                        deletingLinkedReminder = null
+                    } catch (e: Exception) {
+                        showFeedback(context, "刪除失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
+                }
+            },
+            onDismiss = { deletingLinkedReminder = null }
         )
     }
 

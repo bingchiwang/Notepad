@@ -5,6 +5,10 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import java.util.UUID
 
+/**
+ * 番茄鐘專注紀錄資料實體
+ * - 紀錄每次完成之專注時長、關聯目標名稱、日期毫秒數與跨裝置雲端同步狀態
+ */
 @Entity(
     tableName = "pomodoro_records",
     indices = [Index(value = ["syncId"], unique = true)]

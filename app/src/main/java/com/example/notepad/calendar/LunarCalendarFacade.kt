@@ -4,19 +4,20 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * Facade pattern to abstract the complexity of Lunar Calendar calculations.
+ * 農曆萬年曆外觀類別（Facade Pattern）
+ * 封裝底層農曆演算、二十四節氣推算、中西節慶判定與午夜時戳正規化邏輯
  */
 class LunarCalendarFacade {
 
     /**
-     * Get the Lunar date corresponding to the given standard Date.
+     * 取得指定西曆日期對應之農曆日期資訊
      */
     fun getLunarDate(date: Date): LunarDate {
         return LunarCalendarEngine.getLunarDate(date)
     }
 
     /**
-     * Get the Solar Term for the given standard Date, if any.
+     * 取得指定西曆日期對應之二十四節氣名稱（若當日非節氣則回傳 null）
      */
     fun getSolarTerm(date: Date): String? {
         val cal = Calendar.getInstance()
@@ -29,8 +30,7 @@ class LunarCalendarFacade {
     }
 
     /**
-     * Get the Festival name for the given standard Date, if any.
-     * This checks both Solar and Lunar festivals.
+     * 取得指定西曆日期對應之國曆或農曆節慶識別名稱（若無則回傳 null）
      */
     fun getFestival(date: Date): String? {
         val cal = Calendar.getInstance()
@@ -40,8 +40,7 @@ class LunarCalendarFacade {
     }
 
     /**
-     * Convenience method to get a complete description (Lunar Date, Solar Term, Festival)
-     * for a given standard Date.
+     * 彙整指定日期之完整曆法資訊（包含農曆年月日、節氣與節慶）
      */
     fun getCalendarInfo(date: Date): CalendarInfo {
         val lunarDate = getLunarDate(date)
@@ -56,7 +55,7 @@ class LunarCalendarFacade {
     }
 
     /**
-     * Normalize a date to midnight millis (00:00:00.000).
+     * 將任意日期正規化為當日午夜零時整點毫秒數 (00:00:00.000)
      */
     fun getMidnightMillis(date: Date): Long {
         val cal = Calendar.getInstance()
@@ -68,6 +67,9 @@ class LunarCalendarFacade {
         return cal.timeInMillis
     }
 
+    /**
+     * 判斷目標時間戳是否落在「明天」區間（用於觸發明日到期呼吸燈邊框警示）
+     */
     fun isTomorrow(targetMillis: Long): Boolean {
         val cal = Calendar.getInstance()
         cal.set(Calendar.HOUR_OF_DAY, 0)

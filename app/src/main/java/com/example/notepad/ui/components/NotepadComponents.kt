@@ -56,7 +56,7 @@ val PRESET_COLORS = listOf(
 )
 
 /**
- * Color picker row displaying 8 classic preset color dots.
+ * 預設 8 色圓點選擇列元件（選取勾勾圖示自動依據背景明度切換深淺對比色）
  */
 @Composable
 fun ColorPickerRow(
@@ -88,7 +88,7 @@ fun ColorPickerRow(
                     val iconColor = ColorContrastUtils.bestOnBackgroundColor(item.color)
                     Icon(
                         imageVector = Icons.Default.Check,
-                        contentDescription = "Selected",
+                        contentDescription = "已選取",
                         tint = iconColor,
                         modifier = Modifier.size(18.dp)
                     )
@@ -99,7 +99,7 @@ fun ColorPickerRow(
 }
 
 /**
- * Color tag component calculates readable text contrast automatically based on background luminance.
+ * 色彩分類標籤元件（依據背景色彩相對明度自動計算高對比文字顏色，防止文字與底色重色）
  */
 @Composable
 fun ColorTag(
@@ -211,7 +211,7 @@ fun PrioritySelectorRow(
 }
 
 /**
- * Custom Modifier for Breathing Dashed Border.
+ * 呼吸燈動態虛線邊框修飾符（用於明日到期之未完成待辦事項視覺警示）
  */
 fun Modifier.breathingDashedBorder(
     color: Color = Color(0xFFFF5722),
@@ -257,7 +257,7 @@ fun Modifier.breathingDashedBorder(
 }
 
 /**
- * Bouncing Badge Component
+ * 上下彈跳動態警示徽章元件（顯示「⚠️ 明日到期！」提醒）
  */
 @Composable
 fun BouncingBadge(
@@ -304,7 +304,7 @@ fun BouncingBadge(
 }
 
 /**
- * Task Card demonstrating Imminent Deadline UI Alerts with interactive features.
+ * 待辦事項卡片元件（整合優先級徽章、明日到期呼吸燈警示、完成狀態勾選與編輯／刪除操作）
  */
 @Composable
 fun DeadlineAlertCard(
@@ -454,7 +454,7 @@ fun DeadlineAlertCard(
 }
 
 /**
- * Card for displaying a Reminder with notification info, edit and delete actions.
+ * 提醒事項卡片元件（顯示預定提醒時間、通知發送狀態、色彩標籤與編輯／刪除操作）
  */
 @Composable
 fun ReminderCard(
@@ -573,7 +573,7 @@ fun ReminderCard(
 }
 
 /**
- * Common Confirm Delete Dialog
+ * 共用刪除二次確認對話框（遵循操作規範二.3：所有刪除行為皆需先顯示確認訊息）
  */
 @Composable
 fun ConfirmDeleteDialog(
@@ -602,7 +602,7 @@ fun ConfirmDeleteDialog(
 }
 
 /**
- * Reusable date and time formatters that avoid calling Locale.getDefault() inside composables.
+ * 共用日期與時間格式化工具類別（遵循 DRY 原則，統一全專案時間顯示格式）
  */
 object DateFormatter {
     fun formatTime(timestamp: Long): String {

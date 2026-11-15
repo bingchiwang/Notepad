@@ -9,6 +9,9 @@ import androidx.room.Update
 import com.example.notepad.data.local.entity.Reminder
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * 提醒事項資料存取介面（規範 4.4：支援關聯待辦查詢、觸發標記與雲端同步狀態追蹤）
+ */
 @Dao
 interface ReminderDao {
     @Query("SELECT * FROM reminders ORDER BY isFired ASC, triggerAt ASC")
