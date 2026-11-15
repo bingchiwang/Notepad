@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 快速記事桌面小工具配色（深色模式） -->
+    <color name="widget_surface">#FF1B1D22</color>
+    <color name="widget_surface_border">#FF2F333C</color>
+    <color name="widget_header_bg">#FF23262E</color>
+    <color name="widget_card_bg">#FF262A33</color>
+    <color name="widget_card_border">#FF343944</color>
+    <color name="widget_text_primary">#FFF1F3F6</color>
+    <color name="widget_text_secondary">#FFA5ABB8</color>
+    <color name="widget_accent">#FF4C8DFF</color>
+    <color name="widget_on_accent">#FFFFFFFF</color>
+    <color name="widget_chip_bg">#FF2A3955</color>
+    <color name="widget_chip_text">#FF9EC5FF</color>
+</resources>

@@ -98,11 +98,19 @@
 - **字體大小**：透過 `AppFontScale` 提供 `0.85x`、`1.0x`、`1.15x`、`1.30x` 四段即時縮放倍率，於 `NotepadTheme` 注入 `LocalDensity.fontScale` 一致生效至全頁面。
 - **通知開關與同步狀態統整**：於同一設定中心內直接切換全域通知總開關並檢視／觸發雲端同步，所有個人化偏好皆持久化至 `ThemePreferences` 並納入 `CloudSyncManager` 跨裝置同步。
 
+### 3.8 快速記事桌面小工具（`QuickNoteWidgetProvider` / `QuickNoteWidgetService` / `QuickNoteWidgetConfigureActivity`）
+- **最近記事顯示**：透過 `RemoteViewsService`（`QuickNoteWidgetService`）讀取本機 Room `Note` 與 `Category` 清單，依 `isPinned DESC, updatedAt DESC` 排序並顯示最多 12 筆最近記事之釘選徽章、左側色條、分類標籤、更新時間與標題／摘要預覽；支援淺色與深色桌面主題切換（`values/` + `values-night/`）與 `horizontal|vertical` 縮放。
+- **一鍵新增與編輯導航**：透過 `QuickNoteWidgetContract` 建立明確指向 `MainActivity` 之深層連結，配合 `AppNavigation` 的 `LaunchedEffect(pendingWidgetDeepLink)` 與 `NoteEditorRoute(noteId, initialCategoryId)`：
+  - 點擊小工具「+ 新增」按鈕或空狀態提示時，直接開啟空白記事編輯器，並於綁定特定分類時自動預帶 `initialCategoryId`。
+  - 點擊小工具內任一記事卡片時（以 `PendingIntent.FLAG_MUTABLE` Template 搭配 `FillInIntent` 實作），直接開啟該 `noteId` 對應之記事編輯畫面。
+- **可選擇顯示指定分類**：透過 `QuickNoteWidgetConfigureActivity`（`reconfigurable`）與 `QuickNoteWidgetPreferences` 為每個 `appWidgetId` 獨立保存 `WidgetCategoryFilter`（`All`、`Uncategorized`、`CategoryFilter(id)`）；若綁定分類已遭刪除，`QuickNoteWidgetLogic.resolveWidgetState` 自動退回顯示「全部記事」避免空白卡死。
+- **自動即時更新**：`NoteRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `QuickNoteWidgetUpdater.notifyDataChanged`，於本機變更或雲端拉取完成後立即重整所有桌面小工具實例。
+
 ---
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **12 個測試類別、50 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **13 個測試類別、57 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
@@ -116,6 +124,7 @@
 10. `CloudSyncManagerTest`（4 項）：驗證本地優先上傳、雲端下載合併、離線恢復補傳與個人化設定同步。
 11. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析與 6 款月曆樣式對比度。
 12. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
+13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
 
 ---
 

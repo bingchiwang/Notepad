@@ -7,4 +7,17 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- 快速記事桌面小工具配色（淺色模式） -->
+    <color name="widget_surface">#FFFDFBFF</color>
+    <color name="widget_surface_border">#FFE0E3EB</color>
+    <color name="widget_header_bg">#FFF2F5FC</color>
+    <color name="widget_card_bg">#FFF4F6FA</color>
+    <color name="widget_card_border">#FFE3E7F0</color>
+    <color name="widget_text_primary">#FF1A1C1E</color>
+    <color name="widget_text_secondary">#FF5C6069</color>
+    <color name="widget_accent">#FF2563EB</color>
+    <color name="widget_on_accent">#FFFFFFFF</color>
+    <color name="widget_chip_bg">#FFE3EAFA</color>
+    <color name="widget_chip_text">#FF1D4ED8</color>
 </resources>

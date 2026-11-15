@@ -52,6 +52,7 @@ import com.example.notepad.ui.screens.PomodoroScreen
 import com.example.notepad.ui.screens.ScheduleScreen
 import com.example.notepad.ui.screens.TaskDetailScreen
 import com.example.notepad.ui.screens.TaskScreen
+import com.example.notepad.widget.WidgetDeepLink
 import kotlinx.coroutines.launch
 
 /**
@@ -70,7 +71,9 @@ fun AppNavigation(
     noteDraftPreferences: NoteDraftPreferences,
     syncPreferences: SyncPreferences,
     cloudSyncManager: CloudSyncManager,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    pendingWidgetDeepLink: WidgetDeepLink? = null,
+    onConsumeWidgetDeepLink: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -114,6 +117,31 @@ fun AppNavigation(
     val currentLeafRoute = navigationState.backStacks[currentTopRoute]?.lastOrNull() ?: currentTopRoute
     val isDetailScreen = currentLeafRoute is NoteEditorRoute || currentLeafRoute is TaskDetailRoute
 
+    // 處理來自桌面快速記事小工具的深度連結（直接進入新增或指定記事編輯頁面）
+    LaunchedEffect(pendingWidgetDeepLink) {
+        val deepLink = pendingWidgetDeepLink ?: return@LaunchedEffect
+        navigationState.topLevelRoute = NotesRoute
+        navigationState.backStacks[NotesRoute]?.let { notesStack ->
+            while (notesStack.size > 1) {
+                notesStack.removeLastOrNull()
+            }
+            when (deepLink) {
+                is WidgetDeepLink.CreateNote -> {
+                    notesStack.add(
+                        NoteEditorRoute(
+                            noteId = null,
+                            initialCategoryId = deepLink.categoryId
+                        )
+                    )
+                }
+                is WidgetDeepLink.EditNote -> {
+                    notesStack.add(NoteEditorRoute(noteId = deepLink.noteId))
+                }
+            }
+        }
+        onConsumeWidgetDeepLink()
+    }
+
     val entryProvider = entryProvider<NavKey> {
         entry<NotesRoute>(
             metadata = ListDetailSceneStrategy.listPane(
@@ -139,7 +167,8 @@ fun AppNavigation(
                 noteId = key.noteId,
                 noteRepository = noteRepository,
                 noteDraftPreferences = noteDraftPreferences,
-                onNavigateBack = { navigator.goBack() }
+                onNavigateBack = { navigator.goBack() },
+                initialCategoryId = key.initialCategoryId
             )
         }
 

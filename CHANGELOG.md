@@ -4,6 +4,18 @@
 
 ---
 
+## [1.6.0] - 2026-11-15
+### 新增 (Added)
+- **快速記事桌面小工具（`widget/`）**：
+  - **顯示最近記事內容**：新增 `QuickNoteWidgetProvider`、`QuickNoteWidgetService`（`RemoteViewsService`）與自適應淺／深色佈局（`widget_quick_note.xml`、`widget_quick_note_item.xml`、`values-night/colors.xml`），於桌面直接呈現釘選徽章、分類標籤、色條識別、標題／多行摘要預覽與最近修改時間，支援水平與垂直縮放。
+  - **點擊即可新增記事**：點擊小工具頂部「+ 新增」按鈕或空狀態提示區，透過 `QuickNoteWidgetContract` 與 `MainActivity` / `AppNavigation` 深度連結直接開啟 `NoteEditorScreen` 新增記事；若小工具已綁定特定分類，自動預帶該分類標籤（`initialCategoryId`）。
+  - **點擊記事可進入編輯頁面**：透過 `RemoteViews` `PendingIntentTemplate` + `FillInIntent`（符合 Android 12+/14+ `PendingIntent` 規範），點擊小工具內任一記事卡片即可直接開啟該篇記事的編輯頁面。
+  - **可選擇顯示指定分類**：新增 Jetpack Compose `QuickNoteWidgetConfigureActivity` 與 `QuickNoteWidgetPreferences`，於加入桌面時或隨時點擊小工具頂部分類膠囊，選擇顯示「全部記事」、「未分類」或任一既有分類；若原綁定分類遭刪除，由 `QuickNoteWidgetLogic` 安全退回「全部記事」。
+- **本機異動與雲端同步即時重新整理小工具**：串接 `NoteRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 至 `QuickNoteWidgetUpdater.notifyDataChanged`，確保新增／編輯／刪除記事或分類異動與雲端同步拉回後桌面小工具即時更新。
+- **測試覆蓋擴充**：新增 `QuickNoteWidgetLogicTest`（7 項分類編解碼、排序與分類遺失退回、空白標題／多行超長摘要、深度連結解析測試），全專案單元測試擴充至 **57 項**（13 個測試套件，0 失敗、0 略過）。
+
+---
+
 ## [1.5.1] - 2026-11-15
 ### 優化與規範稽核 (Changed / Improved)
 - **全專案規範合規稽核與 UX 回饋強化**：

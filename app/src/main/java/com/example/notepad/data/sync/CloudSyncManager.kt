@@ -62,7 +62,8 @@ class CloudSyncManager(
     private val notificationPreferences: NotificationPreferences,
     private val networkObserver: NetworkConnectivityObserver,
     private val remoteDataSource: CloudRemoteDataSource,
-    private val onReminderSyncedFromCloud: (suspend (reminder: Reminder, isDeleted: Boolean) -> Unit)? = null
+    private val onReminderSyncedFromCloud: (suspend (reminder: Reminder, isDeleted: Boolean) -> Unit)? = null,
+    private val onRemoteDataSynced: (suspend () -> Unit)? = null
 ) {
     private val syncMutex = Mutex()
     private var monitorScope: CoroutineScope? = null
@@ -305,6 +306,9 @@ class CloudSyncManager(
                 if (conflicts > 0) append("（依最新時間解決 $conflicts 筆衝突）")
             }
             syncPreferences.recordSyncSuccess(syncedAt, summaryMsg)
+            if (downloaded > 0 || deleted > 0) {
+                onRemoteDataSynced?.invoke()
+            }
 
             SyncRunResult(
                 succeeded = true,

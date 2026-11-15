@@ -164,6 +164,16 @@
   - 全專案原始碼與 `.md` 文件 100% 符合 `AGENTS.md` 所有規範
   - 50 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_13_QuickNoteDesktopWidget: 實作快速記事桌面小工具（顯示最近記事、一鍵新增、點擊記事編輯與指定分類篩選）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 建立 `widget/` 套件（`QuickNoteWidgetProvider`、`QuickNoteWidgetService`、`QuickNoteWidgetConfigureActivity`、`QuickNoteWidgetPreferences`、`QuickNoteWidgetLogic`、`QuickNoteWidgetContract`）與淺／深色自適應佈局及 `appwidget-provider` 中繼定義（`quick_note_widget_info.xml`）。
+  - 擴充 `NoteEditorRoute`、`NoteEditorScreen`、`AppNavigation`、`MainActivity` 與 `CloudSyncManager.onRemoteDataSynced`，支援小工具「一鍵新增（自動預帶篩選分類）」、「點擊記事直達編輯」與「本機／雲端同步自動重整小工具」。
+  - 新增 `QuickNoteWidgetLogicTest` 7 項單元測試並同步更新技術規格書、版本紀錄與 README。
+- **驗收標準 (Acceptance Criteria):**
+  - 支援 Android 8.0+（`minSdk = 26`）與 Android 12+/14+ `PendingIntent` 規範，Android Lint `NewApi` 與測試錯誤均為 0
+  - 全專案 57 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

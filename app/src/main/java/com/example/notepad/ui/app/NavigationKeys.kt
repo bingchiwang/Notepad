@@ -10,7 +10,10 @@ import kotlinx.serialization.Serializable
 data object NotesRoute : NavKey
 
 @Serializable
-data class NoteEditorRoute(val noteId: Int? = null) : NavKey
+data class NoteEditorRoute(
+    val noteId: Int? = null,
+    val initialCategoryId: Int? = null
+) : NavKey
 
 @Serializable
 data object TaskRoute : NavKey

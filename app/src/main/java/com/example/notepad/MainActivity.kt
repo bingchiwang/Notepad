@@ -1,5 +1,6 @@
 package com.example.notepad
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -30,14 +31,22 @@ import com.example.notepad.data.sync.FirebaseFirestoreDataSource
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.app.AppNavigation
 import com.example.notepad.ui.theme.NotepadTheme
+import com.example.notepad.widget.QuickNoteWidgetContract
+import com.example.notepad.widget.QuickNoteWidgetUpdater
+import com.example.notepad.widget.WidgetDeepLink
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
 
     private var networkMonitor: AndroidNetworkMonitor? = null
+    private val widgetDeepLinkFlow = MutableStateFlow<WidgetDeepLink?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        QuickNoteWidgetContract.parseWidgetDeepLink(intent)?.let { deepLink ->
+            widgetDeepLinkFlow.value = deepLink
+        }
 
         val database = AppDatabase.getDatabase(this)
         val tombstoneDao = database.syncTombstoneDao()
@@ -79,12 +88,18 @@ class MainActivity : ComponentActivity() {
                     val enabled = notificationPreferences.isNotificationsEnabled()
                     ReminderScheduler.scheduleReminder(this@MainActivity, reminder, enabled)
                 }
+            },
+            onRemoteDataSynced = {
+                QuickNoteWidgetUpdater.notifyDataChanged(this@MainActivity)
             }
         )
 
-        // 本地優先寫入後，即時通知雲端同步協調器（有網同步，離線保留 PENDING_UPLOAD）
+        // 本地優先寫入後，即時重新整理桌面小工具並通知雲端同步協調器（有網同步，離線保留 PENDING_UPLOAD）
         taskRepository.onLocalDataChanged = { cloudSyncManager.requestSyncOnDataChanged() }
-        noteRepository.onLocalDataChanged = { cloudSyncManager.requestSyncOnDataChanged() }
+        noteRepository.onLocalDataChanged = {
+            QuickNoteWidgetUpdater.notifyDataChanged(this)
+            cloudSyncManager.requestSyncOnDataChanged()
+        }
         cloudSyncManager.startObserving(lifecycleScope)
 
         val calendarFacade = LunarCalendarFacade()
@@ -117,6 +132,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val pendingWidgetDeepLink by widgetDeepLinkFlow.collectAsState()
                     AppNavigation(
                         taskRepository = taskRepository,
                         noteRepository = noteRepository,
@@ -125,10 +141,20 @@ class MainActivity : ComponentActivity() {
                         notificationPreferences = notificationPreferences,
                         noteDraftPreferences = noteDraftPreferences,
                         syncPreferences = syncPreferences,
-                        cloudSyncManager = cloudSyncManager
+                        cloudSyncManager = cloudSyncManager,
+                        pendingWidgetDeepLink = pendingWidgetDeepLink,
+                        onConsumeWidgetDeepLink = { widgetDeepLinkFlow.value = null }
                     )
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        QuickNoteWidgetContract.parseWidgetDeepLink(intent)?.let { deepLink ->
+            widgetDeepLinkFlow.value = deepLink
         }
     }
 

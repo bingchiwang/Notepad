@@ -47,7 +47,8 @@ fun NoteEditorScreen(
     noteId: Int?,
     noteRepository: NoteRepository,
     noteDraftPreferences: NoteDraftPreferences,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    initialCategoryId: Int? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -104,6 +105,10 @@ fun NoteEditorScreen(
             selectedCategoryId = existingNote.categoryId
             selectedColor = existingNote.color
             isPinned = existingNote.isPinned
+        } else if (initialCategoryId != null) {
+            // 從指定分類的小工具點擊新增時，預帶對應分類標籤
+            selectedCategoryId = initialCategoryId
+            baselineCategoryId = initialCategoryId
         }
 
         isInitialized = true
