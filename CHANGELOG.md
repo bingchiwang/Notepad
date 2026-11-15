@@ -4,6 +4,17 @@
 
 ---
 
+## [1.8.0] - 2026-11-15
+### 新增 (Added)
+- **今日行程桌面小工具（`widget/`）**：
+  - **顯示今天到期的待辦**：新增 `TodayScheduleWidgetProvider`、`TodayScheduleWidgetService`、`TodayScheduleWidgetLogic`、`TodayScheduleWidgetRowBinder` 與雙主題佈局（`widget_today_schedule.xml`、`widget_today_section_header.xml`、`widget_today_reminder_item.xml`、`widget_today_empty_row.xml`、`today_schedule_widget_info.xml`），重用 `ToDoWidgetLogic` 與 `ToDoWidgetRowBinder` 顯示今日到期的未完成待辦（含高／中／低優先級與直接勾選完成）。
+  - **顯示今日完成進度**：於頂部固定進度卡片（`widget_progress_drawable.xml` 水平 `ProgressBar`）彙整今日時間規劃區塊（`TimeBlock`）與今日到期待辦（`ToDo`）之完成數與百分比；抽離共用 `WidgetTaskActions` 確保從任一小工具勾選任務完成皆同步取消關聯提醒並即時刷新進度。
+  - **顯示即將到來的提醒**：過濾尚未觸發（`isFired = false`）且晚於目前時間的提醒通知，依時間升冪排序並區分「`今天 HH:mm`」、「`明天 HH:mm`」與跨日時間顯示；點擊可直接跳轉至 `TaskScreen` 提醒事項分軌。
+- **通知觸發與雙向即時刷新**：串接 `ReminderReceiver`（提醒觸發標記已處理時）、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 至 `TodayScheduleWidgetUpdater.notifyDataChanged`，維持桌面資訊即時同步。
+- **測試覆蓋擴充**：新增 `TodayScheduleWidgetLogicTest`（5 項今天到期待辦篩選、今日綜合完成進度計算、即將到來提醒排序與格式、深度連結解析測試），全專案單元測試擴充至 **67 項**（15 個測試套件，0 失敗、0 略過）。
+
+---
+
 ## [1.7.0] - 2026-11-15
 ### 新增 (Added)
 - **待辦事項桌面小工具（`widget/`）**：

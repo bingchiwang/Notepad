@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-62%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-67%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -35,7 +35,7 @@
 4. **⏰ 每日時間規劃表**：直觀管理每日時段區塊、即時計算完成進度百分比，並可一鍵帶入番茄鐘。
 5. **🍅 番茄鐘專注計時器**：內建 25 / 5 / 15 分鐘三段式專注循環、待辦目標綁定與每日完成統計。
 6. **☁️ 本地優先 Firebase 雲端同步與個人化設定中心**：離線優先寫入 Room v5，連網自動與 Firebase Cloud Firestore 雙向智慧合併（LWW）；內建 WCAG 自動防重色對比引擎、自訂按鍵色、月曆樣式與 4 段全局字體大小調整。
-7. **📲 快速記事 & 待辦事項桌面小工具**：於手機桌面直接瀏覽最近記事（支援分類切換、一鍵新增／編輯）與未完成待辦任務（支援直接勾選完成、截止日警示與高／中／低優先級標示）。
+7. **📲 三大生產力桌面小工具（快速記事／待辦事項／今日行程）**：於手機桌面直接瀏覽與操作最近記事（分類切換、一鍵新增／編輯）、未完成待辦（直接勾選完成、截止日、高中低優先級）與今日行程概覽（今天到期待辦、今日完成進度條、即將到來的提醒）。
 
 ---
 
@@ -85,6 +85,11 @@
 - **直接勾選完成與提醒連動**：直接在桌面點擊任務左側核取方塊即可完成待辦、標記雲端待同步並自動取消尚未觸發的關聯提醒鬧鐘。
 - **截止日緊迫度與高／中／低優先級標示**：明確區分「已逾期」、「今天到期」、「明天到期」、「截止日期」與「未設截止日」，並透過左側色條與色彩徽章清楚標示高、中、低優先級。
 - **快速新增與詳情導航**：支援一鍵從桌面彈出新增待辦視窗或點擊任務列直達 `TaskDetailScreen`。
+
+### 8. 🗓️ 今日行程桌面小工具 (`TodayScheduleWidgetProvider` / `TodayScheduleWidgetService` / `TodayScheduleWidgetLogic`)
+- **今天到期的待辦**：篩選截止日為今天的未完成待辦並標示高／中／低優先級，支援直接在桌面勾選完成並即時消除關聯鬧鐘提醒。
+- **今日完成進度進度條**：彙整今日所有每日時間規劃與今天到期之待辦事項，顯示即時進度百分比條與完成統計。
+- **即將到來的提醒**：列出尚未觸發且未過期的最近提醒，標示「今天」、「明天」或跨日時間並可一鍵直達提醒管理頁面。
 
 ---
 
@@ -173,7 +178,12 @@ com.example.notepad/
 │   ├── ToDoWidgetLogic.kt                  # 待辦小工具未完成過濾、優先級排序與截止日緊迫度邏輯
 │   ├── ToDoWidgetRowBinder.kt              # 待辦列元件 RemoteViews 共用繫結器（DRY）
 │   ├── ToDoWidgetService.kt                # Android 8.0–11 待辦清單 RemoteViewsService
-│   └── ToDoWidgetProvider.kt               # 待辦小工具提供者（直接勾選完成／提醒取消）與重整協調器
+│   ├── ToDoWidgetProvider.kt               # 待辦小工具提供者（直接勾選完成／提醒取消）與重整協調器
+│   ├── TodayScheduleWidgetLogic.kt         # 今日行程進度統計、今日到期篩選與提醒排序邏輯
+│   ├── TodayScheduleWidgetRowBinder.kt     # 今日行程多型態清單列（分區標題／待辦／提醒）繫結器
+│   ├── TodayScheduleWidgetService.kt       # Android 8.0–11 今日行程 RemoteViewsService
+│   ├── TodayScheduleWidgetProvider.kt      # 今日行程小工具提供者與即時重整協調器
+│   └── WidgetTaskActions.kt                # 跨小工具共用待辦完成與雙向刷新協調器（DRY）
 └── ui/                                     # Jetpack Compose 視覺介面層
     ├── app/                                # Navigation 3 多堆疊導覽狀態與系統欄防遮擋容器
     │   ├── AppNavigation.kt
@@ -204,7 +214,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **14 個單元測試套件、共 62 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **15 個單元測試套件、共 67 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -221,6 +231,7 @@ com.example.notepad/
 | `ColorContrastUtilsTest` | 5 | WCAG 相對明度與對比度、淺底深字/深底白字自動切換、同色邊框判定、Hex 色碼解析與 6 款月曆樣式防重色驗證 |
 | `QuickNoteWidgetLogicTest` | 7 | 記事小工具分類編解碼、釘選與更新時間排序、分類刪除退回、空白標題／多行摘要格式化與深度連結解析 |
 | `ToDoWidgetLogicTest` | 5 | 待辦小工具未完成過濾、優先級與截止日排序、徽章標籤格式、逾期／今日／明日判別與深度連結解析 |
+| `TodayScheduleWidgetLogicTest` | 5 | 今日行程小工具今日到期待辦、綜合完成進度計算、即將到來提醒排序與格式及深度連結解析 |
 | `ExampleUnitTest` | 1 | 基礎 JUnit 測試環境驗證 |
 
 ---
@@ -240,7 +251,7 @@ com.example.notepad/
 - **[開發與操作規範 (`AGENTS.md`)](AGENTS.md)**：程式碼管理、操作體驗、功能操作規範與變更管理標準流程。
 - **[專案技術規格書 (`SPECIFICATION.md`)](SPECIFICATION.md)**：Room v5 資料表結構、DataStore 模型、WCAG 對比度公式、雲端同步協議與測試規格。
 - **[版本變更紀錄 (`CHANGELOG.md`)](CHANGELOG.md)**：從 `v1.0.0` 至最新版本的完整功能演進、架構升級與修復紀錄。
-- **[專案實作計畫 (`.agent/plan.md`)](.agent/plan.md)**：各開發階段（`Task_1` ~ `Task_14`）之實作細節與驗收標準。
+- **[專案實作計畫 (`.agent/plan.md`)](.agent/plan.md)**：各開發階段（`Task_1` ~ `Task_15`）之實作細節與驗收標準。
 
 ---
 
@@ -253,7 +264,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 62 項單元測試
+# 1. 執行全部 67 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

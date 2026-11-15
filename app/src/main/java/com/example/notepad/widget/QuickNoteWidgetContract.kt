@@ -19,6 +19,12 @@ sealed interface WidgetDeepLink {
 
     /** 點擊待辦小工具內任一任務列後直接進入該任務詳情頁 */
     data class OpenToDoDetail(val taskId: Int) : WidgetDeepLink
+
+    /** 點擊今日行程小工具標題或進度卡後直接切換至每日時間規劃頁面 */
+    data object OpenScheduleTab : WidgetDeepLink
+
+    /** 點擊今日行程小工具內即將到來的提醒後切換至提醒事項分頁 */
+    data object OpenRemindersTrack : WidgetDeepLink
 }
 
 object QuickNoteWidgetContract {
@@ -32,6 +38,8 @@ object QuickNoteWidgetContract {
     const val ACTION_EDIT_NOTE = "EDIT_NOTE"
     const val ACTION_OPEN_TODO_TAB = "OPEN_TODO_TAB"
     const val ACTION_OPEN_TODO_DETAIL = "OPEN_TODO_DETAIL"
+    const val ACTION_OPEN_SCHEDULE_TAB = "OPEN_SCHEDULE_TAB"
+    const val ACTION_OPEN_REMINDERS_TRACK = "OPEN_REMINDERS_TRACK"
 
     const val INVALID_ID = -1
 
@@ -81,6 +89,26 @@ object QuickNoteWidgetContract {
     }
 
     /**
+     * 建立開啟主程式「每日排程」分頁的明確 Intent
+     */
+    fun buildOpenScheduleTabIntent(context: Context): Intent {
+        return Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_WIDGET_ACTION, ACTION_OPEN_SCHEDULE_TAB)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+    }
+
+    /**
+     * 建立開啟主程式「待辦＞提醒事項」分軌的明確 Intent
+     */
+    fun buildOpenRemindersTrackIntent(context: Context): Intent {
+        return Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_WIDGET_ACTION, ACTION_OPEN_REMINDERS_TRACK)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+    }
+
+    /**
      * 由啟動 MainActivity 之 Intent 解析來自桌面小工具的導航請求
      */
     fun parseWidgetDeepLink(intent: Intent?): WidgetDeepLink? {
@@ -116,6 +144,8 @@ object QuickNoteWidgetContract {
             ACTION_EDIT_NOTE -> noteId.takeIf { it > 0 }?.let { WidgetDeepLink.EditNote(it) }
             ACTION_OPEN_TODO_TAB -> WidgetDeepLink.OpenToDoTab(openAddDialog = openAddToDo)
             ACTION_OPEN_TODO_DETAIL -> todoId.takeIf { it > 0 }?.let { WidgetDeepLink.OpenToDoDetail(it) }
+            ACTION_OPEN_SCHEDULE_TAB -> WidgetDeepLink.OpenScheduleTab
+            ACTION_OPEN_REMINDERS_TRACK -> WidgetDeepLink.OpenRemindersTrack
             else -> null
         }
     }

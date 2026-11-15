@@ -48,7 +48,9 @@ fun TaskScreen(
     onStartPomodoro: ((String) -> Unit)? = null,
     notificationsEnabled: Boolean = true,
     openAddToDoOnLaunch: Boolean = false,
-    onConsumeOpenAddToDo: () -> Unit = {}
+    onConsumeOpenAddToDo: () -> Unit = {},
+    initialTrackOnLaunch: Int? = null,
+    onConsumeInitialTrack: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -68,7 +70,7 @@ fun TaskScreen(
     var showAddToDoDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
 
-    // 來自桌面待辦小工具「+ 新增」深度連結時，直接切換至待辦列表並開啟新增對話框
+    // 來自桌面待辦／今日行程小工具「+ 新增」深度連結時，直接切換至待辦列表並開啟新增對話框
     LaunchedEffect(openAddToDoOnLaunch) {
         if (openAddToDoOnLaunch) {
             selectedTrack = 0
@@ -76,6 +78,13 @@ fun TaskScreen(
             showAddToDoDialog = true
             onConsumeOpenAddToDo()
         }
+    }
+
+    // 來自今日行程小工具點擊提醒項目時，直接切換至「提醒事項」分軌
+    LaunchedEffect(initialTrackOnLaunch) {
+        val targetTrack = initialTrackOnLaunch ?: return@LaunchedEffect
+        selectedTrack = targetTrack.coerceIn(0, 1)
+        onConsumeInitialTrack()
     }
 
     // State for editing

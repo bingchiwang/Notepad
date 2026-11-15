@@ -113,11 +113,17 @@
 - **高、中、低優先級識別與深度連結**：每筆任務同時顯示左側優先級色條（紅／橘／綠）與「`高優先`／`中優先`／`低優先`」高對比色彩徽章（支援淺／深色主題）；點擊頂部「+ 新增」直接進入 `TaskRoute` 並開啟 `AddToDoDialog`，點擊任務內容列直接進入 `TaskDetailRoute`。
 - **即時自動重新整理**：`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `ToDoWidgetUpdater.notifyDataChanged`，確保主應用異動與雲端拉回後即時刷新桌面小工具。
 
+### 3.10 今日行程桌面小工具（`TodayScheduleWidgetProvider` / `TodayScheduleWidgetService` / `TodayScheduleWidgetLogic`）
+- **今日完成進度統計**：透過 `TodayScheduleWidgetLogic.resolveTodaySchedule` 彙整今日所有 `TimeBlock`（`date` 落於當日）與今天到期的 `ToDo`（`dueDate` 落於當日），計算已完成項數／總項數與百分比，以頂部進度條（`ProgressBar`）與摘要文字即時呈現；點擊進度卡片或日期膠囊直接開啟 `ScheduleRoute`。
+- **今天到期的待辦**：重用 `ToDoWidgetLogic` 與 `ToDoWidgetRowBinder` 呈現今天到期且未完成的任務清單，並透過共用 `WidgetTaskActions.completeToDo` 支援直接在桌面勾選完成、取消關聯提醒並同步重整「待辦事項小工具」與「今日行程小工具」；當今日到期任務全數完成時顯示「今日到期任務已全數完成 ✓」。
+- **即將到來的提醒**：過濾尚未觸發且未過期的 `Reminder`（`!isFired && triggerAt > now`），依觸發時間升冪排序並依距離呈現「`今天 HH:mm`」、「`明天 HH:mm`」或「`MM/dd HH:mm`」；點擊可直達 `TaskRoute` 之「提醒事項」分軌。
+- **即時聯動刷新**：`ReminderReceiver`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆即時觸發 `TodayScheduleWidgetUpdater.notifyDataChanged`。
+
 ---
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **14 個測試類別、62 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **15 個測試類別、67 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
@@ -133,6 +139,7 @@
 12. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
 13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
 14. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
+15. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
 
 ---
 

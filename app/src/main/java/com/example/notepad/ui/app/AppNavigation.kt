@@ -113,12 +113,13 @@ fun AppNavigation(
 
     var activePomodoroTask by remember { mutableStateOf<String?>("自由專注") }
     var openAddToDoFromWidget by remember { mutableStateOf(false) }
+    var initialTaskTrackFromWidget by remember { mutableStateOf<Int?>(null) }
 
     val currentTopRoute = navigationState.topLevelRoute
     val currentLeafRoute = navigationState.backStacks[currentTopRoute]?.lastOrNull() ?: currentTopRoute
     val isDetailScreen = currentLeafRoute is NoteEditorRoute || currentLeafRoute is TaskDetailRoute
 
-    // 處理來自桌面小工具（快速記事／待辦事項）的深度連結導航
+    // 處理來自桌面小工具（快速記事／待辦事項／今日行程）的深度連結導航
     LaunchedEffect(pendingWidgetDeepLink) {
         val deepLink = pendingWidgetDeepLink ?: return@LaunchedEffect
         when (deepLink) {
@@ -152,6 +153,7 @@ fun AppNavigation(
                         taskStack.removeLastOrNull()
                     }
                 }
+                initialTaskTrackFromWidget = 0
                 openAddToDoFromWidget = deepLink.openAddDialog
             }
             is WidgetDeepLink.OpenToDoDetail -> {
@@ -162,6 +164,23 @@ fun AppNavigation(
                     }
                     taskStack.add(TaskDetailRoute(deepLink.taskId))
                 }
+            }
+            is WidgetDeepLink.OpenScheduleTab -> {
+                navigationState.topLevelRoute = ScheduleRoute
+                navigationState.backStacks[ScheduleRoute]?.let { scheduleStack ->
+                    while (scheduleStack.size > 1) {
+                        scheduleStack.removeLastOrNull()
+                    }
+                }
+            }
+            is WidgetDeepLink.OpenRemindersTrack -> {
+                navigationState.topLevelRoute = TaskRoute
+                navigationState.backStacks[TaskRoute]?.let { taskStack ->
+                    while (taskStack.size > 1) {
+                        taskStack.removeLastOrNull()
+                    }
+                }
+                initialTaskTrackFromWidget = 1
             }
         }
         onConsumeWidgetDeepLink()
@@ -214,7 +233,9 @@ fun AppNavigation(
                 },
                 notificationsEnabled = notificationsEnabled,
                 openAddToDoOnLaunch = openAddToDoFromWidget,
-                onConsumeOpenAddToDo = { openAddToDoFromWidget = false }
+                onConsumeOpenAddToDo = { openAddToDoFromWidget = false },
+                initialTrackOnLaunch = initialTaskTrackFromWidget,
+                onConsumeInitialTrack = { initialTaskTrackFromWidget = null }
             )
         }
 

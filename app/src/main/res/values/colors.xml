@@ -33,4 +33,9 @@
     <color name="widget_priority_low_bar">#FF4CAF50</color>
     <color name="widget_due_overdue_text">#FFDC2626</color>
     <color name="widget_due_soon_text">#FFD97706</color>
+
+    <!-- 今日行程桌面小工具進度條與提醒配色（淺色模式） -->
+    <color name="widget_progress_track">#FFE2E8F0</color>
+    <color name="widget_reminder_today_bg">#FFDBEAFE</color>
+    <color name="widget_reminder_today_text">#FF1D4ED8</color>
 </resources>

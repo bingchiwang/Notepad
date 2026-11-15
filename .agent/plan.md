@@ -185,6 +185,16 @@
   - 支援 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`；API 31+ `RemoteCollectionItems` 與 API <31 `RemoteViewsService` 雙軌支援），Android Lint `NewApi` 與測試錯誤均為 0
   - 全專案 62 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_15_TodayScheduleDesktopWidget: 實作今日行程桌面小工具（顯示今天到期的待辦、今日完成進度與即將到來的提醒）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 建立 `TodayScheduleWidgetLogic`、`TodayScheduleWidgetRowBinder`、`TodayScheduleWidgetService`、`TodayScheduleWidgetProvider`（含 `TodayScheduleWidgetUpdater`）、共用 `WidgetTaskActions` 及對應佈局／進度條資源（`widget_today_schedule.xml`、`widget_today_section_header.xml`、`widget_today_reminder_item.xml`、`widget_today_empty_row.xml`、`widget_progress_drawable.xml`、`today_schedule_widget_info.xml`）。
+  - 擴充 `QuickNoteWidgetContract`（`OpenScheduleTab`、`OpenRemindersTrack`）、`TaskScreen`（支援 `initialTrackOnLaunch` 直接切換提醒事項分軌）、`AppNavigation`、`ReminderReceiver` 與 `MainActivity` 同步刷新所有桌面小工具。
+  - 新增 `TodayScheduleWidgetLogicTest` 5 項單元測試並同步更新技術規格書、版本紀錄與 README。
+- **驗收標準 (Acceptance Criteria):**
+  - 支援 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`），Android Lint 錯誤為 0
+  - 全專案 67 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

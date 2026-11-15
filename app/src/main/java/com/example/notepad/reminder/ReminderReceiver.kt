@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.example.notepad.MainActivity
 import com.example.notepad.data.local.AppDatabase
 import com.example.notepad.data.preferences.NotificationPreferences
+import com.example.notepad.widget.TodayScheduleWidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -37,9 +38,10 @@ class ReminderReceiver : BroadcastReceiver() {
                     showNotification(context, reminderId, title, message)
                 }
 
-                // 標記資料庫狀態為已處理
+                // 標記資料庫狀態為已處理並同步刷新今日行程小工具
                 val db = AppDatabase.getDatabase(context)
                 db.reminderDao().markAsFired(reminderId)
+                TodayScheduleWidgetUpdater.notifyDataChanged(context)
             } catch (_: Exception) {
             } finally {
                 pendingResult.finish()

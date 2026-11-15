@@ -8,19 +8,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
-import android.widget.Toast
 import com.example.notepad.R
 import com.example.notepad.data.local.AppDatabase
-import com.example.notepad.data.repository.TaskRepository
-import com.example.notepad.reminder.ReminderScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -47,7 +41,7 @@ class ToDoWidgetProvider : AppWidgetProvider() {
                         val pendingResult = goAsync()
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
-                                completeToDoFromWidget(context.applicationContext, todoId)
+                                WidgetTaskActions.completeToDo(context.applicationContext, todoId)
                             } finally {
                                 pendingResult.finish()
                             }
@@ -77,39 +71,6 @@ class ToDoWidgetProvider : AppWidgetProvider() {
                 updateWidgetsInternal(context, appWidgetManager, appWidgetIds)
             } finally {
                 pendingResult.finish()
-            }
-        }
-    }
-
-    private suspend fun completeToDoFromWidget(context: Context, todoId: Int) {
-        val database = AppDatabase.getDatabase(context)
-        val toDo = database.toDoDao().getToDoById(todoId).first() ?: return
-        if (toDo.isCompleted) return
-
-        val taskRepository = TaskRepository(
-            toDoDao = database.toDoDao(),
-            reminderDao = database.reminderDao(),
-            timeBlockDao = database.timeBlockDao(),
-            pomodoroDao = database.pomodoroDao(),
-            syncTombstoneDao = database.syncTombstoneDao()
-        )
-        ReminderScheduler.updateToDoCompletionAndSyncReminders(
-            context = context,
-            taskRepository = taskRepository,
-            toDo = toDo,
-            isCompleted = true
-        )
-
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        if (appWidgetManager != null) {
-            val componentName = ComponentName(context, ToDoWidgetProvider::class.java)
-            val ids = appWidgetManager.getAppWidgetIds(componentName)
-            updateWidgetsInternal(context, appWidgetManager, ids)
-        }
-
-        Handler(Looper.getMainLooper()).post {
-            runCatching {
-                Toast.makeText(context, "已完成：「${toDo.title}」", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -287,6 +248,20 @@ class ToDoWidgetProvider : AppWidgetProvider() {
  */
 object ToDoWidgetUpdater {
     private val updateScope = CoroutineScope(Dispatchers.IO)
+
+    suspend fun refreshAllBlocking(context: Context) {
+        val appContext = context.applicationContext
+        val appWidgetManager = AppWidgetManager.getInstance(appContext) ?: return
+        val componentName = ComponentName(appContext, ToDoWidgetProvider::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        if (appWidgetIds.isEmpty()) return
+
+        ToDoWidgetProvider.updateWidgetsInternal(
+            context = appContext,
+            appWidgetManager = appWidgetManager,
+            appWidgetIds = appWidgetIds
+        )
+    }
 
     fun notifyDataChanged(context: Context) {
         val appContext = context.applicationContext

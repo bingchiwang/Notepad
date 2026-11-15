@@ -4,4 +4,6 @@
     <string name="widget_quick_note_description">在桌面瀏覽最近記事內容、選擇顯示指定分類，並一鍵新增或進入編輯頁面。</string>
     <string name="widget_todo_name">待辦事項小工具</string>
     <string name="widget_todo_description">在桌面直接檢視尚未完成的待辦任務、截止日期與高／中／低優先級，並直接勾選完成項目。</string>
+    <string name="widget_today_schedule_name">今日行程小工具</string>
+    <string name="widget_today_schedule_description">在桌面查看今天到期的待辦任務、今日完成進度百分比與即將到來的提醒通知。</string>
 </resources>
