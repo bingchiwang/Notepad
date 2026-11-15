@@ -20,4 +20,17 @@
     <color name="widget_on_accent">#FFFFFFFF</color>
     <color name="widget_chip_bg">#FFE3EAFA</color>
     <color name="widget_chip_text">#FF1D4ED8</color>
+
+    <!-- 待辦事項桌面小工具優先級與截止日配色（淺色模式） -->
+    <color name="widget_priority_high_bg">#FFFEE2E2</color>
+    <color name="widget_priority_high_text">#FFB91C1C</color>
+    <color name="widget_priority_high_bar">#FFE53935</color>
+    <color name="widget_priority_medium_bg">#FFFEF3C7</color>
+    <color name="widget_priority_medium_text">#FFB45309</color>
+    <color name="widget_priority_medium_bar">#FFFF9800</color>
+    <color name="widget_priority_low_bg">#FFDCFCE7</color>
+    <color name="widget_priority_low_text">#FF15803D</color>
+    <color name="widget_priority_low_bar">#FF4CAF50</color>
+    <color name="widget_due_overdue_text">#FFDC2626</color>
+    <color name="widget_due_soon_text">#FFD97706</color>
 </resources>

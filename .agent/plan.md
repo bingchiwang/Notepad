@@ -174,6 +174,17 @@
   - 支援 Android 8.0+（`minSdk = 26`）與 Android 12+/14+ `PendingIntent` 規範，Android Lint `NewApi` 與測試錯誤均為 0
   - 全專案 57 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_14_ToDoDesktopWidget: 實作待辦事項桌面小工具（顯示未完成任務、直接勾選完成、顯示截止日期與標示高／中／低優先級）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 建立 `ToDoWidgetLogic`、`ToDoWidgetRowBinder`、`ToDoWidgetService`、`ToDoWidgetProvider`（含 `ToDoWidgetUpdater`）與淺／深色雙主題優先級／截止日佈局資源（`widget_todo.xml`、`widget_todo_item.xml`、`todo_widget_info.xml`、`ic_widget_checklist.xml`、`ic_widget_checkbox_unchecked.xml`、`widget_priority_*_bg.xml`）。
+  - 擴充 `QuickNoteWidgetContract`（`OpenToDoTab`、`OpenToDoDetail`）、`TaskScreen`（支援 `openAddToDoOnLaunch` 自動彈出新增對話框）、`AppNavigation` 與 `MainActivity`（連動 `taskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced`）。
+  - 支援直接於桌面點擊核取方塊完成任務，同步呼叫 `ReminderScheduler.updateToDoCompletionAndSyncReminders` 取消尚未觸發的關聯提醒並立即更新桌面列表。
+  - 新增 `ToDoWidgetLogicTest` 5 項單元測試並同步更新 `SPECIFICATION.md`、`CHANGELOG.md` 與 `README.md`。
+- **驗收標準 (Acceptance Criteria):**
+  - 支援 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`；API 31+ `RemoteCollectionItems` 與 API <31 `RemoteViewsService` 雙軌支援），Android Lint `NewApi` 與測試錯誤均為 0
+  - 全專案 62 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

@@ -33,6 +33,7 @@ import com.example.notepad.ui.app.AppNavigation
 import com.example.notepad.ui.theme.NotepadTheme
 import com.example.notepad.widget.QuickNoteWidgetContract
 import com.example.notepad.widget.QuickNoteWidgetUpdater
+import com.example.notepad.widget.ToDoWidgetUpdater
 import com.example.notepad.widget.WidgetDeepLink
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -91,11 +92,15 @@ class MainActivity : ComponentActivity() {
             },
             onRemoteDataSynced = {
                 QuickNoteWidgetUpdater.notifyDataChanged(this@MainActivity)
+                ToDoWidgetUpdater.notifyDataChanged(this@MainActivity)
             }
         )
 
         // 本地優先寫入後，即時重新整理桌面小工具並通知雲端同步協調器（有網同步，離線保留 PENDING_UPLOAD）
-        taskRepository.onLocalDataChanged = { cloudSyncManager.requestSyncOnDataChanged() }
+        taskRepository.onLocalDataChanged = {
+            ToDoWidgetUpdater.notifyDataChanged(this)
+            cloudSyncManager.requestSyncOnDataChanged()
+        }
         noteRepository.onLocalDataChanged = {
             QuickNoteWidgetUpdater.notifyDataChanged(this)
             cloudSyncManager.requestSyncOnDataChanged()

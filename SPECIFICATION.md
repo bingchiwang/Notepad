@@ -106,11 +106,18 @@
 - **可選擇顯示指定分類**：透過 `QuickNoteWidgetConfigureActivity`（`reconfigurable`）與 `QuickNoteWidgetPreferences` 為每個 `appWidgetId` 獨立保存 `WidgetCategoryFilter`（`All`、`Uncategorized`、`CategoryFilter(id)`）；若綁定分類已遭刪除，`QuickNoteWidgetLogic.resolveWidgetState` 自動退回顯示「全部記事」避免空白卡死。
 - **自動即時更新**：`NoteRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `QuickNoteWidgetUpdater.notifyDataChanged`，於本機變更或雲端拉取完成後立即重整所有桌面小工具實例。
 
+### 3.9 待辦事項桌面小工具（`ToDoWidgetProvider` / `ToDoWidgetService` / `ToDoWidgetLogic`）
+- **僅顯示尚未完成任務**：透過 `ToDoWidgetLogic.resolveActiveTasks` 嚴格過濾 `isCompleted = false` 之待辦事項，依 `priority.level` 降冪、`dueDate` 升冪與 `createdAt` 降冪排序，並於頂部膠囊即時顯示待辦總數。
+- **直接勾選完成並連動提醒取消**：點擊任務核取方塊透過 `ToDoWidgetProvider` 發送廣播動作呼叫 `ReminderScheduler.updateToDoCompletionAndSyncReminders`，將任務設為已完成、標記 `SyncStatus.PENDING_UPLOAD` 並自動取消所有尚未觸發的關聯系統鬧鐘；Android 12+（API 31+）採用 `RemoteViews.RemoteCollectionItems` 與共用 `ToDoWidgetRowBinder`，Android 8.0–11（API 26–30）採用 `ToDoWidgetService`（`RemoteViewsService`），確保跨版本零權限或 BAL 例外。
+- **截止日期緊急度標示**：依據本地時區午夜邊界計算 `DueDateUrgency`（`OVERDUE` 已逾期、`TODAY` 今天到期、`TOMORROW` 明天到期、`UPCOMING` 未來日期、`NONE` 未設截止日），套用對應提醒字色。
+- **高、中、低優先級識別與深度連結**：每筆任務同時顯示左側優先級色條（紅／橘／綠）與「`高優先`／`中優先`／`低優先`」高對比色彩徽章（支援淺／深色主題）；點擊頂部「+ 新增」直接進入 `TaskRoute` 並開啟 `AddToDoDialog`，點擊任務內容列直接進入 `TaskDetailRoute`。
+- **即時自動重新整理**：`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `ToDoWidgetUpdater.notifyDataChanged`，確保主應用異動與雲端拉回後即時刷新桌面小工具。
+
 ---
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **13 個測試類別、57 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **14 個測試類別、62 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
@@ -124,7 +131,8 @@
 10. `CloudSyncManagerTest`（4 項）：驗證本地優先上傳、雲端下載合併、離線恢復補傳與個人化設定同步。
 11. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析與 6 款月曆樣式對比度。
 12. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
-13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
+13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
+14. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
 
 ---
 

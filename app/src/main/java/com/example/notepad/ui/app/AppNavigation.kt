@@ -112,21 +112,22 @@ fun AppNavigation(
     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
 
     var activePomodoroTask by remember { mutableStateOf<String?>("自由專注") }
+    var openAddToDoFromWidget by remember { mutableStateOf(false) }
 
     val currentTopRoute = navigationState.topLevelRoute
     val currentLeafRoute = navigationState.backStacks[currentTopRoute]?.lastOrNull() ?: currentTopRoute
     val isDetailScreen = currentLeafRoute is NoteEditorRoute || currentLeafRoute is TaskDetailRoute
 
-    // 處理來自桌面快速記事小工具的深度連結（直接進入新增或指定記事編輯頁面）
+    // 處理來自桌面小工具（快速記事／待辦事項）的深度連結導航
     LaunchedEffect(pendingWidgetDeepLink) {
         val deepLink = pendingWidgetDeepLink ?: return@LaunchedEffect
-        navigationState.topLevelRoute = NotesRoute
-        navigationState.backStacks[NotesRoute]?.let { notesStack ->
-            while (notesStack.size > 1) {
-                notesStack.removeLastOrNull()
-            }
-            when (deepLink) {
-                is WidgetDeepLink.CreateNote -> {
+        when (deepLink) {
+            is WidgetDeepLink.CreateNote -> {
+                navigationState.topLevelRoute = NotesRoute
+                navigationState.backStacks[NotesRoute]?.let { notesStack ->
+                    while (notesStack.size > 1) {
+                        notesStack.removeLastOrNull()
+                    }
                     notesStack.add(
                         NoteEditorRoute(
                             noteId = null,
@@ -134,8 +135,32 @@ fun AppNavigation(
                         )
                     )
                 }
-                is WidgetDeepLink.EditNote -> {
+            }
+            is WidgetDeepLink.EditNote -> {
+                navigationState.topLevelRoute = NotesRoute
+                navigationState.backStacks[NotesRoute]?.let { notesStack ->
+                    while (notesStack.size > 1) {
+                        notesStack.removeLastOrNull()
+                    }
                     notesStack.add(NoteEditorRoute(noteId = deepLink.noteId))
+                }
+            }
+            is WidgetDeepLink.OpenToDoTab -> {
+                navigationState.topLevelRoute = TaskRoute
+                navigationState.backStacks[TaskRoute]?.let { taskStack ->
+                    while (taskStack.size > 1) {
+                        taskStack.removeLastOrNull()
+                    }
+                }
+                openAddToDoFromWidget = deepLink.openAddDialog
+            }
+            is WidgetDeepLink.OpenToDoDetail -> {
+                navigationState.topLevelRoute = TaskRoute
+                navigationState.backStacks[TaskRoute]?.let { taskStack ->
+                    while (taskStack.size > 1) {
+                        taskStack.removeLastOrNull()
+                    }
+                    taskStack.add(TaskDetailRoute(deepLink.taskId))
                 }
             }
         }
@@ -187,7 +212,9 @@ fun AppNavigation(
                     activePomodoroTask = taskName
                     navigator.navigate(PomodoroRoute)
                 },
-                notificationsEnabled = notificationsEnabled
+                notificationsEnabled = notificationsEnabled,
+                openAddToDoOnLaunch = openAddToDoFromWidget,
+                onConsumeOpenAddToDo = { openAddToDoFromWidget = false }
             )
         }
 

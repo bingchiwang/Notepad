@@ -46,7 +46,9 @@ fun TaskScreen(
     calendarFacade: LunarCalendarFacade,
     onTaskClick: (Int) -> Unit,
     onStartPomodoro: ((String) -> Unit)? = null,
-    notificationsEnabled: Boolean = true
+    notificationsEnabled: Boolean = true,
+    openAddToDoOnLaunch: Boolean = false,
+    onConsumeOpenAddToDo: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -65,6 +67,16 @@ fun TaskScreen(
 
     var showAddToDoDialog by remember { mutableStateOf(false) }
     var showAddReminderDialog by remember { mutableStateOf(false) }
+
+    // 來自桌面待辦小工具「+ 新增」深度連結時，直接切換至待辦列表並開啟新增對話框
+    LaunchedEffect(openAddToDoOnLaunch) {
+        if (openAddToDoOnLaunch) {
+            selectedTrack = 0
+            todoFilterMode = 1
+            showAddToDoDialog = true
+            onConsumeOpenAddToDo()
+        }
+    }
 
     // State for editing
     var editingToDo by remember { mutableStateOf<ToDo?>(null) }

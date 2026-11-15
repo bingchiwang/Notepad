@@ -4,6 +4,18 @@
 
 ---
 
+## [1.7.0] - 2026-11-15
+### 新增 (Added)
+- **待辦事項桌面小工具（`widget/`）**：
+  - **顯示尚未完成的任務**：新增 `ToDoWidgetProvider`、`ToDoWidgetService`、`ToDoWidgetLogic` 與 `ToDoWidgetRowBinder`，過濾僅顯示未完成待辦（`isCompleted = false`），並依「高＞中＞低優先級、截止日由近到遠、最新建立優先」排序，於頂部膠囊即時統計未完成筆數。
+  - **直接勾選完成項目**：點擊任務左側核取方塊即透過背景廣播觸發 `ReminderScheduler.updateToDoCompletionAndSyncReminders` 完成該任務、標記雲端待上傳、取消尚未觸發之關聯提醒鬧鐘，並即時從桌面清單移除已完成項目；支援 Android 12+ `RemoteCollectionItems` 與 Android 8.0–11 `RemoteViewsService` 雙軌相容。
+  - **顯示截止日期**：於 `ToDoWidgetLogic.resolveDueDateInfo` 依本地午夜時間判別 `已逾期`（紅字）、`今天到期` / `明天到期`（琥珀警示色）、`截止 MM/dd` 與 `未設截止日` 狀態。
+  - **標示高、中、低優先級**：每列待辦皆透過左側高對比識別色條與高／中／低優先級色彩徽章（`高優先`／`中優先`／`低優先`）清楚分級，完整適配淺／深色桌面主題。
+- **深度連結與雙向即時刷新**：擴充 `WidgetDeepLink`（`OpenToDoTab`、`OpenToDoDetail`）、`TaskScreen`（支援一鍵開啟 `AddToDoDialog`）、`AppNavigation`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 至 `ToDoWidgetUpdater.notifyDataChanged`，實現桌面與主應用雙向連動。
+- **測試覆蓋擴充**：新增 `ToDoWidgetLogicTest`（5 項未完成過濾、優先級與截止日排序、高中低徽章格式、逾期/今日/明日/未來判別、深度連結解析測試），全專案單元測試擴充至 **62 項**（14 個測試套件，0 失敗、0 略過）。
+
+---
+
 ## [1.6.0] - 2026-11-15
 ### 新增 (Added)
 - **快速記事桌面小工具（`widget/`）**：

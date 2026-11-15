@@ -5,23 +5,33 @@ import android.content.Intent
 import com.example.notepad.MainActivity
 
 /**
- * 桌面快速記事小工具深度連結動作與參數契約
+ * 桌面小工具深度連結動作與參數契約（支援快速記事與待辦事項桌面小工具）
  */
 sealed interface WidgetDeepLink {
-    /** 點擊小工具「新增」按鈕後直接開啟空白記事編輯器（可帶入預選分類） */
+    /** 點擊記事小工具「新增」按鈕後直接開啟空白記事編輯器（可帶入預選分類） */
     data class CreateNote(val categoryId: Int? = null) : WidgetDeepLink
 
-    /** 點擊小工具內任一記事項目後直接進入該篇記事編輯頁面 */
+    /** 點擊記事小工具內任一記事項目後直接進入該篇記事編輯頁面 */
     data class EditNote(val noteId: Int) : WidgetDeepLink
+
+    /** 點擊待辦小工具標題或「新增」按鈕後切換至待辦分頁（可選自動彈出新增待辦視窗） */
+    data class OpenToDoTab(val openAddDialog: Boolean = false) : WidgetDeepLink
+
+    /** 點擊待辦小工具內任一任務列後直接進入該任務詳情頁 */
+    data class OpenToDoDetail(val taskId: Int) : WidgetDeepLink
 }
 
 object QuickNoteWidgetContract {
     const val EXTRA_WIDGET_ACTION = "com.example.notepad.EXTRA_WIDGET_ACTION"
     const val EXTRA_WIDGET_NOTE_ID = "com.example.notepad.EXTRA_WIDGET_NOTE_ID"
     const val EXTRA_WIDGET_CATEGORY_ID = "com.example.notepad.EXTRA_WIDGET_CATEGORY_ID"
+    const val EXTRA_WIDGET_TODO_ID = "com.example.notepad.EXTRA_WIDGET_TODO_ID"
+    const val EXTRA_WIDGET_OPEN_ADD_TODO = "com.example.notepad.EXTRA_WIDGET_OPEN_ADD_TODO"
 
     const val ACTION_CREATE_NOTE = "CREATE_NOTE"
     const val ACTION_EDIT_NOTE = "EDIT_NOTE"
+    const val ACTION_OPEN_TODO_TAB = "OPEN_TODO_TAB"
+    const val ACTION_OPEN_TODO_DETAIL = "OPEN_TODO_DETAIL"
 
     const val INVALID_ID = -1
 
@@ -49,6 +59,28 @@ object QuickNoteWidgetContract {
     }
 
     /**
+     * 建立開啟主程式「待辦分頁（可選擇直接彈出新增待辦對話框）」的明確 Intent
+     */
+    fun buildOpenToDoTabIntent(context: Context, openAddDialog: Boolean): Intent {
+        return Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_WIDGET_ACTION, ACTION_OPEN_TODO_TAB)
+            putExtra(EXTRA_WIDGET_OPEN_ADD_TODO, openAddDialog)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+    }
+
+    /**
+     * 建立開啟主程式「指定待辦任務詳情頁」的明確 Intent
+     */
+    fun buildOpenToDoDetailIntent(context: Context, taskId: Int): Intent {
+        return Intent(context, MainActivity::class.java).apply {
+            putExtra(EXTRA_WIDGET_ACTION, ACTION_OPEN_TODO_DETAIL)
+            putExtra(EXTRA_WIDGET_TODO_ID, taskId)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+    }
+
+    /**
      * 由啟動 MainActivity 之 Intent 解析來自桌面小工具的導航請求
      */
     fun parseWidgetDeepLink(intent: Intent?): WidgetDeepLink? {
@@ -56,7 +88,15 @@ object QuickNoteWidgetContract {
         val action = intent.getStringExtra(EXTRA_WIDGET_ACTION)
         val noteId = intent.getIntExtra(EXTRA_WIDGET_NOTE_ID, INVALID_ID)
         val categoryId = intent.getIntExtra(EXTRA_WIDGET_CATEGORY_ID, INVALID_ID)
-        return parseWidgetDeepLink(action = action, noteId = noteId, categoryId = categoryId)
+        val todoId = intent.getIntExtra(EXTRA_WIDGET_TODO_ID, INVALID_ID)
+        val openAddToDo = intent.getBooleanExtra(EXTRA_WIDGET_OPEN_ADD_TODO, false)
+        return parseWidgetDeepLink(
+            action = action,
+            noteId = noteId,
+            categoryId = categoryId,
+            todoId = todoId,
+            openAddToDo = openAddToDo
+        )
     }
 
     /**
@@ -65,13 +105,17 @@ object QuickNoteWidgetContract {
     fun parseWidgetDeepLink(
         action: String?,
         noteId: Int = INVALID_ID,
-        categoryId: Int = INVALID_ID
+        categoryId: Int = INVALID_ID,
+        todoId: Int = INVALID_ID,
+        openAddToDo: Boolean = false
     ): WidgetDeepLink? {
         return when (action) {
             ACTION_CREATE_NOTE -> WidgetDeepLink.CreateNote(
                 categoryId = categoryId.takeIf { it > 0 }
             )
             ACTION_EDIT_NOTE -> noteId.takeIf { it > 0 }?.let { WidgetDeepLink.EditNote(it) }
+            ACTION_OPEN_TODO_TAB -> WidgetDeepLink.OpenToDoTab(openAddDialog = openAddToDo)
+            ACTION_OPEN_TODO_DETAIL -> todoId.takeIf { it > 0 }?.let { WidgetDeepLink.OpenToDoDetail(it) }
             else -> null
         }
     }
