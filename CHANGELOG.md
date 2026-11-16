@@ -4,6 +4,15 @@
 
 ---
 
+## [1.9.2] - 2026-11-16
+### 修復 (Fixed)
+- **修復二十四節氣跨時區計算與 GitHub CI 測試一致性（`LunarCalendarEngine`）**：
+  - 修正 `LunarCalendarEngine.getSolarTerm` 原先使用 JVM 預設時區判定節氣所屬日期的問題，統一以東亞標準時間（`GMT+8`）計算節氣落點，避免於 GitHub Actions（`UTC` 時區）執行時因跨午夜偏移導致如 2026 年「雨水」（GMT+8 `2/19 06:25`／UTC `2/18 22:25`）錯位至前一日。
+  - 同步優化 `LunarCalendarEngine.getLunarDate` 日差運算改為提取本地年月日後統一以 `UTC` 計算整數天數差，杜絕全球各時區夏令時間（DST）造成的一日誤差。
+  - 已於 `UTC` 時區與本地時區完成 16 個測試套件共 **74 項單元測試** 與 `./gradlew build` 驗證通過。
+
+---
+
 ## [1.9.1] - 2026-11-16
 ### 調整與優化 (Changed / Improved)
 - **整合「時間規畫表」與內嵌「番茄鐘」導覽架構（`AppNavigation` / `ScheduleScreen`）**：

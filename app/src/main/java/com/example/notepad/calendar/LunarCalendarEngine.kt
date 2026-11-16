@@ -114,16 +114,23 @@ class LunarCalendarEngine {
          * 以西元 1900 年 1 月 31 日（農曆正月初一）為基準日計算相差天數並逐年逐月推算
          */
         fun getLunarDate(date: Date): LunarDate {
-            val dateCal = Calendar.getInstance().apply { 
-                time = date
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
+            // 先擷取本地年月日，再統一以 UTC 計算日差，避免跨日／夏令時間（DST）誤差
+            val localCal = Calendar.getInstance().apply { time = date }
+            val utcZone = TimeZone.getTimeZone("UTC")
+            val dateCal = Calendar.getInstance(utcZone).apply {
+                clear()
+                set(
+                    localCal.get(Calendar.YEAR),
+                    localCal.get(Calendar.MONTH),
+                    localCal.get(Calendar.DAY_OF_MONTH),
+                    0,
+                    0,
+                    0
+                )
             }
-            val baseCal = Calendar.getInstance().apply {
+            val baseCal = Calendar.getInstance(utcZone).apply {
+                clear()
                 set(1900, 0, 31, 0, 0, 0)
-                set(Calendar.MILLISECOND, 0)
             }
 
             val offset = ((dateCal.timeInMillis - baseCal.timeInMillis) / 86400000L).toInt()
@@ -193,10 +200,12 @@ class LunarCalendarEngine {
                 set(Calendar.MILLISECOND, 0)
             }.time.time
 
+            // 傳統二十四節氣依東亞標準時間（GMT+8）判定所屬曆日，確保在 UTC 或全球各時區（含 CI）結果完全一致
+            val eastAsiaZone = TimeZone.getTimeZone("GMT+8")
             for (i in 0 until 24) {
                 val ms = (31556925974.7 * (year - 1900) + solarTermInfo[i] * 60000L).toLong()
                 val termDate = Date(baseDate + ms)
-                val cal = Calendar.getInstance().apply { time = termDate }
+                val cal = Calendar.getInstance(eastAsiaZone).apply { time = termDate }
                 if (cal.get(Calendar.MONTH) == month - 1 && cal.get(Calendar.DAY_OF_MONTH) == day) {
                     return solarTermNames[i]
                 }

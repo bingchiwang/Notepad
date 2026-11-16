@@ -217,6 +217,15 @@
   - 底部導覽列維持 4 項一致入口，且「時間規畫表」內可流暢切換時間規畫與番茄鐘功能
   - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_18_SolarTermTimezoneFix: 修復農曆二十四節氣於 UTC／跨時區環境之計算一致性（修復 GitHub Actions CI）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 調整 `LunarCalendarEngine.getSolarTerm` 統一採用 `GMT+8`（東亞標準時間）比對二十四節氣日期，並於 `getLunarDate` 統一以 UTC 計算跨日整數天數差以消除夏令時間／時區偏移造成的誤判。
+  - 於 `UTC` 時區模擬 GitHub Actions Runner 驗證全專案 74 項單元測試與 `./gradlew build` 全數通過。
+- **驗收標準 (Acceptance Criteria):**
+  - 全專案 74 項單元測試於 UTC 與 GMT+8 環境均 100% 通過
+  - GitHub Actions `Android CI / build` 執行成功
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)
