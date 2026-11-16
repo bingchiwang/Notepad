@@ -119,8 +119,8 @@
 - **即將到來的提醒**：過濾尚未觸發且未過期的 `Reminder`（`!isFired && triggerAt > now`），依觸發時間升冪排序並依距離呈現「`今天 HH:mm`」、「`明天 HH:mm`」或「`MM/dd HH:mm`」；點擊可直達 `TaskRoute` 之「提醒事項」分軌。
 - **即時聯動刷新**：`ReminderReceiver`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆即時觸發 `TodayScheduleWidgetUpdater.notifyDataChanged`。
 
-### 3.11 月曆桌面小工具與全小工具圖示系統（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences`）
-- **完整月份與星期顯示**：透過 `CalendarWidgetLogic.resolveMonthGrid` 產生固定 6 週 × 7 天（42 格，週日為首日）月曆格網與「`YYYY年 M月`」標題（搭配 `ic_widget_calendar.xml` 標頭圖示），今天日期以藍色底色與藍色外框（`widget_cal_today_bg.xml`）及藍字日號標示；透過 `CalendarWidgetPreferences` 為每個 `appWidgetId` 獨立保存當前顯示年月，支援點擊左右箭頭切換上／下個月及點擊標題回到當月。
+### 3.11 月曆桌面小工具與全小工具圖示系統（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences` / `CalendarWidgetConfigureActivity`）
+- **完整月份與星期顯示（日期置中靠上＋可選農曆日期）**：透過 `CalendarWidgetLogic.resolveMonthGrid` 產生固定 6 週 × 7 天（42 格，週日為首日）月曆格網與「`YYYY年 M月`」標題（搭配 `ic_widget_calendar.xml` 標頭圖示），今天日期以藍色底色與藍色外框（`widget_cal_today_bg.xml`）及藍字日號標示；格內國曆日號採「置中靠上（`top|center_horizontal`）」對齊，並透過 `CalendarWidgetPreferences` 依 `appWidgetId` 獨立保存顯示年月與是否顯示農曆開關（`showLunarDate`），支援點擊頂部「`農曆 ✓`」按鈕一鍵切換，或於加入／重設配置頁（`CalendarWidgetConfigureActivity`）預覽與選擇是否顯示農曆日期、節慶與二十四節氣。
 - **直接顯示圖示＋文字標籤與多筆截斷規則（不使用小圓點）**：
   - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以附帶類型圖示（`ic_widget_cal_event_note` / `ic_widget_cal_event_todo` / `ic_widget_cal_event_todo_done`）之單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
   - 每個日期格最多直接顯示 2 筆事項（`MAX_VISIBLE_EVENTS = 2`）；當同一天超過 2 筆事項時，自動計算剩餘筆數並顯示「`＋N 項`」標籤（例如共 5 筆時顯示前 2 筆及「`＋3 項`」）。
@@ -138,7 +138,7 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **16 個測試類別、73 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **16 個測試類別、74 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
@@ -155,7 +155,7 @@
 13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
 14. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
 15. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
-16. `CalendarWidgetLogicTest`（6 項）：驗證月曆小工具跨年月份進退位、42 格週日對齊與今日標示、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則及深度連結解析。
+16. `CalendarWidgetLogicTest`（7 項）：驗證月曆小工具跨年月份進退位、42 格週日對齊與今日標示、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、農曆顯示切換與節慶標記及深度連結解析。
 
 ---
 

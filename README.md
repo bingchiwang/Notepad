@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-73%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-74%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -91,8 +91,8 @@
 - **今日完成進度進度條**：彙整今日所有每日時間規劃與今天到期之待辦事項，顯示即時進度百分比條與完成統計。
 - **即將到來的提醒**：列出尚未觸發且未過期的最近提醒，標示「今天」、「明天」或跨日時間並可一鍵直達提醒管理頁面。
 
-### 9. 📆 月曆桌面小工具 (`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences`)
-- **完整月份與今日藍色標示**：顯示月曆圖示、完整年月標題、星期列與 6 週 × 7 天網格；今天日期以醒目藍色底與藍色外框標示，並支援點擊左右箭頭切換上／下個月。
+### 9. 📆 月曆桌面小工具 (`CalendarWidgetProvider` / `CalendarWidgetConfigureActivity` / `CalendarWidgetLogic`)
+- **完整月份、日期置中靠上與可選農曆日期**：顯示月曆圖示、完整年月標題、星期列與 6 週 × 7 天網格；格內日期採置中靠上對齊，今天以醒目藍色底與藍色外框標示，並支援點擊頂部「`農曆`」按鈕一鍵切換或於配置頁選擇是否顯示農曆日期、節慶與二十四節氣。
 - **格內直接顯示圖示＋文字與 `＋N 項` 摺疊（不使用小圓點）**：有記事或待辦事項的日期直接在格子內顯示附帶專屬小圖示的單行省略文字，並以暖琥珀色與湛藍色底區分記事與待辦；每格最多顯示 2 筆，超過 2 筆時自動顯示「`＋3 項`」等剩餘筆數標籤。
 - **五維度直覺點擊互動與小工具選單預覽圖示**：點擊日期格開啟該日記事與待辦清單、點擊記事進入編輯頁、點擊待辦查看或修改詳情、點擊左右箭頭切換月份、點擊「`+ 新增`」快速選擇建立該日記事或待辦；四大桌面小工具均配備專屬 Launcher 選單圖示與預覽插圖。
 
@@ -189,8 +189,9 @@ com.example.notepad/
 │   ├── TodayScheduleWidgetService.kt       # Android 8.0–11 今日行程 RemoteViewsService
 │   ├── TodayScheduleWidgetProvider.kt      # 今日行程小工具提供者與即時重整協調器
 │   ├── CalendarWidgetLogic.kt              # 月曆小工具 42 格月份排程、記事/待辦排序與 ＋N 項截斷邏輯
-│   ├── CalendarWidgetPreferences.kt        # 依 appWidgetId 保存月曆小工具目前顯示年月
-│   ├── CalendarWidgetProvider.kt           # 月曆小工具提供者（月份切換、格內事件直達）與重整協調器
+│   ├── CalendarWidgetPreferences.kt        # 依 appWidgetId 保存月曆小工具顯示年月與農曆開關
+│   ├── CalendarWidgetProvider.kt           # 月曆小工具提供者（月份／農曆切換、格內事件直達）與重整協調器
+│   ├── CalendarWidgetConfigureActivity.kt  # 月曆小工具農曆日期顯示配置與即時預覽 Compose 介面
 │   └── WidgetTaskActions.kt                # 跨小工具共用待辦完成與雙向刷新協調器（DRY）
 └── ui/                                     # Jetpack Compose 視覺介面層
     ├── app/                                # Navigation 3 多堆疊導覽狀態與系統欄防遮擋容器
@@ -222,7 +223,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **16 個單元測試套件、共 73 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **16 個單元測試套件、共 74 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -240,7 +241,7 @@ com.example.notepad/
 | `QuickNoteWidgetLogicTest` | 7 | 記事小工具分類編解碼、釘選與更新時間排序、分類刪除退回、空白標題／多行摘要格式化與深度連結解析 |
 | `ToDoWidgetLogicTest` | 5 | 待辦小工具未完成過濾、優先級與截止日排序、徽章標籤格式、逾期／今日／明日判別與深度連結解析 |
 | `TodayScheduleWidgetLogicTest` | 5 | 今日行程小工具今日到期待辦、綜合完成進度計算、即將到來提醒排序與格式及深度連結解析 |
-| `CalendarWidgetLogicTest` | 6 | 月曆小工具跨年月份切換、42 格週日對齊與今日標示、記事与待辦歸類、超過 2 筆顯示 `＋3 項` 與深度連結解析 |
+| `CalendarWidgetLogicTest` | 7 | 月曆小工具跨年月份切換、42 格週日對齊與今日標示、記事與待辦歸類、超過 2 筆顯示 `＋3 項`、農曆顯示切換與深度連結解析 |
 | `ExampleUnitTest` | 1 | 基礎 JUnit 測試環境驗證 |
 
 ---
@@ -273,7 +274,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 73 項單元測試
+# 1. 執行全部 74 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

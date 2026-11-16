@@ -6,6 +6,7 @@
     android:layout_margin="1.5dp"
     android:layout_weight="1"
     android:background="@drawable/widget_cal_cell_bg"
+    android:gravity="top|center_horizontal"
     android:orientation="vertical"
     android:padding="2.5dp">
 
@@ -14,13 +15,29 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ellipsize="end"
-        android:gravity="start"
+        android:gravity="top|center_horizontal"
+        android:includeFontPadding="false"
         android:maxLines="1"
         android:paddingHorizontal="2dp"
         android:text="1"
         android:textColor="@color/widget_text_primary"
         android:textSize="10.5sp"
         android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/widget_cal_lunar_date"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="0.5dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:paddingHorizontal="1dp"
+        android:text="初一"
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="7.5sp"
+        android:visibility="gone" />
 
     <TextView
         android:id="@+id/widget_cal_event_1"
@@ -31,6 +48,7 @@
         android:drawablePadding="2dp"
         android:ellipsize="end"
         android:gravity="center_vertical"
+        android:includeFontPadding="false"
         android:maxLines="1"
         android:paddingHorizontal="3dp"
         android:paddingVertical="1dp"
@@ -47,6 +65,7 @@
         android:drawablePadding="2dp"
         android:ellipsize="end"
         android:gravity="center_vertical"
+        android:includeFontPadding="false"
         android:maxLines="1"
         android:paddingHorizontal="3dp"
         android:paddingVertical="1dp"
@@ -62,6 +81,7 @@
         android:background="@drawable/widget_cal_more_pill_bg"
         android:ellipsize="end"
         android:gravity="center"
+        android:includeFontPadding="false"
         android:maxLines="1"
         android:paddingHorizontal="2dp"
         android:paddingVertical="0.5dp"

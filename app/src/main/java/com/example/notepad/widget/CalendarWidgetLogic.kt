@@ -1,8 +1,10 @@
 package com.example.notepad.widget
 
+import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.local.entity.Note
 import com.example.notepad.data.local.entity.ToDo
 import java.util.Calendar
+import java.util.Date
 
 /**
  * 月曆桌面小工具單筆行事曆事項類型（用於套用不同底色區分記事與待辦）
@@ -33,17 +35,20 @@ data class CalendarDayCellState(
     val isToday: Boolean,
     val visibleEvents: List<CalendarDayEvent>,
     val overflowCount: Int,
-    val overflowLabel: String?
+    val overflowLabel: String?,
+    val lunarLabel: String? = null,
+    val isLunarHighlight: Boolean = false
 )
 
 /**
- * 經月份對齊、多筆截斷與色彩語意整理後的月曆小工具狀態
+ * 經月份對齊、農曆顯示設定、多筆截斷與色彩語意整理後的月曆小工具狀態
  */
 data class ResolvedCalendarWidgetState(
     val year: Int,
     val month: Int,
     val headerTitle: String,
     val quickAddDefaultDateMillis: Long,
+    val showLunarDate: Boolean,
     val cells: List<CalendarDayCellState>
 )
 
@@ -57,6 +62,20 @@ object CalendarWidgetLogic {
 
     /** 完整月曆固定顯示 6 週 x 7 天 */
     const val GRID_CELL_COUNT = 42
+
+    /** 共用離線農曆門面實例（避免每次繪製重複建立物件） */
+    private val sharedLunarFacade by lazy { LunarCalendarFacade() }
+
+    /**
+     * 取得指定午夜時間戳對應之農曆簡短標籤與節慶／節氣／初一醒目標記
+     */
+    fun resolveLunarLabel(dayMidnightMillis: Long): Pair<String, Boolean> {
+        val info = sharedLunarFacade.getCalendarInfo(Date(dayMidnightMillis))
+        val isHighlight = !info.festival.isNullOrEmpty() ||
+            !info.solarTerm.isNullOrEmpty() ||
+            info.lunarDate.day == 1
+        return info.displayLabel to isHighlight
+    }
 
     /**
      * 取得指定時間戳記所屬之本地年、月（1-12）
@@ -89,7 +108,9 @@ object CalendarWidgetLogic {
         notes: List<Note>,
         todos: List<ToDo>,
         todayMillis: Long = System.currentTimeMillis(),
-        dateNormalizer: (Long) -> Long = ToDoWidgetLogic::normalizeToLocalMidnight
+        showLunarDate: Boolean = false,
+        dateNormalizer: (Long) -> Long = ToDoWidgetLogic::normalizeToLocalMidnight,
+        lunarLabelProvider: (Long) -> Pair<String, Boolean> = ::resolveLunarLabel
     ): ResolvedCalendarWidgetState {
         val normalizedToday = dateNormalizer(todayMillis)
 
@@ -126,6 +147,11 @@ object CalendarWidgetLogic {
             val visibleEvents = dayEvents.take(MAX_VISIBLE_EVENTS)
             val overflowCount = (dayEvents.size - MAX_VISIBLE_EVENTS).coerceAtLeast(0)
             val overflowLabel = if (overflowCount > 0) "＋${overflowCount} 項" else null
+            val (lunarLabel, isLunarHighlight) = if (showLunarDate) {
+                lunarLabelProvider(cellMidnight)
+            } else {
+                null to false
+            }
 
             cells.add(
                 CalendarDayCellState(
@@ -135,7 +161,9 @@ object CalendarWidgetLogic {
                     isToday = isToday,
                     visibleEvents = visibleEvents,
                     overflowCount = overflowCount,
-                    overflowLabel = overflowLabel
+                    overflowLabel = overflowLabel,
+                    lunarLabel = lunarLabel,
+                    isLunarHighlight = isLunarHighlight
                 )
             )
 
@@ -153,6 +181,7 @@ object CalendarWidgetLogic {
             month = month,
             headerTitle = "${year}年 ${month}月",
             quickAddDefaultDateMillis = quickAddDefaultDateMillis,
+            showLunarDate = showLunarDate,
             cells = cells
         )
     }

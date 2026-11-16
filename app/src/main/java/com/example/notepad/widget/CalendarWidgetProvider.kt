@@ -34,6 +34,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             ACTION_PREV_MONTH -> -1
             ACTION_NEXT_MONTH -> 1
             ACTION_RESET_MONTH -> 0
+            ACTION_TOGGLE_LUNAR -> null
             else -> return
         }
 
@@ -48,10 +49,10 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val preferences = CalendarWidgetPreferences(appContext)
-                if (deltaMonths == 0) {
-                    preferences.resetToCurrentMonth(appWidgetId)
-                } else {
-                    preferences.shiftDisplayedMonth(appWidgetId, deltaMonths)
+                when (deltaMonths) {
+                    null -> preferences.toggleShowLunarDate(appWidgetId)
+                    0 -> preferences.resetToCurrentMonth(appWidgetId)
+                    else -> preferences.shiftDisplayedMonth(appWidgetId, deltaMonths)
                 }
                 val manager = AppWidgetManager.getInstance(appContext) ?: return@launch
                 updateWidgetsInternal(appContext, manager, intArrayOf(appWidgetId))
@@ -89,6 +90,7 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         const val ACTION_PREV_MONTH = "com.example.notepad.ACTION_WIDGET_CAL_PREV_MONTH"
         const val ACTION_NEXT_MONTH = "com.example.notepad.ACTION_WIDGET_CAL_NEXT_MONTH"
         const val ACTION_RESET_MONTH = "com.example.notepad.ACTION_WIDGET_CAL_RESET_MONTH"
+        const val ACTION_TOGGLE_LUNAR = "com.example.notepad.ACTION_WIDGET_CAL_TOGGLE_LUNAR"
 
         private val WEEK_ROW_IDS = intArrayOf(
             R.id.widget_cal_week_0,
@@ -120,12 +122,14 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                     appWidgetId = appWidgetId,
                     defaultTodayMillis = nowMillis
                 )
+                val showLunarDate = preferences.getShowLunarDate(appWidgetId)
                 val resolvedState = CalendarWidgetLogic.resolveMonthGrid(
                     year = displayYear,
                     month = displayMonth,
                     notes = notes,
                     todos = todos,
-                    todayMillis = nowMillis
+                    todayMillis = nowMillis,
+                    showLunarDate = showLunarDate
                 )
                 val views = buildWidgetRemoteViews(
                     context = context,
@@ -174,6 +178,37 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                     action = ACTION_RESET_MONTH,
                     requestCode = 200_000 + appWidgetId * 10 + 3,
                     uriSuffix = "reset"
+                )
+            )
+
+            // 頂部一鍵切換是否顯示農曆日期／節氣節慶
+            val lunarToggleBg = if (resolved.showLunarDate) {
+                R.drawable.widget_chip_bg
+            } else {
+                R.drawable.widget_cal_nav_bg
+            }
+            val lunarToggleTextColor = if (resolved.showLunarDate) {
+                R.color.widget_chip_text
+            } else {
+                R.color.widget_text_secondary
+            }
+            views.setInt(R.id.widget_cal_lunar_toggle, "setBackgroundResource", lunarToggleBg)
+            views.setTextColor(
+                R.id.widget_cal_lunar_toggle,
+                ContextCompat.getColor(context, lunarToggleTextColor)
+            )
+            views.setTextViewText(
+                R.id.widget_cal_lunar_toggle,
+                if (resolved.showLunarDate) "農曆 ✓" else "農曆"
+            )
+            views.setOnClickPendingIntent(
+                R.id.widget_cal_lunar_toggle,
+                buildMonthActionPendingIntent(
+                    context = context,
+                    appWidgetId = appWidgetId,
+                    action = ACTION_TOGGLE_LUNAR,
+                    requestCode = 200_000 + appWidgetId * 10 + 4,
+                    uriSuffix = "lunar"
                 )
             )
 
@@ -237,6 +272,24 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 R.id.widget_cal_day_number,
                 ContextCompat.getColor(context, dayNumberColorRes)
             )
+
+            // 依設定顯示或隱藏至中靠上的農曆日期／節慶／節氣文字
+            val lunarText = cell.lunarLabel
+            if (lunarText != null) {
+                val lunarColorRes = when {
+                    !cell.isCurrentMonth -> R.color.widget_cal_text_other
+                    cell.isLunarHighlight -> R.color.widget_cal_today_text
+                    else -> R.color.widget_text_secondary
+                }
+                cellViews.setViewVisibility(R.id.widget_cal_lunar_date, View.VISIBLE)
+                cellViews.setTextViewText(R.id.widget_cal_lunar_date, lunarText)
+                cellViews.setTextColor(
+                    R.id.widget_cal_lunar_date,
+                    ContextCompat.getColor(context, lunarColorRes)
+                )
+            } else {
+                cellViews.setViewVisibility(R.id.widget_cal_lunar_date, View.GONE)
+            }
 
             // 點擊日期格 -> 開啟該日期的記事與待辦清單
             val openDayIntent = QuickNoteWidgetContract.buildOpenCalendarDayIntent(

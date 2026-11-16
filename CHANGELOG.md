@@ -7,7 +7,8 @@
 ## [1.9.0] - 2026-11-15
 ### 新增 (Added)
 - **月曆桌面小工具（`widget/`）**：
-  - **完整月份與星期網格顯示**：新增 `CalendarWidgetProvider`、`CalendarWidgetLogic`、`CalendarWidgetPreferences` 與雙主題自適應佈局（`widget_calendar.xml`、`widget_calendar_day_cell.xml`、`calendar_widget_info.xml`），顯示月曆圖示（`ic_widget_calendar.xml`）、完整年月標題、星期列（`日`～`六`）與 6 週 × 7 天（42 格）月曆格網，並支援依個別小工具實例點擊左右箭頭切換上一個月／下一個月（點擊年月標題可快速回到當月）。
+  - **完整月份與星期網格顯示**：新增 `CalendarWidgetProvider`、`CalendarWidgetLogic`、`CalendarWidgetPreferences`、`CalendarWidgetConfigureActivity` 與雙主題自適應佈局（`widget_calendar.xml`、`widget_calendar_day_cell.xml`、`calendar_widget_info.xml`），顯示月曆圖示（`ic_widget_calendar.xml`）、完整年月標題、星期列（`日`～`六`）與 6 週 × 7 天（42 格）月曆格網，並支援依個別小工具實例點擊左右箭頭切換上一個月／下一個月（點擊年月標題可快速回到當月）。
+  - **日期置中靠上排版與可選農曆日期**：每個日期格之國曆日號採「置中靠上（`top|center_horizontal`）」排版，並可透過小工具頂部「`農曆 ✓`」一鍵切換鈕或長按重設配置頁（`CalendarWidgetConfigureActivity`）自由選擇是否於日號下方顯示農曆日期、傳統節慶與二十四節氣。
   - **今天日期明顯標示**：今天日期格採用專屬藍色背景與藍色外框（`widget_cal_today_bg.xml`）及高對比藍字日號標示，清晰區分當月、非當月與今日。
   - **格內直接顯示圖示＋文字與多筆折疊規則（無小圓點）**：廢除傳統小圓點標記，直接於日期格內顯示附帶專屬小圖示（記事文件圖示 `ic_widget_cal_event_note.xml`、待辦勾選圖示 `ic_widget_cal_event_todo.xml`／已完成核取圖示 `ic_widget_cal_event_todo_done.xml`）的文字膠囊，並以不同底色區分記事（暖琥珀色 `widget_cal_note_pill_bg`）與待辦事項（湛藍色 `widget_cal_todo_pill_bg`／已完成翠綠色 `widget_cal_todo_done_pill_bg`）；每格最多直接顯示 2 筆事項，單行超出寬度自動省略（`ellipsize="end"`），超過 2 筆時自動顯示「`＋N 項`」（如 5 筆顯示 2 筆＋「`＋3 項`」）。
   - **五項完整點擊互動**：
@@ -20,7 +21,7 @@
   - 為 `QuickNoteWidgetProvider`、`ToDoWidgetProvider`、`TodayScheduleWidgetProvider` 與 `CalendarWidgetProvider` 新增桌面小工具選單專屬識別圖示（`ic_widget_picker_note.xml`、`ic_widget_picker_todo.xml`、`ic_widget_picker_today.xml`、`ic_widget_picker_calendar.xml`）與高解析度向量預覽插圖（`widget_preview_quick_note.xml`、`widget_preview_todo.xml`、`widget_preview_today_schedule.xml`、`widget_preview_calendar.xml`）。
   - 於各桌面小工具內部元件補齊語意圖示：快速記事分類資料夾圖示（`ic_widget_category.xml`）、單篇記事文件圖示（`ic_widget_note_doc.xml`）、修改時間時鐘圖示（`ic_widget_clock.xml`）、待辦截止日曆圖示（`ic_widget_due_calendar.xml`）、標籤圖示（`ic_widget_tag.xml`）、今日進度統計圖示（`ic_widget_progress.xml`）與今日行程分區圖示。
 - **萬年曆畫面整合當日記事清單與雙向即時刷新**：擴充 `CalendarScreen`（新增「📝 該日記事」區塊、點擊記事編輯、點擊待辦進詳情頁、快速新增記事／待辦選單對話框）、`NoteEditorRoute`（支援 `initialCreatedAtMillis`）、`WidgetTaskActions` 與 `MainActivity`（記事、待辦本機異動與雲端同步拉回後即時觸發 `CalendarWidgetUpdater.notifyDataChanged`）。
-- **測試覆蓋擴充**：新增 `CalendarWidgetLogicTest`（6 項跨年月份進退位、42 格週日對齊與今日標示、非本月預設新增日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」標籤計算、深度連結解析測試），全專案單元測試擴充至 **73 項**（16 個測試套件，0 失敗、0 略過）。
+- **測試覆蓋擴充**：新增 `CalendarWidgetLogicTest`（7 項跨年月份進退位、42 格週日對齊與今日標示、非本月預設新增日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」標籤計算、農曆顯示切換與節慶／初一標記、深度連結解析測試），全專案單元測試擴充至 **74 項**（16 個測試套件，0 失敗、0 略過）。
 
 ---
 

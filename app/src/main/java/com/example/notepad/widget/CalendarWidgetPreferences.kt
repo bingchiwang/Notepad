@@ -64,12 +64,38 @@ class CalendarWidgetPreferences(context: Context) {
     }
 
     /**
+     * 讀取指定小工具是否顯示農曆日期／節慶／節氣（預設顯示）
+     */
+    fun getShowLunarDate(appWidgetId: Int): Boolean {
+        return prefs.getBoolean(lunarKey(appWidgetId), DEFAULT_SHOW_LUNAR)
+    }
+
+    /**
+     * 儲存指定小工具是否顯示農曆日期之設定
+     */
+    fun setShowLunarDate(appWidgetId: Int, showLunar: Boolean) {
+        prefs.edit()
+            .putBoolean(lunarKey(appWidgetId), showLunar)
+            .apply()
+    }
+
+    /**
+     * 一鍵切換指定小工具的農曆顯示開關並回傳切換後狀態
+     */
+    fun toggleShowLunarDate(appWidgetId: Int): Boolean {
+        val nextValue = !getShowLunarDate(appWidgetId)
+        setShowLunarDate(appWidgetId, nextValue)
+        return nextValue
+    }
+
+    /**
      * 移除已從桌面刪除之月曆小工具設定資料
      */
     fun removeWidget(appWidgetId: Int) {
         prefs.edit()
             .remove(yearKey(appWidgetId))
             .remove(monthKey(appWidgetId))
+            .remove(lunarKey(appWidgetId))
             .apply()
     }
 
@@ -77,8 +103,11 @@ class CalendarWidgetPreferences(context: Context) {
 
     private fun monthKey(appWidgetId: Int): String = "cal_month_$appWidgetId"
 
+    private fun lunarKey(appWidgetId: Int): String = "cal_lunar_$appWidgetId"
+
     companion object {
         private const val PREFS_NAME = "calendar_widget_prefs"
         private const val UNSET_VALUE = -1
+        const val DEFAULT_SHOW_LUNAR = true
     }
 }

@@ -42,6 +42,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".widget.CalendarWidgetConfigureActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Notepad">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false">

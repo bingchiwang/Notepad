@@ -159,6 +159,38 @@ class CalendarWidgetLogicTest {
     }
 
     @Test
+    fun `可切換顯示或隱藏農曆日期並正確帶出節慶與初一標籤`() {
+        val withoutLunar = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 2,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 2, 17),
+            showLunarDate = false
+        )
+        assertFalse(withoutLunar.showLunarDate)
+        assertTrue(withoutLunar.cells.all { it.lunarLabel == null && !it.isLunarHighlight })
+
+        // 2026 年 2 月 17 日為農曆正月初一（春節）
+        val withLunar = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 2,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 2, 17),
+            showLunarDate = true
+        )
+        assertTrue(withLunar.showLunarDate)
+        val springFestivalCell = withLunar.cells.first { it.isCurrentMonth && it.dayOfMonth == 17 }
+        assertEquals("春節", springFestivalCell.lunarLabel)
+        assertTrue(springFestivalCell.isLunarHighlight)
+
+        val feb18Cell = withLunar.cells.first { it.isCurrentMonth && it.dayOfMonth == 18 }
+        assertEquals("初二", feb18Cell.lunarLabel)
+        assertFalse(feb18Cell.isLunarHighlight)
+    }
+
+    @Test
     fun `月曆小工具深度連結解析點擊日期與快速新增參數正確無誤`() {
         val targetMillis = localMillis(2026, 11, 20)
 

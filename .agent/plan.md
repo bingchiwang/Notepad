@@ -35,7 +35,7 @@
   * **Room Database v5**：包含 `Note`、`Category`、`ToDo`、`Reminder`、`TimeBlock`、`PomodoroRecord`、`SyncTombstone` 共 7 個實體與對應 DAO（含 `MIGRATION_3_4` 與 `MIGRATION_4_5`）。
   * **DataStore Preferences**：包含 `ThemePreferences`、`NotificationPreferences`、`NoteDraftPreferences`、`SyncPreferences`。
 * **雲端服務 (Cloud Backend)**：Firebase BOM (`35.1.0`) + Cloud Firestore
-* **品質驗證與 CI/CD**：16 個單元測試套件（73 項測試）、Android Lint 靜態檢查、GitHub Actions (`.github/workflows/android.yml`)
+* **品質驗證與 CI/CD**：16 個單元測試套件（74 項測試）、Android Lint 靜態檢查、GitHub Actions (`.github/workflows/android.yml`)
 
 ---
 
@@ -202,10 +202,11 @@
   - 廢除小圓點標示，改於每日格子內直接顯示最多 2 筆附帶類型小圖示（`ic_widget_cal_event_*`）之單行省略文字標籤並以不同底色區分記事與待辦；超過 2 筆時自動顯示「`＋N 項`」（如 5 筆顯示前 2 筆與「`＋3 項`」）。
   - 為四大桌面小工具補齊桌面選單專屬圖示（`ic_widget_picker_*`）、預覽插圖（`widget_preview_*`）及小工具內部語意圖示（分類、文件、時鐘、截止日曆、標籤、進度圖示）。
   - 擴充 `QuickNoteWidgetContract`（`OpenCalendarDay`、`buildEditNoteIntent`）、`NoteEditorRoute`（`initialCreatedAtMillis`）、`NoteEditorScreen`、`CalendarScreen`（整合「📝 該日記事」區塊、點擊記事編輯、點擊待辦詳情與快速建立記事／待辦對話框）、`AppNavigation`、`WidgetTaskActions` 與 `MainActivity` 雙向即時刷新。
-  - 新增 `CalendarWidgetLogicTest` 6 項單元測試並同步更新 `SPECIFICATION.md`、`CHANGELOG.md` 與 `README.md`。
+  - 將日期格內國曆日號調整為「置中靠上（`top|center_horizontal`）」對齊，並擴充 `CalendarWidgetLogic`、`CalendarWidgetPreferences`、`CalendarWidgetProvider`（頂部一鍵切換 `ACTION_TOGGLE_LUNAR`）與 `CalendarWidgetConfigureActivity`（`reconfigurable` 即時預覽設定頁），支援依個別小工具選擇是否於日號下方顯示農曆日期、節慶與二十四節氣。
+  - 新增 `CalendarWidgetLogicTest` 7 項單元測試並同步更新 `SPECIFICATION.md`、`CHANGELOG.md` 與 `README.md`。
 - **驗收標準 (Acceptance Criteria):**
   - 支援 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`），Android Lint 錯誤為 0
-  - 全專案 73 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+  - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
 ---
 
