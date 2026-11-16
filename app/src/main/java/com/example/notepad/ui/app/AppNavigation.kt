@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
@@ -101,7 +100,7 @@ fun AppNavigation(
     }
 
     val topLevelRoutes = remember {
-        setOf(NotesRoute, TaskRoute, CalendarRoute, ScheduleRoute, PomodoroRoute)
+        setOf(NotesRoute, TaskRoute, CalendarRoute, ScheduleRoute)
     }
 
     val navigationState = rememberNavigationState(
@@ -116,6 +115,7 @@ fun AppNavigation(
     var initialTaskTrackFromWidget by remember { mutableStateOf<Int?>(null) }
     var calendarDateFromWidget by remember { mutableStateOf<Long?>(null) }
     var openCalendarQuickAddFromWidget by remember { mutableStateOf(false) }
+    var scheduleTabOnLaunch by remember { mutableStateOf<Int?>(null) }
 
     val currentTopRoute = navigationState.topLevelRoute
     val currentLeafRoute = navigationState.backStacks[currentTopRoute]?.lastOrNull() ?: currentTopRoute
@@ -174,6 +174,7 @@ fun AppNavigation(
                         scheduleStack.removeLastOrNull()
                     }
                 }
+                scheduleTabOnLaunch = 0
             }
             is WidgetDeepLink.OpenRemindersTrack -> {
                 navigationState.topLevelRoute = TaskRoute
@@ -242,7 +243,8 @@ fun AppNavigation(
                 },
                 onStartPomodoro = { taskName ->
                     activePomodoroTask = taskName
-                    navigator.navigate(PomodoroRoute)
+                    scheduleTabOnLaunch = 1
+                    navigator.navigate(ScheduleRoute)
                 },
                 notificationsEnabled = notificationsEnabled,
                 openAddToDoOnLaunch = openAddToDoFromWidget,
@@ -294,10 +296,9 @@ fun AppNavigation(
         entry<ScheduleRoute> {
             ScheduleScreen(
                 taskRepository = taskRepository,
-                onStartPomodoroForTask = { taskName ->
-                    activePomodoroTask = taskName
-                    navigator.navigate(PomodoroRoute)
-                }
+                initialTab = scheduleTabOnLaunch,
+                onConsumeInitialTab = { scheduleTabOnLaunch = null },
+                initialPomodoroTaskTitle = activePomodoroTask
             )
         }
 
@@ -341,14 +342,8 @@ fun AppNavigation(
                 item(
                     selected = currentTopRoute == ScheduleRoute,
                     onClick = { navigator.navigate(ScheduleRoute) },
-                    icon = { Icon(Icons.Default.Schedule, contentDescription = "排程") },
-                    label = { Text("排程") }
-                )
-                item(
-                    selected = currentTopRoute == PomodoroRoute,
-                    onClick = { navigator.navigate(PomodoroRoute) },
-                    icon = { Icon(Icons.Default.Timer, contentDescription = "番茄鐘") },
-                    label = { Text("番茄鐘") }
+                    icon = { Icon(Icons.Default.Schedule, contentDescription = "時間規畫表") },
+                    label = { Text("時間規畫表", maxLines = 1) }
                 )
             }
         ) {
@@ -359,7 +354,7 @@ fun AppNavigation(
                         NotesRoute -> "📝 記事與分類搜尋"
                         TaskRoute -> "📋 雙軌待辦與提醒"
                         CalendarRoute -> "📅 農曆萬年曆"
-                        ScheduleRoute -> "⏰ 每日時間規劃"
+                        ScheduleRoute -> "⏰ 時間規畫表"
                         PomodoroRoute -> "🍅 專注番茄鐘"
                         else -> "記事本"
                     }

@@ -208,6 +208,15 @@
   - 支援 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`），Android Lint 錯誤為 0
   - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_17_UnifiedSchedulePomodoroTab: 將底部導覽之「番茄鐘」與「排程」整併改為「時間規畫表」，並將番茄鐘整合內嵌於時間規畫表分頁中。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 調整 `AppNavigation` 之頂層導覽為四大分頁（`記事`、`待辦`、`月曆`、`時間規畫表`），移除底部導覽列獨立之「番茄鐘」欄位。
+  - 擴充 `ScheduleScreen` 加入 `⏰ 時間規畫` 與 `🍅 番茄鐘` 雙分頁切換（`PrimaryTabRow`），並將所有任務／時間段「一鍵進入番茄鐘」連動導向 `ScheduleRoute` 之番茄鐘分頁。
+- **驗收標準 (Acceptance Criteria):**
+  - 底部導覽列維持 4 項一致入口，且「時間規畫表」內可流暢切換時間規畫與番茄鐘功能
+  - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

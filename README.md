@@ -70,10 +70,9 @@
 - **離線墓碑與斷線自動補傳**：離線刪除自動寫入 `SyncTombstone`（`sync_tombstones` 表），待網路恢復時由 `AndroidNetworkMonitor` 自動觸發背景同步並記錄 `lastSyncAt` 最後同步時間。
 - **智慧衝突解決（`SyncConflictResolver`）**：雙端異動衝突時採最新修改時間優先（Last-Write-Wins, `updatedAt`）智慧合併。
 
-### 5. 📅 離線農曆萬年曆、⏰ 每日排程與 🍅 番茄鐘
-- **離線農曆萬年曆（`CalendarScreen`）**：離線推算 1900–2100 年農曆日期、干支生肖年、二十四節氣與傳統節慶，同頁檢視並管理當日待辦與提醒。
-- **每日時間規劃表（`ScheduleScreen`）**：依日期檢視時段行程、即時計算完成率進度條，並支援一鍵將行程帶入番茄鐘。
-- **番茄鐘專注計時器（`PomodoroScreen`）**：支援「專注工作 25m」、「短暫休息 5m」、「深度休息 15m」環狀動畫倒數，完成後自動寫入專注歷史紀錄並統計今日番茄數。
+### 5. 📅 離線農曆萬年曆、⏰ 時間規畫表（含內嵌 🍅 番茄鐘）
+- **離線農曆萬年曆（`CalendarScreen`）**：離線推算 1900–2100 年農曆日期、干支生肖年、二十四節氣與傳統節慶，同頁檢視並管理當日記事、待辦與提醒。
+- **時間規畫表與番茄鐘整合（`ScheduleScreen` + `PomodoroScreen`）**：底部導覽簡化為四大核心入口（`記事`、`待辦`、`月曆`、`時間規畫表`），於「時間規畫表」內建雙分頁切換「`⏰ 時間規畫`」（依日期檢視時段行程、即時計算完成率進度條）與「`🍅 番茄鐘`」（25m／5m／15m 環狀動畫倒數、目標任務綁定與今日專注統計）。
 
 ### 6. 📲 快速記事桌面小工具 (`QuickNoteWidgetProvider` / `QuickNoteWidgetConfigureActivity`)
 - **最近記事即時預覽**：於手機桌面直接瀏覽釘選與最新修改記事，顯示標題、摘要預覽、色條識別、分類標籤與修改時間，支援淺／深色桌面主題與雙向調整大小。
@@ -209,8 +208,8 @@ com.example.notepad/
     │   ├── NoteEditorScreen.kt             # 記事新增/編輯器（支援空白標題內文与草稿即時保存）
     │   ├── TaskScreen.kt                   # 雙軌待辦/提醒主畫面與 TaskDetailScreen 待辦詳情頁
     │   ├── CalendarScreen.kt               # 農曆萬年曆畫面（套用 6 款自訂月曆樣式與當日任務管理）
-    │   ├── ScheduleScreen.kt               # 每日時間規劃畫面
-    │   └── PomodoroScreen.kt               # 番茄鐘專注計時畫面
+    │   ├── ScheduleScreen.kt               # 時間規畫表畫面（含雙分頁切換每日時間規畫與內嵌番茄鐘）
+    │   └── PomodoroScreen.kt               # 番茄鐘專注計時子分頁畫面（內嵌於時間規畫表）
     └── theme/                              # 主題與 WCAG 對比度引擎
         ├── Theme.kt                        # NotepadTheme、自訂按鍵色彩與全局字體縮放注入
         ├── ColorContrastUtils.kt           # WCAG 2.1 相對明度、對比度計算與自動深淺字色切換

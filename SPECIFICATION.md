@@ -73,11 +73,10 @@
 
 ### 3.4 離線農曆萬年曆、每日排程與番茄鐘
 - **離線農曆萬年曆（`LunarCalendarFacade` / `CalendarScreen`）**：支援 1900–2100 年農曆日、天干地支生肖、二十四節氣與傳統民俗節日演算，並連動當日待辦與提醒項目。
-- **每日時間規劃表（`ScheduleScreen`）**：以日期切換檢視時間區塊、計算當日完成進度百分比，勾選或編輯刪除皆有即時回饋與確認防護，並可一鍵帶入番茄鐘。
-- **番茄鐘計時器（`PomodoroScreen`）**：提供專注工作（25 分鐘）、短暫休息（5 分鐘）、深度休息（15 分鐘），完成專注時自動寫入 `PomodoroRecord` 並顯示即時完成提示。
+- **每日時間規畫與內嵌番茄鐘（`ScheduleScreen` / `PomodoroScreen`）**：於「時間規畫表」內整合「`⏰ 時間規畫`」與「`🍅 番茄鐘`」雙分頁，以日期切換檢視時間區塊、計算當日完成率進度條，並可一鍵將排程或待辦任務帶入番茄鐘（專注工作 25 分鐘、短暫休息 5 分鐘、深度休息 15 分鐘）自動寫入 `PomodoroRecord`。
 
 ### 3.5 全局導航、系統欄安全防護與操作規範
-- **導航架構（`AppNavigation`）**：採用 Jetpack Navigation 3 與 `NavigationSuiteScaffold`，全應用所有主要頁面維持一致的 5 項底部導覽（`記事`、`待辦`、`月曆`、`排程`、`番茄鐘`）及頂部雲端同步／通知／主題設定快捷工具列。
+- **導航架構（`AppNavigation`）**：採用 Jetpack Navigation 3 與 `NavigationSuiteScaffold`，全應用所有主要頁面維持一致的 4 項底部導覽（`記事`、`待辦`、`月曆`、`時間規畫表`；番茄鐘內嵌於「時間規畫表」內部切換分頁）及頂部雲端同步／通知／主題設定快捷工具列。
 - **系統欄與挖孔防護**：外層容器套用 `statusBarsPadding()`、`navigationBarsPadding()`、`displayCutoutPadding()`，編輯器套用 `imePadding()`，防止手機系統導覽列、狀態欄、鏡頭挖孔或鍵盤遮擋介面。
 - **操作反饋與二次確認**：所有新增、更新、刪除、狀態勾選、設定變更與雲端同步結果皆透過 `showFeedback` 提供清楚即時反饋；所有刪除操作皆經由 `ConfirmDeleteDialog` 二次確認防護。
 
