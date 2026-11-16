@@ -4,6 +4,15 @@
 
 ---
 
+## [1.9.3] - 2026-11-16
+### 修復與打包驗證 (Fixed / Verified)
+- **修復 Release R8 執行期閃退並完成模擬器實機安裝啟動驗證（`build.gradle.kts` / `proguard-rules.pro`）**：
+  - 於 `Pixel_6a` 模擬器實測 Release APK 時發現原先 `packageScope` R8 設定會造成 `Room` 初始化拋出 `IllegalAccessError`（`kotlin.text` 跨套件存取權限異常）。
+  - 將 `app/build.gradle.kts` 之 `release` 建置類型調整為標準 `isMinifyEnabled = true`、`isShrinkResources = true` 與 `proguard-android-optimize.txt`，並新增 [app/proguard-rules.pro](app/proguard-rules.pro) 保護 Room、Navigation 3 `@Serializable` 路由、桌面小工具與 `BroadcastReceiver`；Release 產物同步縮減至 **4.01 MB**（已簽章版）。
+  - 透過 `apksigner` 完成 APK v2/v3 簽章驗證，並於 `Pixel_6a` 模擬器完成冷啟動與各桌面小工具深度連結導航實測，確認無任何閃退且全部 74 項單元測試與 Lint 通過。
+
+---
+
 ## [1.9.2] - 2026-11-16
 ### 修復 (Fixed)
 - **修復二十四節氣跨時區計算與 GitHub CI 測試一致性（`LunarCalendarEngine`）**：

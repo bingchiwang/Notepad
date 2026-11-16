@@ -226,6 +226,15 @@
   - 全專案 74 項單元測試於 UTC 與 GMT+8 環境均 100% 通過
   - GitHub Actions `Android CI / build` 執行成功
 
+### Task_19_ReleaseR8AndApkVerification: 修復 Release R8 混淆設定並完成 Debug／Release APK 簽章與模擬器實機執行驗證。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 修正 `app/build.gradle.kts` 移除造成 Room 初始化 `IllegalAccessError` 的實驗性 `packageScope` R8 設定，改為標準 `isMinifyEnabled = true`、`isShrinkResources = true` 搭配 `app/proguard-rules.pro`。
+  - 透過 `zipalign` 與 `apksigner` 簽署產生可直接安裝執行的 `app-release-signed.apk`（4.01 MB）與 `app-debug.apk`（30.51 MB），並於 `Pixel_6a` 模擬器完成實機安裝、冷啟動與多頁深層連結測試（0 閃退）。
+- **驗收標準 (Acceptance Criteria):**
+  - Debug 與 Release APK 皆通過 `apksigner` 驗證且於 Android 模擬器實測正常啟動執行
+  - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)
