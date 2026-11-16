@@ -4,59 +4,71 @@
     android:height="120dp"
     android:viewportWidth="240"
     android:viewportHeight="120">
-    <!-- 卡片外框 -->
+    <!-- 圓角卡片底板 -->
     <path
         android:fillColor="#FFF8FAFC"
         android:strokeColor="#FFD8E0EC"
         android:strokeWidth="1.5"
-        android:pathData="M16,4h208c6.63,0 12,5.37 12,12v88c0,6.63 -5.37,12 -12,12H16c-6.63,0 -12,-5.37 -12,-12V16C4,9.37 9.37,4 16,4z" />
-    <!-- 頂部圖示與標題 -->
+        android:pathData="M16,4 h208 a12,12 0 0 1 12,12 v88 a12,12 0 0 1 -12,12 h-208 a12,12 0 0 1 -12,-12 v-88 a12,12 0 0 1 12,-12 z" />
+    <!-- 頂部翡翠綠圖示徽章與新增按鈕 -->
     <path
         android:fillColor="#FF10B981"
-        android:pathData="M18,16h14v14H18V16z" />
+        android:pathData="M20,14 h10 a3,3 0 0 1 3,3 v10 a3,3 0 0 1 -3,3 h-10 a3,3 0 0 1 -3,-3 v-10 a3,3 0 0 1 3,-3 z" />
     <path
         android:fillColor="#FF1F2937"
-        android:pathData="M38,18h54v10H38V18z" />
+        android:pathData="M39,19 h44 a2,2 0 0 1 0,4 h-44 a2,2 0 0 1 0,-4 z" />
+    <path
+        android:fillColor="#FFE0E7FF"
+        android:pathData="M96,15 h34 a7,7 0 0 1 0,14 h-34 a7,7 0 0 1 0,-14 z" />
     <path
         android:fillColor="#FF2563EB"
-        android:pathData="M182,14h42v18h-42V14z" />
+        android:pathData="M190,14 h30 a8,8 0 0 1 0,16 h-30 a8,8 0 0 1 0,-16 z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M204,19 v6 M201,22 h6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5" />
     <!-- 待辦列 1（高優先） -->
     <path
         android:fillColor="#FFFFFFFF"
         android:strokeColor="#FFE5E7EB"
         android:strokeWidth="1"
-        android:pathData="M16,40h208v32H16V40z" />
+        android:pathData="M20,39 h200 a8,8 0 0 1 8,8 v18 a8,8 0 0 1 -8,8 h-200 a8,8 0 0 1 -8,-8 v-18 a8,8 0 0 1 8,-8 z" />
     <path
         android:fillColor="#FFEF4444"
-        android:pathData="M20,44h4v24h-4V44z" />
+        android:pathData="M19,44 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v21 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 z" />
     <path
-        android:fillColor="#FF2563EB"
-        android:pathData="M30,50h12v12H30V50z" />
+        android:fillColor="#00000000"
+        android:pathData="M31,49 h9 a2.5,2.5 0 0 1 2.5,2.5 v7 a2.5,2.5 0 0 1 -2.5,2.5 h-9 a2.5,2.5 0 0 1 -2.5,-2.5 v-7 a2.5,2.5 0 0 1 2.5,-2.5 z"
+        android:strokeColor="#FF2563EB"
+        android:strokeWidth="1.6" />
     <path
         android:fillColor="#FF374151"
-        android:pathData="M48,47h100v7H48V47z" />
+        android:pathData="M50,47 h92 a2.5,2.5 0 0 1 0,5 h-92 a2.5,2.5 0 0 1 0,-5 z" />
     <path
         android:fillColor="#FFFEE2E2"
-        android:pathData="M184,46h32v10h-32V46z" />
+        android:pathData="M188,45 h28 a5,5 0 0 1 0,10 h-28 a5,5 0 0 1 0,-10 z" />
     <path
         android:fillColor="#FF9CA3AF"
-        android:pathData="M48,59h75v5H48V59z" />
+        android:pathData="M50,58 h68 a2,2 0 0 1 0,4 h-68 a2,2 0 0 1 0,-4 z" />
     <!-- 待辦列 2（中優先） -->
     <path
         android:fillColor="#FFFFFFFF"
         android:strokeColor="#FFE5E7EB"
         android:strokeWidth="1"
-        android:pathData="M16,78h208v30H16V78z" />
+        android:pathData="M20,78 h200 a8,8 0 0 1 8,8 v16 a8,8 0 0 1 -8,8 h-200 a8,8 0 0 1 -8,-8 v-16 a8,8 0 0 1 8,-8 z" />
     <path
         android:fillColor="#FFF59E0B"
-        android:pathData="M20,82h4v22h-4V82z" />
+        android:pathData="M19,83 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v19 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 z" />
     <path
-        android:fillColor="#FF2563EB"
-        android:pathData="M30,87h12v12H30V87z" />
+        android:fillColor="#00000000"
+        android:pathData="M31,87 h9 a2.5,2.5 0 0 1 2.5,2.5 v7 a2.5,2.5 0 0 1 -2.5,2.5 h-9 a2.5,2.5 0 0 1 -2.5,-2.5 v-7 a2.5,2.5 0 0 1 2.5,-2.5 z"
+        android:strokeColor="#FF2563EB"
+        android:strokeWidth="1.6" />
     <path
         android:fillColor="#FF374151"
-        android:pathData="M48,85h90v7H48V85z" />
+        android:pathData="M50,86 h82 a2.5,2.5 0 0 1 0,5 h-82 a2.5,2.5 0 0 1 0,-5 z" />
     <path
         android:fillColor="#FFFEF3C7"
-        android:pathData="M184,84h32v10h-32V84z" />
+        android:pathData="M188,84 h28 a5,5 0 0 1 0,10 h-28 a5,5 0 0 1 0,-10 z" />
 </vector>

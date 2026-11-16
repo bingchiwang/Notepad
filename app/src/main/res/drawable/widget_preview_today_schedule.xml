@@ -4,58 +4,67 @@
     android:height="150dp"
     android:viewportWidth="240"
     android:viewportHeight="150">
-    <!-- 卡片外框 -->
+    <!-- 圓角卡片底板 -->
     <path
         android:fillColor="#FFF8FAFC"
         android:strokeColor="#FFD8E0EC"
         android:strokeWidth="1.5"
-        android:pathData="M16,4h208c6.63,0 12,5.37 12,12v118c0,6.63 -5.37,12 -12,12H16c-6.63,0 -12,-5.37 -12,-12V16C4,9.37 9.37,4 16,4z" />
-    <!-- 頂部圖示與標題 -->
+        android:pathData="M16,4 h208 a12,12 0 0 1 12,12 v118 a12,12 0 0 1 -12,12 h-208 a12,12 0 0 1 -12,-12 v-118 a12,12 0 0 1 12,-12 z" />
+    <!-- 頂部靛紫圖示徽章與標題 -->
     <path
         android:fillColor="#FF6366F1"
-        android:pathData="M18,15h14v14H18V15z" />
+        android:pathData="M20,13 h10 a3,3 0 0 1 3,3 v10 a3,3 0 0 1 -3,3 h-10 a3,3 0 0 1 -3,-3 v-10 a3,3 0 0 1 3,-3 z" />
     <path
         android:fillColor="#FF1F2937"
-        android:pathData="M38,17h56v10H38V17z" />
+        android:pathData="M39,18 h46 a2,2 0 0 1 0,4 h-46 a2,2 0 0 1 0,-4 z" />
     <path
         android:fillColor="#FF2563EB"
-        android:pathData="M182,13h42v18h-42V13z" />
+        android:pathData="M190,13 h30 a8,8 0 0 1 0,16 h-30 a8,8 0 0 1 0,-16 z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M204,18 v6 M201,21 h6"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.5" />
     <!-- 今日完成進度條卡片 -->
     <path
         android:fillColor="#FFFFFFFF"
         android:strokeColor="#FFE5E7EB"
         android:strokeWidth="1"
-        android:pathData="M16,38h208v32H16V38z" />
+        android:pathData="M20,37 h200 a8,8 0 0 1 8,8 v18 a8,8 0 0 1 -8,8 h-200 a8,8 0 0 1 -8,-8 v-18 a8,8 0 0 1 8,-8 z" />
     <path
         android:fillColor="#FF374151"
-        android:pathData="M24,44h70v6H24V44z" />
+        android:pathData="M24,44 h66 a2,2 0 0 1 0,4 h-66 a2,2 0 0 1 0,-4 z" />
     <path
         android:fillColor="#FFE2E8F0"
-        android:pathData="M24,56h192v7H24V56z" />
+        android:pathData="M24,55 h192 a3.5,3.5 0 0 1 0,7 h-192 a3.5,3.5 0 0 1 0,-7 z" />
     <path
         android:fillColor="#FF2563EB"
-        android:pathData="M24,56h130v7H24V56z" />
-    <!-- 今日到期待辦與即將到來提醒 -->
+        android:pathData="M24,55 h132 a3.5,3.5 0 0 1 0,7 h-132 a3.5,3.5 0 0 1 0,-7 z" />
+    <!-- 今日到期待辦卡片 -->
     <path
         android:fillColor="#FFFFFFFF"
         android:strokeColor="#FFE5E7EB"
         android:strokeWidth="1"
-        android:pathData="M16,78h208v28H16V78z" />
+        android:pathData="M20,77 h200 a8,8 0 0 1 8,8 v13 a8,8 0 0 1 -8,8 h-200 a8,8 0 0 1 -8,-8 v-13 a8,8 0 0 1 8,-8 z" />
     <path
         android:fillColor="#FFEF4444"
-        android:pathData="M20,82h4v20h-4V82z" />
+        android:pathData="M19,82 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v16 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 z" />
     <path
         android:fillColor="#FF374151"
-        android:pathData="M32,87h110v8H32V87z" />
+        android:pathData="M31,88 h106 a2.5,2.5 0 0 1 0,5 h-106 a2.5,2.5 0 0 1 0,-5 z" />
+    <!-- 即將到來提醒卡片 -->
     <path
         android:fillColor="#FFFFFFFF"
         android:strokeColor="#FFE5E7EB"
         android:strokeWidth="1"
-        android:pathData="M16,112h208v26H16V112z" />
+        android:pathData="M20,111 h200 a8,8 0 0 1 8,8 v11 a8,8 0 0 1 -8,8 h-200 a8,8 0 0 1 -8,-8 v-11 a8,8 0 0 1 8,-8 z" />
     <path
         android:fillColor="#FF2563EB"
-        android:pathData="M20,116h4v18h-4V116z" />
+        android:pathData="M19,115 h3.5 a1.5,1.5 0 0 1 1.5,1.5 v15 a1.5,1.5 0 0 1 -1.5,1.5 h-3.5 z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M31,121 h92 a2.5,2.5 0 0 1 0,5 h-92 a2.5,2.5 0 0 1 0,-5 z" />
     <path
         android:fillColor="#FFDBEAFE"
-        android:pathData="M168,119h46v12h-46V119z" />
+        android:pathData="M174,117 h38 a6,6 0 0 1 0,12 h-38 a6,6 0 0 1 0,-12 z" />
 </vector>

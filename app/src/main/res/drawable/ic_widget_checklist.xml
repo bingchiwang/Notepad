@@ -1,9 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
+    android:width="20dp"
+    android:height="20dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- 翡翠綠圓角底徽 -->
     <path
-        android:fillColor="@color/widget_accent"
-        android:pathData="M22,7h-9v2h9V7zM22,15h-9v2h9V15zM5.54,11L2,7.46l1.41,-1.41l2.12,2.12l4.24,-4.24l1.41,1.41L5.54,11zM5.54,19L2,15.46l1.41,-1.41l2.12,2.12l4.24,-4.24l1.41,1.41L5.54,19z" />
+        android:fillColor="#FF10B981"
+        android:pathData="M6,2 h12 a4,4 0 0 1 4,4 v12 a4,4 0 0 1 -4,4 h-12 a4,4 0 0 1 -4,-4 v-12 a4,4 0 0 1 4,-4 z" />
+    <!-- 白色勾選清單 -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M18,8.5 h-6 v1.8 h6 V8.5 z M18,13.8 h-6 v1.8 h6 V13.8 z M8.2,11.2 l-2,-2 l1,-1 l1,1 l2.2,-2.2 l1,1 L8.2,11.2 z M8.2,16.5 l-2,-2 l1,-1 l1,1 l2.2,-2.2 l1,1 L8.2,16.5 z" />
 </vector>

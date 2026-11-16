@@ -235,6 +235,16 @@
   - Debug 與 Release APK 皆通過 `apksigner` 驗證且於 Android 模擬器實測正常啟動執行
   - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_20_WidgetIconPolish: 優化四大桌面小工具選單圖示、頂部徽章圖示與預覽插圖。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 升級 `ic_widget_picker_*` 四款桌面小工具選單圖示為漸層圓角方塊搭配微陰影多層次向量插畫，明確區隔快速記事、待辦事項、今日行程與月曆小工具。
+  - 將 `ic_widget_note`、`ic_widget_checklist`、`ic_widget_today`、`ic_widget_calendar` 升級為與選單視覺一致的圓角雙色識別徽章。
+  - 全面將 `widget_preview_*` 預覽圖從直角矩形升級為圓角現代化排版示意圖。
+- **驗收標準 (Acceptance Criteria):**
+  - 所有向量 XML 與漸層屬性於 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`）無任何 AAPT2 或 Lint 錯誤
+  - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

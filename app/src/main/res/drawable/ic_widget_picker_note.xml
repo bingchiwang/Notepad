@@ -1,15 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
-    <!-- 圓角底塊（暖琥珀金） -->
+    <!-- 圓角漸層底塊（暖琥珀金） -->
+    <path android:pathData="M13,3 h22 a10,10 0 0 1 10,10 v22 a10,10 0 0 1 -10,10 h-22 a10,10 0 0 1 -10,-10 v-22 a10,10 0 0 1 10,-10 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="24"
+                android:endY="45"
+                android:startX="24"
+                android:startY="3"
+                android:type="linear">
+                <item android:color="#FFFBBF24" android:offset="0.0" />
+                <item android:color="#FFD97706" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- 頂部微高光細框 -->
     <path
-        android:fillColor="#FFF59E0B"
-        android:pathData="M12,4h24c4.42,0 8,3.58 8,8v24c0,4.42 -3.58,8 -8,8H12c-4.42,0 -8,-3.58 -8,-8V12c0,-4.42 3.58,-8 8,-8z" />
-    <!-- 記事本與畫筆白色圖示 -->
+        android:fillColor="#00000000"
+        android:pathData="M13,3.75 h22 a9.25,9.25 0 0 1 9.25,9.25 v22 a9.25,9.25 0 0 1 -9.25,9.25 h-22 a9.25,9.25 0 0 1 -9.25,-9.25 v-22 a9.25,9.25 0 0 1 9.25,-9.25 z"
+        android:strokeColor="#33FFFFFF"
+        android:strokeWidth="1" />
+    <!-- 記事紙張微陰影 -->
+    <path
+        android:fillColor="#26000000"
+        android:pathData="M15,12 h13 l7,7 v16 a3,3 0 0 1 -3,3 h-17 a3,3 0 0 1 -3,-3 v-20 a3,3 0 0 1 3,-3 z" />
+    <!-- 潔白折角筆記本頁面 -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M14,30.5V34h3.5l10.32,-10.32l-3.5,-3.5L14,30.5zM30.71,20.29c0.39,-0.39 0.39,-1.02 0,-1.41l-2.09,-2.09c-0.39,-0.39 -1.02,-0.39 -1.41,0l-1.71,1.71l3.5,3.5L30.71,20.29zM14,14h12v3H14V14z" />
+        android:pathData="M14,10.5 h13 l7,7 v16 a3,3 0 0 1 -3,3 h-17 a3,3 0 0 1 -3,-3 v-20 a3,3 0 0 1 3,-3 z" />
+    <!-- 右上折角陰影面 -->
+    <path
+        android:fillColor="#FFFDE68A"
+        android:pathData="M27,10.5 v5 a2,2 0 0 0 2,2 h5 z" />
+    <!-- 記事本內文線條 -->
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M16,20.5 h11 a1,1 0 0 1 0,2 h-11 a1,1 0 0 1 0,-2 z" />
+    <path
+        android:fillColor="#FFE5E7EB"
+        android:pathData="M16,25 h13 a1,1 0 0 1 0,2 h-13 a1,1 0 0 1 0,-2 z M16,29.5 h8 a1,1 0 0 1 0,2 h-8 a1,1 0 0 1 0,-2 z" />
+    <!-- 右下亮藍畫筆圓章 -->
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M34,27 a7,7 0 1 0 0.01,0 z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M30.5,35.8 v1.7 h1.7 l4.7,-4.7 l-1.7,-1.7 l-4.7,4.7 z M38.2,31.3 c0.2,-0.2 0.2,-0.5 0,-0.7 l-1,-1 c-0.2,-0.2 -0.5,-0.2 -0.7,0 l-0.8,0.8 l1.7,1.7 l0.8,-0.8 z" />
 </vector>

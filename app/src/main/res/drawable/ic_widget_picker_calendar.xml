@@ -1,15 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
-    <!-- 圓角底塊（皇家藍） -->
+    <!-- 圓角漸層底塊（皇家藍） -->
+    <path android:pathData="M13,3 h22 a10,10 0 0 1 10,10 v22 a10,10 0 0 1 -10,10 h-22 a10,10 0 0 1 -10,-10 v-22 a10,10 0 0 1 10,-10 z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:endX="24"
+                android:endY="45"
+                android:startX="24"
+                android:startY="3"
+                android:type="linear">
+                <item android:color="#FF60A5FA" android:offset="0.0" />
+                <item android:color="#FF1D4ED8" android:offset="1.0" />
+            </gradient>
+        </aapt:attr>
+    </path>
     <path
-        android:fillColor="#FF2563EB"
-        android:pathData="M12,4h24c4.42,0 8,3.58 8,8v24c0,4.42 -3.58,8 -8,8H12c-4.42,0 -8,-3.58 -8,-8V12c0,-4.42 3.58,-8 8,-8z" />
-    <!-- 月曆網格白色圖示 -->
+        android:fillColor="#00000000"
+        android:pathData="M13,3.75 h22 a9.25,9.25 0 0 1 9.25,9.25 v22 a9.25,9.25 0 0 1 -9.25,9.25 h-22 a9.25,9.25 0 0 1 -9.25,-9.25 v-22 a9.25,9.25 0 0 1 9.25,-9.25 z"
+        android:strokeColor="#33FFFFFF"
+        android:strokeWidth="1" />
+    <!-- 月曆卡片陰影 -->
+    <path
+        android:fillColor="#24000000"
+        android:pathData="M12.5,12 h24 a3.5,3.5 0 0 1 3.5,3.5 v19.5 a3.5,3.5 0 0 1 -3.5,3.5 h-24 a3.5,3.5 0 0 1 -3.5,-3.5 v-19.5 a3.5,3.5 0 0 1 3.5,-3.5 z" />
+    <!-- 月曆白色本體 -->
     <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M32,13h-1v-2h-2v2H19v-2h-2v2h-1c-1.66,0 -3,1.34 -3,3v17c0,1.66 1.34,3 3,3h16c1.66,0 3,-1.34 3,-3V16C35,14.34 33.66,13 32,13zM32,33H16V20h16V33zM18,22h3v3h-3V22zM22.5,22h3v3h-3V22zM27,22h3v3h-3V22zM18,27h3v3h-3V27zM22.5,27h3v3h-3V27zM27,27h3v3h-3V27z" />
+        android:pathData="M12,11 h24 a3.5,3.5 0 0 1 3.5,3.5 v19.5 a3.5,3.5 0 0 1 -3.5,3.5 h-24 a3.5,3.5 0 0 1 -3.5,-3.5 v-19.5 a3.5,3.5 0 0 1 3.5,-3.5 z" />
+    <!-- 深藍月曆頁首條 -->
+    <path
+        android:fillColor="#FF1E40AF"
+        android:pathData="M12,11 h24 a3.5,3.5 0 0 1 3.5,3.5 v3.5 h-31 v-3.5 a3.5,3.5 0 0 1 3.5,-3.5 z" />
+    <!-- 雙掛環釦 -->
+    <path
+        android:fillColor="#FFE0F2FE"
+        android:pathData="M16,9 a1.3,1.3 0 0 1 2.6,0 v3 a1.3,1.3 0 0 1 -2.6,0 z M29.4,9 a1.3,1.3 0 0 1 2.6,0 v3 a1.3,1.3 0 0 1 -2.6,0 z" />
+    <!-- 月曆網格日期格（含藍色「今天」highlight 格與琥珀/藍事件標籤條） -->
+    <path
+        android:fillColor="#FFF1F5F9"
+        android:pathData="M12,21 h6.5 a1.5,1.5 0 0 1 1.5,1.5 v3.5 a1.5,1.5 0 0 1 -1.5,1.5 h-6.5 a1.5,1.5 0 0 1 -1.5,-1.5 v-3.5 a1.5,1.5 0 0 1 1.5,-1.5 z M29.5,21 h6.5 a1.5,1.5 0 0 1 1.5,1.5 v3.5 a1.5,1.5 0 0 1 -1.5,1.5 h-6.5 a1.5,1.5 0 0 1 -1.5,-1.5 v-3.5 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+    <path
+        android:fillColor="#FFDBEAFE"
+        android:pathData="M21.2,21 h5.6 a1.5,1.5 0 0 1 1.5,1.5 v3.5 a1.5,1.5 0 0 1 -1.5,1.5 h-5.6 a1.5,1.5 0 0 1 -1.5,-1.5 v-3.5 a1.5,1.5 0 0 1 1.5,-1.5 z"
+        android:strokeColor="#FF2563EB"
+        android:strokeWidth="1.2" />
+    <!-- 下方記事（暖琥珀）與待辦（湛藍）標籤條 -->
+    <path
+        android:fillColor="#FFFEF3C7"
+        android:pathData="M12,29.5 h10 a1.2,1.2 0 0 1 0,2.5 h-10 a1.2,1.2 0 0 1 0,-2.5 z" />
+    <path
+        android:fillColor="#FFBFDBFE"
+        android:pathData="M24.5,29.5 h12 a1.2,1.2 0 0 1 0,2.5 h-12 a1.2,1.2 0 0 1 0,-2.5 z" />
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M13,30.2 h4 v1 h-4 z" />
+    <path
+        android:fillColor="#FF2563EB"
+        android:pathData="M25.5,30.2 h5 v1 h-5 z" />
 </vector>

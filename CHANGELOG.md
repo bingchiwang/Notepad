@@ -4,6 +4,15 @@
 
 ---
 
+## [1.9.4] - 2026-11-16
+### 優化 (Improved)
+- **全面升級四大桌面小工具圖示與預覽插圖視覺設計（`res/drawable/`）**：
+  - 重新繪製四大桌面小工具選單圖示（[ic_widget_picker_note.xml](app/src/main/res/drawable/ic_widget_picker_note.xml)、[ic_widget_picker_todo.xml](app/src/main/res/drawable/ic_widget_picker_todo.xml)、[ic_widget_picker_today.xml](app/src/main/res/drawable/ic_widget_picker_today.xml)、[ic_widget_picker_calendar.xml](app/src/main/res/drawable/ic_widget_picker_calendar.xml)），導入垂直色彩漸層（`<gradient>`）、內緣微高光與專屬功能前景插畫（折頁便箋配畫筆圓章、雙卡打勾清單、暖陽進度儀表、雙環月曆網格配今日高亮與兩色標籤），徹底區分各小工具辨識度。
+  - 將小工具頂部導覽圖示（[ic_widget_note.xml](app/src/main/res/drawable/ic_widget_note.xml)、[ic_widget_checklist.xml](app/src/main/res/drawable/ic_widget_checklist.xml)、[ic_widget_today.xml](app/src/main/res/drawable/ic_widget_today.xml)、[ic_widget_calendar.xml](app/src/main/res/drawable/ic_widget_calendar.xml)）升級為圓角雙色識別徽章風格，在深／淺色桌面主題下皆保持高對比一致美感。
+  - 翻新全部四款桌面選單預覽插圖（`widget_preview_*.xml`），改用圓角卡片、膠囊按鈕、分區進度條與置中靠上日期＋農曆提示條呈現真實排版。
+
+---
+
 ## [1.9.3] - 2026-11-16
 ### 修復與打包驗證 (Fixed / Verified)
 - **修復 Release R8 執行期閃退並完成模擬器實機安裝啟動驗證（`build.gradle.kts` / `proguard-rules.pro`）**：
