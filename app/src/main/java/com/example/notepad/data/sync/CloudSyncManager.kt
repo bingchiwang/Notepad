@@ -19,6 +19,7 @@ import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.preferences.AppFontScale
 import com.example.notepad.data.preferences.CalendarStyle
+import com.example.notepad.data.preferences.CloudBackendProvider
 import com.example.notepad.data.preferences.NotificationPreferences
 import com.example.notepad.data.preferences.PersonalizationSettings
 import com.example.notepad.data.preferences.SyncPreferences
@@ -114,11 +115,13 @@ class CloudSyncManager(
                 totalPendingCountFlow,
                 syncPreferences.syncSettingsFlow
             ) { isOnline, isSyncing, pendingCount, settings ->
+                val configured = remoteDataSource.isConfigured(settings)
                 CloudSyncUiState(
                     isOnline = isOnline,
                     isSyncing = isSyncing,
                     pendingCount = pendingCount,
-                    isFirebaseConfigured = remoteDataSource.isConfigured(settings),
+                    isCloudConfigured = configured,
+                    isFirebaseConfigured = configured,
                     syncSettings = settings,
                     lastRunSummary = settings.lastSyncMessage
                 )
@@ -182,7 +185,11 @@ class CloudSyncManager(
         }
 
         if (!remoteDataSource.isConfigured(settings)) {
-            val msg = "尚未設定 Firebase 專案（可加入 google-services.json 或手動填寫連線參數），已保留待同步狀態"
+            val msg = if (settings.cloudProvider == CloudBackendProvider.GOOGLE_DRIVE) {
+                "尚未連結 Google 帳號或授權 Google 雲端硬碟，已保留待同步狀態"
+            } else {
+                "尚未設定 Firebase 專案（可加入 google-services.json 或手動填寫連線參數），已保留待同步狀態"
+            }
             syncPreferences.recordSyncStatusMessage(msg)
             return@withLock SyncRunResult(succeeded = false, message = msg)
         }

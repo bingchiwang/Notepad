@@ -8,7 +8,7 @@
 - **離線農曆萬年曆**：完整離線演算 1900–2100 年農曆日、天干地支生肖、二十四節氣與傳統節慶，支援 6 款自訂月曆樣式。
 - **即將到期特殊邊框警示**：針對明日到期的待辦事項，於卡片與月曆同步觸發橘紅呼吸動態發光虛線外框與 `⚠️ 明日到期！` 跳動徽章。
 - **個人化設定與 WCAG 防重色保護**：支援淺色／深色／系統主題、自訂按鍵顏色、月曆樣式、4 段字體大小、通知開關與同步狀態管理；當文字與背景顏色相近或一致時自動切換高對比文字顏色。
-- **本地優先 Firebase 雲端資料同步**：離線優先寫入本機 Room v5，連網時自動與 Firebase Cloud Firestore 雙向同步並採最新修改時間優先（LWW）智慧合併。
+- **本地優先 Google 雲端硬碟雙向同步**：離線優先寫入本機 Room v5，連網時自動與 Google 雲端硬碟 `appDataFolder`（亦可切換 Firebase Firestore 備援）雙向同步並採最新修改時間優先（LWW）智慧合併。
 - **廣泛系統相容與自動化交付**：向下相容 **Android 8.0（API 26）**，採用 Facade 與 Repository 模式，每次修改檔案後通過測試並同步推送至 GitHub。
 
 ---
@@ -20,7 +20,7 @@
 4. **即將到期 UI 警示 (`breathingDashedBorder` / `BouncingBadge`)**：針對次日到期未完成項目觸發橘紅呼吸發光虛線外框與彈跳徽章。
 5. **每日時間規劃表 (`ScheduleScreen`)**：時間軸視覺化日程安排、分類色彩標記、完成打勾與當日完成率進度條、一鍵連動番茄鐘。
 6. **番茄鐘專注計時器 (`PomodoroScreen`)**：支援專注工作 (25m)、短暫休息 (5m)、深度休息 (15m)，搭配環狀動態倒數、目標任務綁定、今日番茄數統計與歷史紀錄。
-7. **Firebase 雲端雙向同步 (`CloudSyncManager` / `FirebaseFirestoreDataSource`)**：Offline-First 本地優先儲存、離線刪除墓碑（`SyncTombstone`）、網路恢復自動上傳、`lastSyncAt` 記錄與 `SyncConflictResolver` 最新修改優先合併。
+7. **Google 雲端硬碟與備援雙向同步 (`CloudSyncManager` / `GoogleDriveRemoteDataSource` / `RoutingCloudRemoteDataSource`)**：Offline-First 本地優先儲存、離線刪除墓碑（`SyncTombstone`）、網路恢復自動上傳、`lastSyncAt` 記錄與 `SyncConflictResolver` 最新修改優先合併。
 8. **個人化設定管理中心 (`AppSettingsDialog` / `ColorContrastUtils` / `CalendarThemeResolver`)**：自訂按鍵顏色、6 款月曆樣式、WCAG 自動文字對比防重色、4 段字體大小、通知開關與同步狀態儀表板。
 
 ---
@@ -34,8 +34,8 @@
 * **資料持久化 (Persistence)**：
   * **Room Database v5**：包含 `Note`、`Category`、`ToDo`、`Reminder`、`TimeBlock`、`PomodoroRecord`、`SyncTombstone` 共 7 個實體與對應 DAO（含 `MIGRATION_3_4` 與 `MIGRATION_4_5`）。
   * **DataStore Preferences**：包含 `ThemePreferences`、`NotificationPreferences`、`NoteDraftPreferences`、`SyncPreferences`。
-* **雲端服務 (Cloud Backend)**：Firebase BOM (`35.1.0`) + Cloud Firestore
-* **品質驗證與 CI/CD**：16 個單元測試套件（74 項測試）、Android Lint 靜態檢查、GitHub Actions (`.github/workflows/android.yml`)
+* **雲端服務 (Cloud Backend)**：Google Play Services Auth (`21.3.0`) + Google Drive REST v3 (`appDataFolder`)，保留 Firebase BOM (`35.1.0`) + Cloud Firestore 備援
+* **品質驗證與 CI/CD**：18 個單元測試套件（81 項測試）、Android Lint 靜態檢查、GitHub Actions (`.github/workflows/android.yml`)
 
 ---
 
@@ -255,6 +255,16 @@
   - `AndroidManifest.xml` 完整註冊 `BOOT_COMPLETED` 與 `MY_PACKAGE_REPLACED` 接收器並符合 Android 12+ `exported` 與安全檢核
   - 全專案 76 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_22_GoogleDriveCloudSync: 將雲端同步改為以 Google 雲端硬碟（Google Drive `appDataFolder`）為主，並完整保留離線優先、刪除墓碑與 LWW 衝突解決架構。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 導入 `com.google.android.gms:play-services-auth:21.3.0`，實作 `GoogleDriveAuthHelper`（以 `Identity.getAuthorizationClient` 申請 `drive.appdata` 權限並讀取授權帳號信箱）、`GoogleDriveSyncPayloadSerializer`（顯式 Moshi `JsonReader`/`JsonWriter` 確保 R8 安全與數值精準度）、`GoogleDriveRemoteDataSource`（於增量上傳時先合併遠端既有未異動文件再寫入 `appDataFolder` JSON 快照）與 `RoutingCloudRemoteDataSource`。
+  - 擴充 `SyncPreferences`（新增 `CloudBackendProvider`、`googleAccountEmail`、`googleDisplayName`、`googleDriveSpaceKey`、`googleDriveAccessToken`），並改版 `CloudSyncDialog`、`AppSettingsDialog`、`AppNavigation` 與 `MainActivity` 為主動呈現 Google 雲端硬碟綁定與同步狀態（保留進階手動權杖或切換 Firebase 備援選項）。
+  - 新增 `GoogleDriveSyncPayloadSerializerTest`（2 項）與 `GoogleDriveRemoteDataSourceTest`（3 項），全專案單元測試擴充至 81 項（18 個測試套件），`./gradlew.bat test build`、R8 Release 編譯與 Android Lint 皆 0 錯誤通過。
+- **驗收標準 (Acceptance Criteria):**
+  - 保留離線優先、刪除墓碑（`SyncTombstone`）與最新修改時間優先（LWW）智慧合併邏輯
+  - 全專案 81 項單元測試、R8 Release 壓縮與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)
@@ -262,5 +272,5 @@
 本專案之完整規範請參閱根目錄 [`AGENTS.md`](../AGENTS.md)：
 - **一、程式碼管理規範**：單一職責、DRY 共用封裝、繁體中文註解、具語意命名、相依性保護、測試驗證、每次修改必上傳 GitHub。
 - **二、操作規範**：主要功能易找、明顯新增按鈕、刪除前二次確認、儲存成功即時提示、錯誤清楚提示、統一底部導覽、減少點擊步驟。
-- **三、功能操作規範**：涵蓋記事管理、待辦事項、分類搜尋、提醒通知、個人化設定與防重色、Firebase 雲端資料同步、Android 8.0（API 26）相容性。
+- **三、功能操作規範**：涵蓋記事管理、待辦事項、分類搜尋、提醒通知、個人化設定與防重色、Google 雲端硬碟與 Firebase 雲端資料同步、Android 8.0（API 26）相容性。
 - **四、功能異動與變更管理規範**：1. 確認修改目的 → 2. 確認是否影響其他功能 → 3. 更新相關程式碼 → 4. 執行必要測試 → 5. 更新專案規格書及版本紀錄並推送 GitHub。

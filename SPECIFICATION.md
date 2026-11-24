@@ -1,11 +1,11 @@
-# 專案規格書 (Project Specification)
+﻿# 專案規格書 (Project Specification)
 
 ## 1. 專案基本資訊
 - **應用程式名稱**：Lunar To-Do & Notepad App（農曆萬年曆與雙軌待辦提醒記事）
 - **套件識別碼 (`applicationId`)**：`com.example.notepad`
 - **開發語言與框架**：Kotlin 2.0+、Jetpack Compose（Material Design 3）、Jetpack Navigation 3、Compose Material Adaptive
 - **SDK 支援範圍**：`minSdk = 26`（Android 8.0 Oreo）、`compileSdk = 37`、`targetSdk = 37`
-- **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Firebase Cloud Sync（`CloudSyncManager`）
+- **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Google Drive / Firebase Cloud Sync（`CloudSyncManager` / `RoutingCloudRemoteDataSource`）
 - **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 5`
 
 ---
@@ -33,7 +33,7 @@
 | `ThemePreferences` | `theme_preferences` | `PersonalizationSettings`（`themeMode = SYSTEM`, `buttonColorLong = null`, `calendarStyle = CLASSIC`, `calendarAccentColorLong = null`, `fontScale = MEDIUM`） | 支援淺／深／系統模式、自訂按鍵顏色、6 款月曆樣式／選色及全局字體大小倍率（`0.85x ~ 1.30x`），跨頁面一致且重開 App 維持有效 |
 | `NotificationPreferences` | `notification_preferences` | `notifications_enabled`（預設 `true`） | 全域通知總開關；關閉時取消所有待觸發鬧鐘且接收器不再顯示通知 |
 | `NoteDraftPreferences` | `note_draft_preferences` | `NoteDraft`（`hasActiveDraft`, `editingNoteId`, `title`, `content`, `categoryId`, `color`, `isPinned`） | 即時保存尚未儲存之記事編輯內容，避免切換分頁或系統回收遺失草稿 |
-| `SyncPreferences` | `cloud_sync_preferences` | `SyncSettings`（`syncEnabled`, `syncAccountId`, `firebaseProjectId`, `firebaseAppId`, `firebaseApiKey`, `lastSyncAt`, `lastSyncMessage`, `settingsUpdatedAt`, `settingsSyncPending`） | 保存雲端同步開關、跨裝置空間代碼、選填手動 Firebase 參數、待同步設定時間戳與最後同步時間 (`lastSyncAt`) |
+| `SyncPreferences` | `cloud_sync_preferences` | `SyncSettings`（`cloudProvider = GOOGLE_DRIVE`, `syncEnabled`, `syncAccountId`, `googleAccountEmail`, `googleDisplayName`, `googleDriveSpaceKey`, `googleDriveAccessToken`, `firebaseProjectId`, `firebaseAppId`, `firebaseApiKey`, `lastSyncAt`, `lastSyncMessage`, `settingsUpdatedAt`, `settingsSyncPending`） | 保存雲端同步後端選擇（預設 Google 雲端硬碟、可切換 Firebase 備援）、Google 授權帳號資訊、備份檔區別代號、待同步設定時間戳與最後同步時間 (`lastSyncAt`) |
 
 ---
 
@@ -81,9 +81,9 @@
 - **系統欄與挖孔防護**：外層容器套用 `statusBarsPadding()`、`navigationBarsPadding()`、`displayCutoutPadding()`，編輯器套用 `imePadding()`，防止手機系統導覽列、狀態欄、鏡頭挖孔或鍵盤遮擋介面。
 - **操作反饋與二次確認**：所有新增、更新、刪除、狀態勾選、設定變更與雲端同步結果皆透過 `showFeedback` 提供清楚即時反饋；所有刪除操作皆經由 `ConfirmDeleteDialog` 二次確認防護。
 
-### 3.6 Firebase 雲端資料同步與衝突解決（`CloudSyncManager` / `FirebaseFirestoreDataSource` / `SyncConflictResolver`）
+### 3.6 Google 雲端硬碟為主之雙向同步與衝突解決（`CloudSyncManager` / `GoogleDriveRemoteDataSource` / `RoutingCloudRemoteDataSource` / `SyncConflictResolver`）
 1. **本地優先寫入（Local-First）**：新增、修改或刪除記事、分類、待辦、提醒、時間規劃、番茄鐘與偏好設定時，一律優先寫入本機 Room 資料庫或 DataStore，確保零網路延遲與離線可用性。
-2. **全資料 Firebase 雲端同步**：於連線且配置就緒時將全部資料類型（含關聯之分類 `categorySyncId` 與連結待辦 `linkedToDoSyncId`）雙向同步至 Firebase Firestore 集合 `notepad_sync/{accountId}/items/{ENTITYTYPE_SYNCID}`；支援自動識別 `google-services.json` 或由使用者於 `CloudSyncDialog` 手動輸入 Firebase Project ID / App ID / Web API Key 動態初始化。
+2. **Google 雲端硬碟（`appDataFolder`）同步與後端路由**：預設透過 Google Play Services `Identity.getAuthorizationClient` 申請 `https://www.googleapis.com/auth/drive.appdata` 權限，將全資料類型封裝為跨裝置共用 JSON 快照檔（`lunar_notepad_sync_v1.json`，支援自訂備份代號區隔）並透過 Google Drive REST v3 雙向同步；增量上傳時自動讀取並合併既有遠端未變動文件；同時保留透過 `RoutingCloudRemoteDataSource` 於進階設定切換回 Firebase Firestore（`notepad_sync/{accountId}/items/{ENTITYTYPE_SYNCID}`）。
 3. **離線異動與刪除墓碑保留**：無網路期間，本機異動維持 `SyncStatus.PENDING_UPLOAD`，刪除資料則即時寫入 `sync_tombstones`（`SyncTombstone`），避免唯一索引（如同名分類重建）衝突同時完整保存待同步刪除操作。
 4. **網路恢復自動上傳**：透過 `AndroidNetworkMonitor`（`ConnectivityManager.NetworkCallback`）偵測網路連線恢復，自動節流觸發 `CloudSyncManager.syncNow` 上傳排隊異動；雲端拉回提醒異動時透過 `onReminderSyncedFromCloud` 同步重整 `ReminderScheduler` 鬧鐘排程。
 5. **最後同步時間記錄**：同步成功後立即寫入 `SyncPreferences.lastSyncAt` 與狀態摘要，並將本機狀態重設為 `SYNCED` 與清除已推播的墓碑；若離線或發生錯誤，保留既有的成功同步時間不覆寫。
@@ -138,7 +138,7 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **16 個測試類別、76 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **18 個測試類別、81 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
@@ -150,12 +150,14 @@
 8. `NoteDraftPreferencesTest`（1 項）：驗證未儲存記事草稿保存、讀取與清除。
 9. `SyncConflictResolverTest`（8 項）：驗證 LWW 雙向合併與刪除墓碑衝突決策。
 10. `CloudSyncManagerTest`（4 項）：驗證本地優先上傳、雲端下載合併、離線恢復補傳與個人化設定同步。
-11. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析與 6 款月曆樣式對比度。
-12. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
-13. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
-14. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
-15. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
-16. `CalendarWidgetLogicTest`（7 項）：驗證月曆小工具跨年月份進退位、42 格週日對齊與今日標示、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、農曆顯示切換與節慶標記及深度連結解析。
+11. `GoogleDriveSyncPayloadSerializerTest`（2 項）：驗證 Google 雲端硬碟快照 JSON 之 64 位元整數、空值、各實體與墓碑來回序列化與異常防護。
+12. `GoogleDriveRemoteDataSourceTest`（3 項）：驗證 Google Drive `appDataFolder` 建立與增量更新合併保留未異動文件、HTTP 401 提示與路由分派。
+13. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析與 6 款月曆樣式對比度。
+14. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
+15. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
+16. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
+17. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
+18. `CalendarWidgetLogicTest`（7 項）：驗證月曆小工具跨年月份進退位、42 格週日對齊與今日標示、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、農曆顯示切換與節慶標記及深度連結解析。
 
 ---
 

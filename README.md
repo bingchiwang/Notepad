@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-76%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-81%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -34,7 +34,7 @@
 3. **📅 1900–2100 離線農曆萬年曆**：純離線位元演算法推算農曆月日、天干地支生肖、二十四節氣與傳統／國曆節慶，支援 6 款自訂月曆視覺風格。
 4. **⏰ 每日時間規劃表**：直觀管理每日時段區塊、即時計算完成進度百分比，並可一鍵帶入番茄鐘。
 5. **🍅 番茄鐘專注計時器**：內建 25 / 5 / 15 分鐘三段式專注循環、待辦目標綁定與每日完成統計。
-6. **☁️ 本地優先 Firebase 雲端同步與個人化設定中心**：離線優先寫入 Room v5，連網自動與 Firebase Cloud Firestore 雙向智慧合併（LWW）；內建 WCAG 自動防重色對比引擎、自訂按鍵色、月曆樣式與 4 段全局字體大小調整。
+6. **☁️ 本地優先 Google 雲端硬碟同步與個人化設定中心**：離線優先寫入 Room v5，連網自動與 Google 雲端硬碟 `appDataFolder`（亦可切換 Firebase Firestore 備援）雙向智慧合併（LWW）；內建 WCAG 自動防重色對比引擎、自訂按鍵色、月曆樣式與 4 段全局字體大小調整。
 7. **📲 四大生產力桌面小工具（快速記事／待辦事項／今日行程／月曆）**：於手機桌面直接瀏覽與操作最近記事（分類切換、一鍵新增／編輯）、未完成待辦（直接勾選完成、截止日、高中低優先級）、今日行程概覽（今天到期待辦、今日完成進度條、即將到來的提醒）與完整月份月曆（藍色標示今日、格內直接顯示記事與待辦文字、超過 2 筆顯示 `＋N 項`、切換月份與快速新增）。
 
 ---
@@ -64,9 +64,9 @@
 - **4 段全局字體大小（`AppFontScale`）**：支援 `85%`（精巧小）、`100%`（標準中）、`115%`（舒適大）、`130%`（特大清晰）即時縮放。
 - **通知開關與同步狀態儀表板**：於同一設定視窗內整合通知權限狀態（支援 `ON_RESUME` 自動刷新）與雲端同步儀表板。
 
-### 4. ☁️ 本地優先 Firebase 雲端資料同步 (`CloudSyncManager` / `FirebaseFirestoreDataSource`)
+### 4. ☁️ 本地優先 Google 雲端硬碟雙向同步 (`CloudSyncManager` / `GoogleDriveRemoteDataSource`)
 - **Offline-First 本地優先**：所有新增、修改、刪除操作皆優先寫入本機 Room v5 / DataStore，離線操作零延遲。
-- **全類型雙向同步**：涵蓋記事、分類、待辦、提醒、時間規劃、番茄鐘紀錄與個人化／通知設定；支援 `google-services.json` 自動讀取或於 `CloudSyncDialog` 手動輸入 Firebase 參數動態連線。
+- **Google 帳號一鍵授權與全類型同步**：透過 Google Play Services 申請 `drive.appdata` 隱藏空間權限，自動於 Google 雲端硬碟保存與合併記事、分類、待辦、提醒、時間規劃、番茄鐘紀錄與個人化／通知設定；亦於進階設定保留切換至 Firebase Firestore 的彈性。
 - **離線墓碑與斷線自動補傳**：離線刪除自動寫入 `SyncTombstone`（`sync_tombstones` 表），待網路恢復時由 `AndroidNetworkMonitor` 自動觸發背景同步並記錄 `lastSyncAt` 最後同步時間。
 - **智慧衝突解決（`SyncConflictResolver`）**：雙端異動衝突時採最新修改時間優先（Last-Write-Wins, `updatedAt`）智慧合併。
 
@@ -201,7 +201,7 @@ com.example.notepad/
     │   └── Navigator.kt
     ├── components/                         # 共用 UI 元件與對話框
     │   ├── AppSettingsDialog.kt            # 個人化設定管理中心（主題/按鍵色/月曆樣式/字體/通知/同步）
-    │   ├── CloudSyncDialog.kt              # Firebase 雲端同步詳細配置與狀態對話框
+    │   ├── CloudSyncDialog.kt              # Google 雲端硬碟為主之雲端同步配置與狀態對話框（含 Firebase 備援）
     │   ├── ItemDialogs.kt                  # 待辦、多日提醒、時間區塊新增/編輯對話框與共用月曆選日器
     │   └── NotepadComponents.kt            # 色彩標籤、優先級徽章、呼吸邊框、二次確認對話框、AppButtonThemeDefaults
     ├── screens/                            # 五大核心畫面與子詳情頁
@@ -223,7 +223,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **16 個單元測試套件、共 76 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **18 個單元測試套件、共 81 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -237,6 +237,8 @@ com.example.notepad/
 | `NoteDraftPreferencesTest` | 1 | 未保存記事草稿寫入、跨頁面讀取還原與儲存後清除驗證 |
 | `SyncConflictResolverTest` | 8 | 本機與雲端雙向新增、LWW 時間戳比對、本機/雲端刪除墓碑衝突與離線編輯復活決策 |
 | `CloudSyncManagerTest` | 4 | 本地優先上傳、雲端拉取合併、離線墓碑排隊與網路恢復自動上傳、個人化設定雲端同步 |
+| `GoogleDriveSyncPayloadSerializerTest` | 2 | Google 雲端硬碟 JSON 快照之 64 位元整數、空值與各實體／墓碑來回序列化與異常防護 |
+| `GoogleDriveRemoteDataSourceTest` | 3 | Google Drive `appDataFolder` 建立與增量更新保留既有文件、HTTP 401 提示與路由分派 |
 | `ColorContrastUtilsTest` | 5 | WCAG 相對明度與對比度、淺底深字/深底白字自動切換、同色邊框判定、Hex 色碼解析與 6 款月曆樣式防重色驗證 |
 | `QuickNoteWidgetLogicTest` | 7 | 記事小工具分類編解碼、釘選與更新時間排序、分類刪除退回、空白標題／多行摘要格式化與深度連結解析 |
 | `ToDoWidgetLogicTest` | 5 | 待辦小工具未完成過濾、優先級與截止日排序、徽章標籤格式、逾期／今日／明日判別與深度連結解析 |
@@ -274,7 +276,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 76 項單元測試
+# 1. 執行全部 81 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

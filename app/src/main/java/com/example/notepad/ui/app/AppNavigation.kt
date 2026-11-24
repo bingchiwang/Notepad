@@ -1,5 +1,9 @@
 package com.example.notepad.ui.app
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -40,6 +44,8 @@ import com.example.notepad.data.preferences.ThemePreferences
 import com.example.notepad.data.repository.NoteRepository
 import com.example.notepad.data.repository.TaskRepository
 import com.example.notepad.data.sync.CloudSyncManager
+import com.example.notepad.data.sync.GoogleDriveAuthHelper
+import com.example.notepad.data.sync.GoogleDriveAuthStartResult
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.components.AppSettingsDialog
 import com.example.notepad.ui.components.CloudSyncDialog
@@ -70,6 +76,7 @@ fun AppNavigation(
     noteDraftPreferences: NoteDraftPreferences,
     syncPreferences: SyncPreferences,
     cloudSyncManager: CloudSyncManager,
+    googleDriveAuthHelper: GoogleDriveAuthHelper,
     modifier: Modifier = Modifier,
     pendingWidgetDeepLink: WidgetDeepLink? = null,
     onConsumeWidgetDeepLink: () -> Unit = {}
@@ -381,13 +388,15 @@ fun AppNavigation(
                                 // 雲端同步狀態指示與管理入口
                                 val syncIcon = when {
                                     syncUiState.isSyncing -> Icons.Default.CloudSync
-                                    !syncUiState.syncSettings.syncEnabled || !syncUiState.isOnline -> Icons.Default.CloudOff
+                                    !syncUiState.syncSettings.syncEnabled ||
+                                        !syncUiState.isOnline ||
+                                        !syncUiState.isCloudConfigured -> Icons.Default.CloudOff
                                     syncUiState.pendingCount > 0 -> Icons.Default.CloudUpload
                                     else -> Icons.Default.CloudDone
                                 }
                                 val syncTint = when {
                                     syncUiState.isSyncing -> MaterialTheme.colorScheme.primary
-                                    !syncUiState.isOnline || !syncUiState.isFirebaseConfigured -> MaterialTheme.colorScheme.error
+                                    !syncUiState.isOnline || !syncUiState.isCloudConfigured -> MaterialTheme.colorScheme.error
                                     syncUiState.pendingCount > 0 -> MaterialTheme.colorScheme.tertiary
                                     syncUiState.syncSettings.syncEnabled -> MaterialTheme.colorScheme.primary
                                     else -> MaterialTheme.colorScheme.onSurfaceVariant
@@ -563,14 +572,99 @@ fun AppNavigation(
     }
 
     if (showCloudSyncDialog) {
+        var isAuthorizingGoogle by remember { mutableStateOf(false) }
+        var googleAuthError by remember { mutableStateOf<String?>(null) }
+
+        val googleAuthLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.StartIntentSenderForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                coroutineScope.launch {
+                    isAuthorizingGoogle = true
+                    googleAuthError = null
+                    try {
+                        val profile = googleDriveAuthHelper.completeAuthorizationFromResult(
+                            activityContext = context,
+                            resultData = result.data
+                        )
+                        syncPreferences.updateGoogleDriveAccount(
+                            email = profile.email,
+                            displayName = profile.displayName
+                        )
+                        showFeedback(context, "已連結 Google 帳號：${profile.email}")
+                        val syncResult = cloudSyncManager.syncNow(isManual = true)
+                        showFeedback(context, syncResult.message)
+                    } catch (e: Exception) {
+                        val msg = e.localizedMessage ?: "Google 帳號授權解析失敗"
+                        googleAuthError = msg
+                        showFeedback(context, msg)
+                    } finally {
+                        isAuthorizingGoogle = false
+                    }
+                }
+            } else {
+                isAuthorizingGoogle = false
+                googleAuthError = "已取消連結 Google 帳號"
+                showFeedback(context, "已取消連結 Google 帳號")
+            }
+        }
+
         CloudSyncDialog(
             uiState = syncUiState,
-            onSaveConfig = { enabled, accountId, projectId, appId, apiKey ->
+            isAuthorizingGoogle = isAuthorizingGoogle,
+            googleAuthError = googleAuthError,
+            onAuthorizeGoogleDrive = {
+                coroutineScope.launch {
+                    isAuthorizingGoogle = true
+                    googleAuthError = null
+                    try {
+                        when (val startResult = googleDriveAuthHelper.beginAuthorization(context)) {
+                            is GoogleDriveAuthStartResult.Authorized -> {
+                                val profile = startResult.profile
+                                syncPreferences.updateGoogleDriveAccount(
+                                    email = profile.email,
+                                    displayName = profile.displayName
+                                )
+                                showFeedback(context, "已連結 Google 帳號：${profile.email}")
+                                isAuthorizingGoogle = false
+                                val syncResult = cloudSyncManager.syncNow(isManual = true)
+                                showFeedback(context, syncResult.message)
+                            }
+
+                            is GoogleDriveAuthStartResult.NeedsUserResolution -> {
+                                googleAuthLauncher.launch(
+                                    IntentSenderRequest.Builder(startResult.intentSender).build()
+                                )
+                            }
+                        }
+                    } catch (e: Exception) {
+                        val msg = e.localizedMessage ?: "啟動 Google 帳號授權失敗"
+                        googleAuthError = msg
+                        showFeedback(context, msg)
+                        isAuthorizingGoogle = false
+                    }
+                }
+            },
+            onDisconnectGoogleDrive = {
+                coroutineScope.launch {
+                    try {
+                        syncPreferences.clearGoogleDriveAccount()
+                        googleAuthError = null
+                        showFeedback(context, "已中斷 Google 雲端硬碟連結")
+                    } catch (e: Exception) {
+                        showFeedback(context, "中斷連結失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                    }
+                }
+            },
+            onSaveConfig = { cloudProvider, enabled, accountId, driveSpaceKey, driveAccessToken, projectId, appId, apiKey ->
                 coroutineScope.launch {
                     try {
                         syncPreferences.updateConfiguration(
+                            cloudProvider = cloudProvider,
                             syncEnabled = enabled,
                             syncAccountId = accountId,
+                            googleDriveSpaceKey = driveSpaceKey,
+                            googleDriveAccessToken = driveAccessToken,
                             firebaseProjectId = projectId,
                             firebaseAppId = appId,
                             firebaseApiKey = apiKey
@@ -584,12 +678,15 @@ fun AppNavigation(
                     }
                 }
             },
-            onSyncNow = { enabled, accountId, projectId, appId, apiKey ->
+            onSyncNow = { cloudProvider, enabled, accountId, driveSpaceKey, driveAccessToken, projectId, appId, apiKey ->
                 coroutineScope.launch {
                     try {
                         syncPreferences.updateConfiguration(
+                            cloudProvider = cloudProvider,
                             syncEnabled = enabled,
                             syncAccountId = accountId,
+                            googleDriveSpaceKey = driveSpaceKey,
+                            googleDriveAccessToken = driveAccessToken,
                             firebaseProjectId = projectId,
                             firebaseAppId = appId,
                             firebaseApiKey = apiKey

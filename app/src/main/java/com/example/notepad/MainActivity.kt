@@ -28,6 +28,9 @@ import com.example.notepad.data.repository.TaskRepository
 import com.example.notepad.data.sync.AndroidNetworkMonitor
 import com.example.notepad.data.sync.CloudSyncManager
 import com.example.notepad.data.sync.FirebaseFirestoreDataSource
+import com.example.notepad.data.sync.GoogleDriveAuthHelper
+import com.example.notepad.data.sync.GoogleDriveRemoteDataSource
+import com.example.notepad.data.sync.RoutingCloudRemoteDataSource
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.app.AppNavigation
 import com.example.notepad.ui.theme.NotepadTheme
@@ -70,7 +73,13 @@ class MainActivity : ComponentActivity() {
         val noteDraftPreferences = NoteDraftPreferences(this)
         val syncPreferences = SyncPreferences(this)
         val monitor = AndroidNetworkMonitor(this).also { networkMonitor = it }
-        val remoteDataSource = FirebaseFirestoreDataSource(this)
+        val googleDriveAuthHelper = GoogleDriveAuthHelper(this)
+        val googleDriveDataSource = GoogleDriveRemoteDataSource(googleDriveAuthHelper)
+        val firebaseDataSource = FirebaseFirestoreDataSource(this)
+        val remoteDataSource = RoutingCloudRemoteDataSource(
+            googleDriveDataSource = googleDriveDataSource,
+            firebaseDataSource = firebaseDataSource
+        )
         val cloudSyncManager = CloudSyncManager(
             noteDao = database.noteDao(),
             categoryDao = database.categoryDao(),
@@ -154,6 +163,7 @@ class MainActivity : ComponentActivity() {
                         noteDraftPreferences = noteDraftPreferences,
                         syncPreferences = syncPreferences,
                         cloudSyncManager = cloudSyncManager,
+                        googleDriveAuthHelper = googleDriveAuthHelper,
                         pendingWidgetDeepLink = pendingWidgetDeepLink,
                         onConsumeWidgetDeepLink = { widgetDeepLinkFlow.value = null }
                     )

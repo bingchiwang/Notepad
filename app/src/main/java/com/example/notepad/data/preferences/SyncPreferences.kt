@@ -18,11 +18,30 @@ private val Context.syncDataStore: DataStore<Preferences> by preferencesDataStor
 )
 
 /**
- * Firebase 雲端同步設定與最後同步狀態模型（資料同步規則 3、5）
+ * 雲端同步後端服務提供者列舉
+ */
+enum class CloudBackendProvider(val value: String, val label: String) {
+    GOOGLE_DRIVE("google_drive", "Google 雲端硬碟"),
+    FIREBASE("firebase", "Firebase Firestore");
+
+    companion object {
+        fun fromValue(raw: String?): CloudBackendProvider {
+            return entries.firstOrNull { it.value == raw } ?: GOOGLE_DRIVE
+        }
+    }
+}
+
+/**
+ * 雲端同步設定與最後同步狀態模型（支援 Google 雲端硬碟為主與 Firebase 備援）
  */
 data class SyncSettings(
+    val cloudProvider: CloudBackendProvider = CloudBackendProvider.GOOGLE_DRIVE,
     val syncEnabled: Boolean = true,
     val syncAccountId: String = "",
+    val googleAccountEmail: String = "",
+    val googleDisplayName: String = "",
+    val googleDriveSpaceKey: String = "",
+    val googleDriveAccessToken: String = "",
     val firebaseProjectId: String = "",
     val firebaseAppId: String = "",
     val firebaseApiKey: String = "",
@@ -31,6 +50,28 @@ data class SyncSettings(
     val settingsUpdatedAt: Long = 0L,
     val settingsSyncPending: Boolean = false
 ) {
+    /**
+     * 檢查是否已連結 Google 帳號或設定手動 Google Drive 授權權杖
+     */
+    fun hasGoogleDriveConfig(): Boolean {
+        return googleAccountEmail.isNotBlank() || googleDriveAccessToken.isNotBlank()
+    }
+
+    /**
+     * 取得 Google 雲端硬碟 AppData 資料夾內對應之同步檔案名稱；
+     * 預設所有相同 Google 帳號裝置共用同一份檔案，若有設定備份區別代號則可分開儲存。
+     */
+    fun resolveGoogleDriveFileName(): String {
+        val sanitized = googleDriveSpaceKey.trim()
+            .replace(Regex("[^A-Za-z0-9_-]"), "_")
+            .take(32)
+        return if (sanitized.isBlank()) {
+            "lunar_notepad_sync_v1.json"
+        } else {
+            "lunar_notepad_sync_${sanitized}_v1.json"
+        }
+    }
+
     /**
      * 檢查是否已於介面設定手動 Firebase 專案連線參數
      */
@@ -50,8 +91,13 @@ class SyncPreferences(
     constructor(context: Context) : this(context.applicationContext.syncDataStore)
 
     companion object {
+        private val KEY_CLOUD_PROVIDER = stringPreferencesKey("cloud_provider")
         private val KEY_SYNC_ENABLED = booleanPreferencesKey("sync_enabled")
         private val KEY_SYNC_ACCOUNT_ID = stringPreferencesKey("sync_account_id")
+        private val KEY_GOOGLE_ACCOUNT_EMAIL = stringPreferencesKey("google_account_email")
+        private val KEY_GOOGLE_DISPLAY_NAME = stringPreferencesKey("google_display_name")
+        private val KEY_GOOGLE_DRIVE_SPACE_KEY = stringPreferencesKey("google_drive_space_key")
+        private val KEY_GOOGLE_DRIVE_ACCESS_TOKEN = stringPreferencesKey("google_drive_access_token")
         private val KEY_FIREBASE_PROJECT_ID = stringPreferencesKey("firebase_project_id")
         private val KEY_FIREBASE_APP_ID = stringPreferencesKey("firebase_app_id")
         private val KEY_FIREBASE_API_KEY = stringPreferencesKey("firebase_api_key")
@@ -64,8 +110,13 @@ class SyncPreferences(
     val syncSettingsFlow: Flow<SyncSettings> = dataStore.data.map { preferences ->
         val rawLastSyncAt = preferences[KEY_LAST_SYNC_AT] ?: 0L
         SyncSettings(
+            cloudProvider = CloudBackendProvider.fromValue(preferences[KEY_CLOUD_PROVIDER]),
             syncEnabled = preferences[KEY_SYNC_ENABLED] ?: true,
             syncAccountId = preferences[KEY_SYNC_ACCOUNT_ID] ?: "",
+            googleAccountEmail = preferences[KEY_GOOGLE_ACCOUNT_EMAIL] ?: "",
+            googleDisplayName = preferences[KEY_GOOGLE_DISPLAY_NAME] ?: "",
+            googleDriveSpaceKey = preferences[KEY_GOOGLE_DRIVE_SPACE_KEY] ?: "",
+            googleDriveAccessToken = preferences[KEY_GOOGLE_DRIVE_ACCESS_TOKEN] ?: "",
             firebaseProjectId = preferences[KEY_FIREBASE_PROJECT_ID] ?: "",
             firebaseAppId = preferences[KEY_FIREBASE_APP_ID] ?: "",
             firebaseApiKey = preferences[KEY_FIREBASE_API_KEY] ?: "",
@@ -94,19 +145,69 @@ class SyncPreferences(
     suspend fun updateConfiguration(
         syncEnabled: Boolean,
         syncAccountId: String,
-        firebaseProjectId: String,
-        firebaseAppId: String,
-        firebaseApiKey: String
+        firebaseProjectId: String = "",
+        firebaseAppId: String = "",
+        firebaseApiKey: String = "",
+        cloudProvider: CloudBackendProvider? = null,
+        googleDriveSpaceKey: String? = null,
+        googleDriveAccessToken: String? = null
     ) {
         val normalizedAccount = syncAccountId.trim().ifBlank {
             "notepad-" + UUID.randomUUID().toString().take(8)
         }
         dataStore.edit { prefs ->
+            cloudProvider?.let { prefs[KEY_CLOUD_PROVIDER] = it.value }
             prefs[KEY_SYNC_ENABLED] = syncEnabled
             prefs[KEY_SYNC_ACCOUNT_ID] = normalizedAccount
+            googleDriveSpaceKey?.let { prefs[KEY_GOOGLE_DRIVE_SPACE_KEY] = it.trim() }
+            googleDriveAccessToken?.let { prefs[KEY_GOOGLE_DRIVE_ACCESS_TOKEN] = it.trim() }
             prefs[KEY_FIREBASE_PROJECT_ID] = firebaseProjectId.trim()
             prefs[KEY_FIREBASE_APP_ID] = firebaseAppId.trim()
             prefs[KEY_FIREBASE_API_KEY] = firebaseApiKey.trim()
+        }
+    }
+
+    /**
+     * 儲存已授權連結的 Google 帳號與狀態
+     */
+    suspend fun updateGoogleDriveAccount(
+        email: String,
+        displayName: String = "",
+        accessToken: String? = null
+    ) {
+        val trimmedEmail = email.trim()
+        dataStore.edit { prefs ->
+            prefs[KEY_CLOUD_PROVIDER] = CloudBackendProvider.GOOGLE_DRIVE.value
+            prefs[KEY_SYNC_ENABLED] = true
+            if (trimmedEmail.isNotBlank()) {
+                prefs[KEY_GOOGLE_ACCOUNT_EMAIL] = trimmedEmail
+            }
+            if (displayName.isNotBlank()) {
+                prefs[KEY_GOOGLE_DISPLAY_NAME] = displayName.trim()
+            }
+            if (!accessToken.isNullOrBlank()) {
+                prefs[KEY_GOOGLE_DRIVE_ACCESS_TOKEN] = accessToken.trim()
+            }
+            if (prefs[KEY_SYNC_ACCOUNT_ID].isNullOrBlank()) {
+                prefs[KEY_SYNC_ACCOUNT_ID] = "notepad-" + UUID.randomUUID().toString().take(8)
+            }
+            prefs[KEY_LAST_SYNC_MESSAGE] = if (trimmedEmail.isNotBlank()) {
+                "已連結 Google 帳號：$trimmedEmail，準備進行雲端同步"
+            } else {
+                "已授權 Google 雲端硬碟，準備進行雲端同步"
+            }
+        }
+    }
+
+    /**
+     * 清除已連結的 Google 帳號與暫存授權資訊
+     */
+    suspend fun clearGoogleDriveAccount() {
+        dataStore.edit { prefs ->
+            prefs[KEY_GOOGLE_ACCOUNT_EMAIL] = ""
+            prefs[KEY_GOOGLE_DISPLAY_NAME] = ""
+            prefs[KEY_GOOGLE_DRIVE_ACCESS_TOKEN] = ""
+            prefs[KEY_LAST_SYNC_MESSAGE] = "已中斷 Google 雲端硬碟連結"
         }
     }
 

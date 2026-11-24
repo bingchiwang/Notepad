@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
+import com.example.notepad.data.preferences.CloudBackendProvider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -693,11 +694,13 @@ fun AppSettingsDialog(
                         Icon(
                             imageVector = when {
                                 syncUiState.isSyncing -> Icons.Default.CloudSync
-                                !syncUiState.isOnline || !syncUiState.syncSettings.syncEnabled -> Icons.Default.CloudOff
+                                !syncUiState.isOnline ||
+                                    !syncUiState.syncSettings.syncEnabled ||
+                                    !syncUiState.isCloudConfigured -> Icons.Default.CloudOff
                                 else -> Icons.Default.CloudDone
                             },
                             contentDescription = null,
-                            tint = if (syncUiState.isOnline && syncUiState.isFirebaseConfigured) {
+                            tint = if (syncUiState.isOnline && syncUiState.isCloudConfigured) {
                                 MaterialTheme.colorScheme.primary
                             } else {
                                 MaterialTheme.colorScheme.error
@@ -722,7 +725,16 @@ fun AppSettingsDialog(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             val networkStateText = if (syncUiState.isOnline) "已連線" else "離線中（已保留本機異動）"
-                            val firebaseStateText = if (syncUiState.isFirebaseConfigured) "已就緒" else "尚未配置 Firebase 專案"
+                            val cloudStateText = if (syncUiState.syncSettings.cloudProvider == CloudBackendProvider.GOOGLE_DRIVE) {
+                                if (syncUiState.isCloudConfigured) {
+                                    val accountLabel = syncUiState.syncSettings.googleAccountEmail.ifBlank { "手動權杖" }
+                                    "Google 雲端硬碟（$accountLabel）"
+                                } else {
+                                    "尚未連結 Google 帳號"
+                                }
+                            } else {
+                                if (syncUiState.isCloudConfigured) "Firebase 已就緒" else "尚未配置 Firebase 專案"
+                            }
                             val pendingText = if (syncUiState.pendingCount > 0) {
                                 "待上傳 ${syncUiState.pendingCount} 筆"
                             } else {
@@ -733,7 +745,7 @@ fun AppSettingsDialog(
                             } ?: "尚未同步"
 
                             Text(
-                                text = "🌐 網路：$networkStateText  ｜  🔥 雲端：$firebaseStateText",
+                                text = "🌐 網路：$networkStateText  ｜  ☁️ 雲端：$cloudStateText",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium
                             )

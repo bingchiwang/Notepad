@@ -4,6 +4,17 @@
 
 ---
 
+## [1.10.0] - 2026-11-24
+### 新增與改版 (Added / Changed)
+- **雲端同步全面支援 Google 雲端硬碟（Google Drive `appDataFolder`）並為主介面**：
+  - 於 `libs.versions.toml` 與 `app/build.gradle.kts` 導入 `play-services-auth:21.3.0`，透過 Google Play Services `Identity.getAuthorizationClient` 申請 `https://www.googleapis.com/auth/drive.appdata` 專屬隱藏空間權限，不需危險通訊錄帳號權限即可一鍵連結與切換 Google 帳號，並透過 Drive `about` 端點自動帶入帳號信箱與顯示名稱。
+  - 新增 [GoogleDriveSyncPayloadSerializer](app/src/main/java/com/example/notepad/data/sync/GoogleDriveSyncPayloadSerializer.kt)、[GoogleDriveAuthHelper](app/src/main/java/com/example/notepad/data/sync/GoogleDriveAuthHelper.kt)、[GoogleDriveRemoteDataSource](app/src/main/java/com/example/notepad/data/sync/GoogleDriveRemoteDataSource.kt) 與 [RoutingCloudRemoteDataSource](app/src/main/java/com/example/notepad/data/sync/RoutingCloudRemoteDataSource.kt)；於增量上傳時自動先讀回並保留遠端未變動（`NO_OP`）文件再執行合併寫入，完整保留離線優先、刪除墓碑（`SyncTombstone`）與最新修改時間優先（LWW `SyncConflictResolver`）雙向合併機制。
+  - 改版 [CloudSyncDialog](app/src/main/java/com/example/notepad/ui/components/CloudSyncDialog.kt)、[AppSettingsDialog](app/src/main/java/com/example/notepad/ui/components/AppSettingsDialog.kt) 與 [AppNavigation](app/src/main/java/com/example/notepad/ui/app/AppNavigation.kt)，預設以 **Google 雲端硬碟同步** 為主操作面板，並保留可折疊的進階備援選項（手動 Access Token 或切換 Firebase Firestore）。
+  - 擴充 [SyncPreferences](app/src/main/java/com/example/notepad/data/preferences/SyncPreferences.kt) 加入 `CloudBackendProvider`、`googleAccountEmail`、`googleDisplayName`、`googleDriveSpaceKey` 與 `googleDriveAccessToken` DataStore 持久化。
+- **測試覆蓋擴充**：新增 `GoogleDriveSyncPayloadSerializerTest`（2 項）與 `GoogleDriveRemoteDataSourceTest`（3 項），全專案單元測試擴充至 **81 項**（18 個測試套件，0 失敗、0 略過、0 Lint 錯誤）。
+
+---
+
 ## [1.9.5] - 2026-11-24
 ### 新增 (Added)
 - **開機完成與 App 更新後自動恢復提醒排程（`BootCompletedReceiver` / `ReminderScheduler`）**：

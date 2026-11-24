@@ -134,6 +134,7 @@ data class CloudSyncUiState(
     val isOnline: Boolean = true,
     val isSyncing: Boolean = false,
     val pendingCount: Int = 0,
+    val isCloudConfigured: Boolean = false,
     val isFirebaseConfigured: Boolean = false,
     val syncSettings: SyncSettings = SyncSettings(),
     val lastRunSummary: String = "尚未同步"
