@@ -10,6 +10,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.example.notepad.data.local.AppDatabase
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.preferences.NotificationPreferences
@@ -35,6 +36,32 @@ object ReminderScheduler {
         currentTimeMillis: Long = System.currentTimeMillis()
     ): Boolean {
         return notificationsEnabled && triggerAt > currentTimeMillis
+    }
+
+    /**
+     * 純邏輯篩選開機或更新後需要重新排程的提醒清單（方便單元測試驗證規範 3.4）：
+     * - 必須開啟全域通知總開關
+     * - 必須尚未觸發（`!isFired`）且晚於目前時間（`triggerAt > currentTimeMillis`）
+     * - 若有關聯待辦事項，該待辦必須仍為未完成狀態
+     */
+    fun filterRemindersToReschedule(
+        reminders: List<Reminder>,
+        todos: List<ToDo>,
+        notificationsEnabled: Boolean,
+        currentTimeMillis: Long = System.currentTimeMillis()
+    ): List<Reminder> {
+        if (!notificationsEnabled) return emptyList()
+        val completedToDoIds = todos
+            .asSequence()
+            .filter { it.isCompleted }
+            .map { it.id }
+            .toSet()
+
+        return reminders.filter { reminder ->
+            !reminder.isFired &&
+                isReminderScheduleAllowed(reminder.triggerAt, true, currentTimeMillis) &&
+                (reminder.linkedToDoId == null || reminder.linkedToDoId !in completedToDoIds)
+        }
     }
 
     /**
@@ -174,5 +201,39 @@ object ReminderScheduler {
                 scheduleReminder(context, reminder, notificationsEnabled = true)
             }
         }
+    }
+
+    /**
+     * 於手機重新開機（`ACTION_BOOT_COMPLETED`）或應用程式更新完成（`ACTION_MY_PACKAGE_REPLACED`）後，
+     * 從本機 Room 資料庫撈取所有未過期且未觸發的提醒並重新向 `AlarmManager` 排程（規範 3.4）。
+     * @return 成功重新排程的系統提醒筆數
+     */
+    suspend fun rescheduleUpcomingReminders(
+        context: Context,
+        currentTimeMillis: Long = System.currentTimeMillis()
+    ): Int {
+        val appContext = context.applicationContext
+        val notificationsEnabled = NotificationPreferences(appContext).isNotificationsEnabled()
+        if (!notificationsEnabled) return 0
+
+        val database = AppDatabase.getDatabase(appContext)
+        val upcomingReminders = database.reminderDao().getUpcomingUnfiredRemindersOnce(currentTimeMillis)
+        if (upcomingReminders.isEmpty()) return 0
+
+        val allToDos = database.toDoDao().getAllToDosOnce()
+        val remindersToSchedule = filterRemindersToReschedule(
+            reminders = upcomingReminders,
+            todos = allToDos,
+            notificationsEnabled = true,
+            currentTimeMillis = currentTimeMillis
+        )
+
+        var scheduledCount = 0
+        remindersToSchedule.forEach { reminder ->
+            if (scheduleReminder(appContext, reminder, notificationsEnabled = true)) {
+                scheduledCount += 1
+            }
+        }
+        return scheduledCount
     }
 }

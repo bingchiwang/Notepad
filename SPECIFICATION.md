@@ -63,12 +63,13 @@
   - `ToDo.dueDate`（截止日期）與 `Reminder.triggerAt`（通知排程）分離管理，可獨立設定並透過 `linkedToDoId` 建立關聯；於 `TaskDetailScreen` 內亦可直接新增、編輯或經二次確認刪除關聯提醒。
   - 次日到期且未完成之任務同步於清單與月曆觸發橘紅呼吸虛線外框與跳動「`⚠️ 明日到期！`」徽章。
 
-### 3.3 提醒通知排程（`ReminderScheduler` / `ReminderReceiver`）
+### 3.3 提醒通知排程（`ReminderScheduler` / `ReminderReceiver` / `BootCompletedReceiver`）
 - 支援自選任意未來年份與月份的多日提醒（`AddMultiDayReminderDialog`）及日期時間編輯（`EditReminderDialog`）。
 - 嚴格攔截過去時間（`triggerAt > System.currentTimeMillis()`），不安排已過期的系統鬧鐘。
 - 整合通知總開關（`NotificationPreferences`）：關閉時立即取消待觸發鬧鐘且廣播端不再發出通知；重新開啟時自動補排尚未過期之未來提醒。
 - 當關聯之待辦任務完成時，透過 `ReminderScheduler.updateToDoCompletionAndSyncReminders` 自動取消所有尚未觸發之關聯提醒排程並標記已處理。
 - 修改提醒時間時先取消舊 `PendingIntent`，再以最新時間重新排程並重置 `isFired = false`。
+- **重開機與 App 更新自動復原排程**：透過已註冊於 `AndroidManifest.xml` 之 `BootCompletedReceiver` 監聽 `ACTION_BOOT_COMPLETED`、`ACTION_MY_PACKAGE_REPLACED` 與快速開機事件，於開機或更新完成後非同步呼叫 `ReminderScheduler.rescheduleUpcomingReminders`，從 Room 資料庫（`ReminderDao.getUpcomingUnfiredRemindersOnce`）撈取所有未觸發、未過期且關聯待辦未完成之提醒重新向 `AlarmManager` 排程，並同步刷新桌面小工具。
 - 完整處理 Android 8.0+（API 26+）通知頻道與權限：Android 13+ 動態申請 `POST_NOTIFICATIONS`，並結合 `NotificationManagerCompat.areNotificationsEnabled()` 與 `AppSettingsDialog` 的 `ON_RESUME` 生命週期監聽即時反映系統授權狀態。
 
 ### 3.4 離線農曆萬年曆、每日排程與番茄鐘
@@ -137,13 +138,13 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **16 個測試類別、74 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **16 個測試類別、76 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
 3. `NoteRepositoryTest`（9 項）：驗證記事 CRUD、釘選排序、分類防重、分類刪除記事重歸類、全文搜尋與離線墓碑。
 4. `TaskRepositoryTest`（4 項）：驗證待辦非空檢核、完成狀態分離、優先級排序、截止日與提醒分離及離線墓碑。
-5. `ReminderSchedulerLogicTest`（3 項）：驗證過期時間攔截與通知總開關邏輯。
+5. `ReminderSchedulerLogicTest`（5 項）：驗證過期時間攔截、通知總開關、開機／更新後重排篩選與系統廣播動作白名單。
 6. `ThemePreferencesTest`（6 項）：驗證主題模式、按鍵色、月曆樣式、字體大小持久化與重設預設值。
 7. `NotificationPreferencesTest`（1 項）：驗證通知總開關 DataStore 持久化。
 8. `NoteDraftPreferencesTest`（1 項）：驗證未儲存記事草稿保存、讀取與清除。

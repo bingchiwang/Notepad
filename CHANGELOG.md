@@ -4,6 +4,15 @@
 
 ---
 
+## [1.9.5] - 2026-11-24
+### 新增 (Added)
+- **開機完成與 App 更新後自動恢復提醒排程（`BootCompletedReceiver` / `ReminderScheduler`）**：
+  - 新增並於 `AndroidManifest.xml` 註冊 [BootCompletedReceiver](app/src/main/java/com/example/notepad/reminder/BootCompletedReceiver.kt)（`android:exported="true"`），監聽 `ACTION_BOOT_COMPLETED`、`ACTION_MY_PACKAGE_REPLACED` 及快速開機廣播 `QUICKBOOT_POWERON`。
+  - 擴充 `ReminderDao.getUpcomingUnfiredRemindersOnce` 與 `ReminderScheduler.rescheduleUpcomingReminders` / `filterRemindersToReschedule`，於重開機或應用程式更新後自動核對通知總開關，從本機 Room 資料庫撈取所有未觸發（`isFired = 0`）、未過期且關聯待辦未完成之未來提醒重新向 `AlarmManager` 排程，並同步刷新桌面待辦、今日行程與月曆小工具。
+- **測試覆蓋擴充**：擴充 `ReminderSchedulerLogicTest`（新增開機／更新重排篩選與廣播動作白名單驗證），全專案單元測試擴充至 **76 項**（16 個測試套件，0 失敗、0 略過）。
+
+---
+
 ## [1.9.4] - 2026-11-16
 ### 優化 (Improved)
 - **全面升級四大桌面小工具圖示與預覽插圖視覺設計（`res/drawable/`）**：

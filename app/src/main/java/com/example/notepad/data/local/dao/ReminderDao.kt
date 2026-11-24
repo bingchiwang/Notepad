@@ -44,6 +44,12 @@ interface ReminderDao {
     @Query("SELECT * FROM reminders")
     suspend fun getAllRemindersOnce(): List<Reminder>
 
+    /**
+     * 撈取所有尚未觸發且觸發時間晚於目前時間的未來提醒（用於開機或 App 更新後重新排程，遵循規範 3.4）
+     */
+    @Query("SELECT * FROM reminders WHERE isFired = 0 AND triggerAt > :currentTimeMillis ORDER BY triggerAt ASC")
+    suspend fun getUpcomingUnfiredRemindersOnce(currentTimeMillis: Long = System.currentTimeMillis()): List<Reminder>
+
     @Query("SELECT * FROM reminders WHERE syncId = :syncId LIMIT 1")
     suspend fun getReminderBySyncIdOnce(syncId: String): Reminder?
 

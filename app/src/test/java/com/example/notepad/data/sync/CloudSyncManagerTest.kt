@@ -675,6 +675,10 @@ private class InMemoryReminderDao : ReminderDao {
     }
 
     override suspend fun getAllRemindersOnce(): List<Reminder> = flow.value
+    override suspend fun getUpcomingUnfiredRemindersOnce(currentTimeMillis: Long): List<Reminder> =
+        flow.value
+            .filter { !it.isFired && it.triggerAt > currentTimeMillis }
+            .sortedBy { it.triggerAt }
     override suspend fun getReminderBySyncIdOnce(syncId: String): Reminder? =
         flow.value.find { it.syncId == syncId }
     override fun observePendingCount(): Flow<Int> =

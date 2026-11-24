@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-74%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-76%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -170,8 +170,9 @@ com.example.notepad/
 │       ├── CloudSyncModels.kt              # 同步文件模型與 SyncConflictResolver (updatedAt LWW)
 │       └── NetworkMonitor.kt               # ConnectivityManager 網路狀態監聽器
 ├── reminder/                               # 提醒推播與鬧鐘排程模組
-│   ├── ReminderScheduler.kt                # 精確鬧鐘排定、過期攔截、總開關連動與任務完成取消提醒
-│   └── ReminderReceiver.kt                 # 鬧鐘廣播接收器與高優先級 NotificationChannel 推播
+│   ├── ReminderScheduler.kt                # 精確鬧鐘排定、過期攔截、總開關連動與開機更新重排協調器
+│   ├── ReminderReceiver.kt                 # 鬧鐘廣播接收器與高優先級 NotificationChannel 推播
+│   └── BootCompletedReceiver.kt            # 開機完成與 App 更新後自動撈取 Room 提醒並重新排程之廣播接收器
 ├── widget/                                 # 快速記事與待辦事項桌面小工具模組
 │   ├── QuickNoteWidgetContract.kt          # 小工具（記事與待辦）深度連結動作與 Intent 解析契約
 │   ├── QuickNoteWidgetLogic.kt             # 記事小工具分類篩選編解碼、排序與摘要格式化邏輯
@@ -222,7 +223,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **16 個單元測試套件、共 74 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **16 個單元測試套件、共 76 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -230,7 +231,7 @@ com.example.notepad/
 | `PriorityAndConvertersTest` | 4 | 優先級列舉權重排序與 Room `DatabaseConverters` 雙向轉換 |
 | `NoteRepositoryTest` | 9 | 記事空白標題/內文保存、`updatedAt` 更新、釘選排序、分類防重、刪除分類記事歸屬、全文搜尋與離線刪除墓碑 |
 | `TaskRepositoryTest` | 4 | 待辦空白名稱攔截、進行中/已完成分離、優先級排序、截止日與獨立提醒分離及離線刪除墓碑 |
-| `ReminderSchedulerLogicTest` | 3 | 過期時間攔截、未來時間允許與通知總開關關閉攔截測試 |
+| `ReminderSchedulerLogicTest` | 5 | 過期時間攔截、未來時間允許、通知總開關關閉攔截與開機／更新後未過期提醒重排篩選測試 |
 | `ThemePreferencesTest` | 6 | 淺色/深色/系統模式、自訂按鍵色、月曆樣式、字體大小持久化與一鍵重設預設值 |
 | `NotificationPreferencesTest` | 1 | 全域通知總開關預設值與切換持久化驗證 |
 | `NoteDraftPreferencesTest` | 1 | 未保存記事草稿寫入、跨頁面讀取還原與儲存後清除驗證 |
@@ -273,7 +274,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 74 項單元測試
+# 1. 執行全部 76 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

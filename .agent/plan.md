@@ -245,6 +245,16 @@
   - 所有向量 XML 與漸層屬性於 Android 8.0–16（`minSdk = 26`、`targetSdk = 37`）無任何 AAPT2 或 Lint 錯誤
   - 全專案 74 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_21_BootAndPackageUpdateReminderRecovery: 補齊並驗證開機／App 更新後自動從 Room 資料庫恢復未過期提醒排程（`BootCompletedReceiver`）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 檢查發現專案雖已於 `AndroidManifest.xml` 宣告 `RECEIVE_BOOT_COMPLETED` 權限，但尚未建立對應的系統開機與更新廣播接收器。
+  - 新增 `BootCompletedReceiver`（監聽 `ACTION_BOOT_COMPLETED`、`ACTION_MY_PACKAGE_REPLACED`、`QUICKBOOT_POWERON`）並註冊於 `AndroidManifest.xml`；擴充 `ReminderDao.getUpcomingUnfiredRemindersOnce` 與 `ReminderScheduler.rescheduleUpcomingReminders`／`filterRemindersToReschedule`，確保通知總開關開啟時於背景撈取 Room 中所有未觸發、未過期且關聯待辦未完成之提醒重新排程。
+  - 擴充 `ReminderSchedulerLogicTest`（共 5 項）並更新技術規格書、版本紀錄與 README，全專案達 76 項單元測試。
+- **驗收標準 (Acceptance Criteria):**
+  - `AndroidManifest.xml` 完整註冊 `BOOT_COMPLETED` 與 `MY_PACKAGE_REPLACED` 接收器並符合 Android 12+ `exported` 與安全檢核
+  - 全專案 76 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)
