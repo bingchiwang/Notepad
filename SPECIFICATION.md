@@ -81,9 +81,9 @@
 - **系統欄與挖孔防護**：外層容器套用 `statusBarsPadding()`、`navigationBarsPadding()`、`displayCutoutPadding()`，編輯器套用 `imePadding()`，防止手機系統導覽列、狀態欄、鏡頭挖孔或鍵盤遮擋介面。
 - **操作反饋與二次確認**：所有新增、更新、刪除、狀態勾選、設定變更與雲端同步結果皆透過 `showFeedback` 提供清楚即時反饋；所有刪除操作皆經由 `ConfirmDeleteDialog` 二次確認防護。
 
-### 3.6 Google 雲端硬碟為主之雙向同步與衝突解決（`CloudSyncManager` / `GoogleDriveRemoteDataSource` / `RoutingCloudRemoteDataSource` / `SyncConflictResolver`）
+### 3.6 Google 雲端硬碟雙向同步與衝突解決（`CloudSyncManager` / `GoogleDriveRemoteDataSource` / `SyncConflictResolver`）
 1. **本地優先寫入（Local-First）**：新增、修改或刪除記事、分類、待辦、提醒、時間規劃、番茄鐘與偏好設定時，一律優先寫入本機 Room 資料庫或 DataStore，確保零網路延遲與離線可用性。
-2. **Google 雲端硬碟（`appDataFolder`）同步與後端路由**：預設透過 Google Play Services `Identity.getAuthorizationClient` 申請 `https://www.googleapis.com/auth/drive.appdata` 權限，將全資料類型封裝為跨裝置共用 JSON 快照檔（`lunar_notepad_sync_v1.json`，支援自訂備份代號區隔）並透過 Google Drive REST v3 雙向同步；增量上傳時自動讀取並合併既有遠端未變動文件；同時保留透過 `RoutingCloudRemoteDataSource` 於進階設定切換回 Firebase Firestore（`notepad_sync/{accountId}/items/{ENTITYTYPE_SYNCID}`）。
+2. **Google 雲端硬碟（`appDataFolder`）單一入口同步**：透過 Google Play Services `Identity.getAuthorizationClient` 申請 `https://www.googleapis.com/auth/drive.appdata` 權限，將全資料類型封裝為跨裝置共用 JSON 快照檔（`lunar_notepad_sync_v1.json`）並透過 Google Drive REST v3 雙向同步；增量上傳時自動讀取並合併既有遠端未變動文件；介面精簡為僅透過 Google 帳號連結與雙向同步。
 3. **離線異動與刪除墓碑保留**：無網路期間，本機異動維持 `SyncStatus.PENDING_UPLOAD`，刪除資料則即時寫入 `sync_tombstones`（`SyncTombstone`），避免唯一索引（如同名分類重建）衝突同時完整保存待同步刪除操作。
 4. **網路恢復自動上傳**：透過 `AndroidNetworkMonitor`（`ConnectivityManager.NetworkCallback`）偵測網路連線恢復，自動節流觸發 `CloudSyncManager.syncNow` 上傳排隊異動；雲端拉回提醒異動時透過 `onReminderSyncedFromCloud` 同步重整 `ReminderScheduler` 鬧鐘排程。
 5. **最後同步時間記錄**：同步成功後立即寫入 `SyncPreferences.lastSyncAt` 與狀態摘要，並將本機狀態重設為 `SYNCED` 與清除已推播的墓碑；若離線或發生錯誤，保留既有的成功同步時間不覆寫。

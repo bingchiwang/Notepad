@@ -4,6 +4,13 @@
 
 ---
 
+## [1.10.1] - 2026-11-25
+### 調整 (Changed)
+- **精簡雲端同步對話框為純 Google 雲端硬碟同步介面（`CloudSyncDialog` / `MainActivity`）**：
+  - 移除連結 Google 帳號底下的「進階設定（服務切換 / Firebase 備援 / 手動權杖）」與「雲端硬碟備份區別代號」欄位，僅保留 **Google 雲端硬碟帳號連結與雙向同步** 操作介面，並於 [GoogleDriveAuthHelper](app/src/main/java/com/example/notepad/data/sync/GoogleDriveAuthHelper.kt) 補充 `Context.findActivity()` 解包強化授權視窗啟動穩定性。
+
+---
+
 ## [1.10.0] - 2026-11-24
 ### 新增與改版 (Added / Changed)
 - **雲端同步全面支援 Google 雲端硬碟（Google Drive `appDataFolder`）並為主介面**：

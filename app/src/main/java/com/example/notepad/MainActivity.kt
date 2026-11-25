@@ -27,10 +27,8 @@ import com.example.notepad.data.repository.NoteRepository
 import com.example.notepad.data.repository.TaskRepository
 import com.example.notepad.data.sync.AndroidNetworkMonitor
 import com.example.notepad.data.sync.CloudSyncManager
-import com.example.notepad.data.sync.FirebaseFirestoreDataSource
 import com.example.notepad.data.sync.GoogleDriveAuthHelper
 import com.example.notepad.data.sync.GoogleDriveRemoteDataSource
-import com.example.notepad.data.sync.RoutingCloudRemoteDataSource
 import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.app.AppNavigation
 import com.example.notepad.ui.theme.NotepadTheme
@@ -74,12 +72,7 @@ class MainActivity : ComponentActivity() {
         val syncPreferences = SyncPreferences(this)
         val monitor = AndroidNetworkMonitor(this).also { networkMonitor = it }
         val googleDriveAuthHelper = GoogleDriveAuthHelper(this)
-        val googleDriveDataSource = GoogleDriveRemoteDataSource(googleDriveAuthHelper)
-        val firebaseDataSource = FirebaseFirestoreDataSource(this)
-        val remoteDataSource = RoutingCloudRemoteDataSource(
-            googleDriveDataSource = googleDriveDataSource,
-            firebaseDataSource = firebaseDataSource
-        )
+        val remoteDataSource = GoogleDriveRemoteDataSource(googleDriveAuthHelper)
         val cloudSyncManager = CloudSyncManager(
             noteDao = database.noteDao(),
             categoryDao = database.categoryDao(),

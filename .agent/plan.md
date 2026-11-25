@@ -265,6 +265,15 @@
   - 保留離線優先、刪除墓碑（`SyncTombstone`）與最新修改時間優先（LWW）智慧合併邏輯
   - 全專案 81 項單元測試、R8 Release 壓縮與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_23_GoogleDriveOnlySyncUI: 移除連結 Google 帳號底下的其他同步方式，精簡雲端同步對話框為純 Google 雲端硬碟操作。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 精簡 `CloudSyncDialog`、`AppNavigation`、`AppSettingsDialog` 與 `MainActivity`，移除 Firebase 切換、手動 Token、同步空間代碼及區別代號輸入框，統一由 `GoogleDriveRemoteDataSource` 提供服務。
+  - 於 `GoogleDriveAuthHelper` 補齊 `Context.findActivity()` 解包機制，全專案 81 項單元測試、R8 Release 壓縮與 Android Lint 皆 0 錯誤通過，並產出最新簽章 `app-release-signed.apk`。
+- **驗收標準 (Acceptance Criteria):**
+  - 雲端同步對話框僅保留 Google 帳號連結與雙向同步功能
+  - 全專案 81 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

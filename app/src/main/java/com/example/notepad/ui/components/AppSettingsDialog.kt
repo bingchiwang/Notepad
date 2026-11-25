@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
-import com.example.notepad.data.preferences.CloudBackendProvider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -725,15 +724,11 @@ fun AppSettingsDialog(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             val networkStateText = if (syncUiState.isOnline) "已連線" else "離線中（已保留本機異動）"
-                            val cloudStateText = if (syncUiState.syncSettings.cloudProvider == CloudBackendProvider.GOOGLE_DRIVE) {
-                                if (syncUiState.isCloudConfigured) {
-                                    val accountLabel = syncUiState.syncSettings.googleAccountEmail.ifBlank { "手動權杖" }
-                                    "Google 雲端硬碟（$accountLabel）"
-                                } else {
-                                    "尚未連結 Google 帳號"
-                                }
+                            val cloudStateText = if (syncUiState.isCloudConfigured) {
+                                val accountLabel = syncUiState.syncSettings.googleAccountEmail.ifBlank { "Google 雲端硬碟" }
+                                "Google 雲端硬碟（$accountLabel）"
                             } else {
-                                if (syncUiState.isCloudConfigured) "Firebase 已就緒" else "尚未配置 Firebase 專案"
+                                "尚未連結 Google 帳號"
                             }
                             val pendingText = if (syncUiState.pendingCount > 0) {
                                 "待上傳 ${syncUiState.pendingCount} 筆"

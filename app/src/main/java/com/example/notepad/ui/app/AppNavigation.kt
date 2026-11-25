@@ -656,20 +656,16 @@ fun AppNavigation(
                     }
                 }
             },
-            onSaveConfig = { cloudProvider, enabled, accountId, driveSpaceKey, driveAccessToken, projectId, appId, apiKey ->
+            onSaveConfig = { enabled ->
                 coroutineScope.launch {
                     try {
+                        val current = syncPreferences.getSyncSettingsOnce()
                         syncPreferences.updateConfiguration(
-                            cloudProvider = cloudProvider,
+                            cloudProvider = com.example.notepad.data.preferences.CloudBackendProvider.GOOGLE_DRIVE,
                             syncEnabled = enabled,
-                            syncAccountId = accountId,
-                            googleDriveSpaceKey = driveSpaceKey,
-                            googleDriveAccessToken = driveAccessToken,
-                            firebaseProjectId = projectId,
-                            firebaseAppId = appId,
-                            firebaseApiKey = apiKey
+                            syncAccountId = current.syncAccountId
                         )
-                        showFeedback(context, "已儲存雲端同步設定")
+                        showFeedback(context, "已儲存 Google 雲端同步設定")
                         if (enabled) {
                             cloudSyncManager.requestSyncOnDataChanged()
                         }
@@ -678,18 +674,14 @@ fun AppNavigation(
                     }
                 }
             },
-            onSyncNow = { cloudProvider, enabled, accountId, driveSpaceKey, driveAccessToken, projectId, appId, apiKey ->
+            onSyncNow = { enabled ->
                 coroutineScope.launch {
                     try {
+                        val current = syncPreferences.getSyncSettingsOnce()
                         syncPreferences.updateConfiguration(
-                            cloudProvider = cloudProvider,
+                            cloudProvider = com.example.notepad.data.preferences.CloudBackendProvider.GOOGLE_DRIVE,
                             syncEnabled = enabled,
-                            syncAccountId = accountId,
-                            googleDriveSpaceKey = driveSpaceKey,
-                            googleDriveAccessToken = driveAccessToken,
-                            firebaseProjectId = projectId,
-                            firebaseAppId = appId,
-                            firebaseApiKey = apiKey
+                            syncAccountId = current.syncAccountId
                         )
                         val result = cloudSyncManager.syncNow(isManual = true)
                         showFeedback(context, result.message)

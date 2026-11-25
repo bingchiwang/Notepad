@@ -1,6 +1,8 @@
 package com.example.notepad.data.sync
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentSender
 import com.example.notepad.data.preferences.SyncSettings
@@ -67,8 +69,12 @@ class GoogleDriveAuthHelper(
             .setRequestedScopes(listOf(Scope(DRIVE_APP_DATA_SCOPE)))
             .build()
 
+        val authClient = activityContext.findActivity()?.let {
+            Identity.getAuthorizationClient(it)
+        } ?: Identity.getAuthorizationClient(activityContext)
+
         val result = try {
-            awaitTask(Identity.getAuthorizationClient(activityContext).authorize(request))
+            awaitTask(authClient.authorize(request))
         } catch (ex: Exception) {
             throw IllegalStateException(mapAuthorizationError(ex), ex)
         }
@@ -92,9 +98,12 @@ class GoogleDriveAuthHelper(
         activityContext: Context,
         resultData: Intent?
     ): GoogleAccountProfile {
+        val authClient = activityContext.findActivity()?.let {
+            Identity.getAuthorizationClient(it)
+        } ?: Identity.getAuthorizationClient(activityContext)
+
         val result = try {
-            Identity.getAuthorizationClient(activityContext)
-                .getAuthorizationResultFromIntent(resultData)
+            authClient.getAuthorizationResultFromIntent(resultData)
         } catch (ex: Exception) {
             throw IllegalStateException(mapAuthorizationError(ex), ex)
         }
@@ -217,7 +226,7 @@ class GoogleDriveAuthHelper(
         val apiEx = error as? ApiException
         return when (apiEx?.statusCode) {
             CommonStatusCodes.DEVELOPER_ERROR ->
-                "Google OAuth 設定尚未完成（DEVELOPER_ERROR 10）：請於 Google Cloud Console 建立 Android OAuth 2.0 用戶端 ID（套件 com.example.notepad + SHA-1）並啟用 Google Drive API；測試時也可於進階選項貼入權杖。"
+                "Google OAuth 設定尚未完成（DEVELOPER_ERROR 10）：請於 Google Cloud Console 建立 Android OAuth 2.0 用戶端 ID（套件 com.example.notepad + SHA-1）並啟用 Google Drive API。"
 
             CommonStatusCodes.SIGN_IN_REQUIRED ->
                 "此裝置尚未登入 Google 帳號，請先於系統設定登入後再試。"
@@ -232,6 +241,14 @@ class GoogleDriveAuthHelper(
                 "裝置缺少 Google Play 服務或版本過舊，無法執行帳號授權。"
 
             else -> "Google 雲端硬碟授權失敗：${error.message ?: "未知錯誤"}"
+        }
+    }
+
+    private tailrec fun Context.findActivity(): Activity? {
+        return when (this) {
+            is Activity -> this
+            is ContextWrapper -> baseContext.findActivity()
+            else -> null
         }
     }
 
