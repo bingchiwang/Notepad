@@ -555,11 +555,12 @@ fun RecurrenceSelectorSection(
 @Composable
 fun AddToDoDialog(
     initialDueDateMillis: Long? = null,
+    initialTitle: String = "",
     dialogTitle: String = "新增待做事項",
     onDismiss: () -> Unit,
     onSave: (ToDo) -> Unit
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember(initialTitle) { mutableStateOf(initialTitle) }
     var description by remember { mutableStateOf("") }
     var tag by remember { mutableStateOf("日常") }
     var selectedColor by remember { mutableLongStateOf(PRESET_COLORS.first().colorLong) }
@@ -1815,6 +1816,165 @@ fun EditTimeBlockDialog(
                         }
                     ) {
                         Text("更新儲存")
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 新增每日時間規劃區塊共用對話框（供時間規劃表與記事一鍵排程使用，遵循 DRY 原則）
+ */
+@Composable
+fun AddTimeBlockDialog(
+    dateMillis: Long,
+    initialTitle: String = "",
+    dialogTitle: String = "安排每日時間區塊",
+    onDismiss: () -> Unit,
+    onSave: (TimeBlock) -> Unit
+) {
+    var title by remember(initialTitle) { mutableStateOf(initialTitle) }
+    var startTime by remember { mutableStateOf("09:00") }
+    var endTime by remember { mutableStateOf("10:00") }
+    var tag by remember { mutableStateOf("工作") }
+    var description by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableLongStateOf(PRESET_COLORS[1].colorLong) }
+    var showTitleError by remember { mutableStateOf(false) }
+
+    val quickTags = listOf("工作", "學習", "會議", "運動", "閱讀", "休息", "生活")
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(18.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = dialogTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = "📅 排程日期：${DateFormatter.formatDate(dateMillis)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = {
+                        title = it
+                        if (it.isNotBlank()) showTitleError = false
+                    },
+                    label = { Text("活動名稱 *") },
+                    isError = showTitleError,
+                    supportingText = if (showTitleError) {
+                        { Text("活動名稱不得為空白", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    OutlinedTextField(
+                        value = startTime,
+                        onValueChange = { startTime = it },
+                        label = { Text("開始時間") },
+                        placeholder = { Text("09:00") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = endTime,
+                        onValueChange = { endTime = it },
+                        label = { Text("結束時間") },
+                        placeholder = { Text("10:00") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "分類標籤：",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(quickTags) { t ->
+                            FilterChip(
+                                selected = tag == t,
+                                onClick = { tag = t },
+                                label = { Text(t, style = MaterialTheme.typography.labelSmall) }
+                            )
+                        }
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "色彩標記：",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    ColorPickerRow(
+                        selectedColor = selectedColor,
+                        onColorSelected = { selectedColor = it }
+                    )
+                }
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("備註 (選填)") },
+                    maxLines = 2,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("取消")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        colors = AppButtonThemeDefaults.filledColors(),
+                        border = AppButtonThemeDefaults.filledBorder(),
+                        onClick = {
+                            if (title.isBlank()) {
+                                showTitleError = true
+                            } else {
+                                onSave(
+                                    TimeBlock(
+                                        date = dateMillis,
+                                        startTime = startTime.trim().ifEmpty { "09:00" },
+                                        endTime = endTime.trim().ifEmpty { "10:00" },
+                                        title = title.trim(),
+                                        description = description.trim(),
+                                        tag = tag.trim().ifEmpty { "日程" },
+                                        color = selectedColor
+                                    )
+                                )
+                            }
+                        }
+                    ) {
+                        Text("儲存")
                     }
                 }
             }

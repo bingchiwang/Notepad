@@ -231,6 +231,7 @@ fun AppNavigation(
                 noteId = key.noteId,
                 noteRepository = noteRepository,
                 noteDraftPreferences = noteDraftPreferences,
+                taskRepository = taskRepository,
                 onNavigateBack = { navigator.goBack() },
                 initialCategoryId = key.initialCategoryId,
                 initialCreatedAtMillis = key.initialCreatedAtMillis

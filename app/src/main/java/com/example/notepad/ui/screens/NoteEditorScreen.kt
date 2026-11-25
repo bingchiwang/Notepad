@@ -1,6 +1,8 @@
 package com.example.notepad.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -9,9 +11,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckBox
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,12 +26,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.notepad.data.local.entity.Note
+import com.example.notepad.data.local.entity.RecurringTaskLogic
 import com.example.notepad.data.preferences.NoteDraft
 import com.example.notepad.data.preferences.NoteDraftPreferences
+import com.example.notepad.data.repository.NoteChecklistLogic
 import com.example.notepad.data.repository.NoteRepository
+import com.example.notepad.data.repository.TaskRepository
+import com.example.notepad.ui.components.AddTimeBlockDialog
+import com.example.notepad.ui.components.AddToDoDialog
 import com.example.notepad.ui.components.AppButtonThemeDefaults
 import com.example.notepad.ui.components.ColorPickerRow
 import com.example.notepad.ui.components.ConfirmDeleteDialog
@@ -41,12 +56,15 @@ import kotlinx.coroutines.launch
  * - 標題及內文均允許為空白
  * - 修改後自動更新修改時間 (updatedAt)
  * - 自動保存尚未儲存的內容至 DataStore 草稿，切換頁面或重開 App 皆不會遺失
+ * - 支援 Markdown 風格核取方塊清單（`- [ ]` / `- [x]`）互動勾選、Enter 自動延續、
+ *   以及選取文字／清單項目一鍵轉為待辦事項（ToDo）或排入今日時間規劃（TimeBlock）
  */
 @Composable
 fun NoteEditorScreen(
     noteId: Int?,
     noteRepository: NoteRepository,
     noteDraftPreferences: NoteDraftPreferences,
+    taskRepository: TaskRepository? = null,
     onNavigateBack: () -> Unit,
     initialCategoryId: Int? = null,
     initialCreatedAtMillis: Long? = null
@@ -63,6 +81,7 @@ fun NoteEditorScreen(
 
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
+    var contentFieldValue by remember { mutableStateOf(TextFieldValue("")) }
     var selectedCategoryId by remember { mutableStateOf<Int?>(null) }
     var selectedColor by remember { mutableLongStateOf(PRESET_COLORS.first().colorLong) }
     var isPinned by remember { mutableStateOf(false) }
@@ -74,6 +93,9 @@ fun NoteEditorScreen(
     var baselinePinned by remember { mutableStateOf(false) }
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showSelectionMenu by remember { mutableStateOf(false) }
+    var pendingConvertToDoTitle by remember { mutableStateOf<String?>(null) }
+    var pendingConvertTimeBlockTitle by remember { mutableStateOf<String?>(null) }
 
     // 載入既有記事或恢復草稿
     LaunchedEffect(noteId) {
@@ -96,6 +118,7 @@ fun NoteEditorScreen(
         if (matchesCurrentDraft) {
             title = draft.title
             content = draft.content
+            contentFieldValue = TextFieldValue(draft.content, TextRange(draft.content.length))
             selectedCategoryId = draft.categoryId
             selectedColor = draft.color
             isPinned = draft.isPinned
@@ -103,6 +126,7 @@ fun NoteEditorScreen(
         } else if (existingNote != null) {
             title = existingNote.title
             content = existingNote.content
+            contentFieldValue = TextFieldValue(existingNote.content, TextRange(existingNote.content.length))
             selectedCategoryId = existingNote.categoryId
             selectedColor = existingNote.color
             isPinned = existingNote.isPinned
@@ -143,6 +167,28 @@ fun NoteEditorScreen(
             noteDraftPreferences.clearDraft()
             restoredFromDraft = false
         }
+    }
+
+    val checklistItems = remember(content) {
+        NoteChecklistLogic.parseChecklistItems(content)
+    }
+    val selectedTextTitle = remember(contentFieldValue) {
+        if (contentFieldValue.selection.collapsed) {
+            ""
+        } else {
+            NoteChecklistLogic.extractActionableTitle(
+                content = contentFieldValue.text,
+                selectionStart = contentFieldValue.selection.start,
+                selectionEnd = contentFieldValue.selection.end
+            )
+        }
+    }
+    val cursorLineTitle = remember(contentFieldValue) {
+        NoteChecklistLogic.extractActionableTitle(
+            content = contentFieldValue.text,
+            selectionStart = contentFieldValue.selection.start,
+            selectionEnd = contentFieldValue.selection.end
+        )
     }
 
     Scaffold(
@@ -379,18 +425,337 @@ fun NoteEditorScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // 內文輸入（允許為空白）
+                // === 核取方塊清單工具與選取文字一鍵轉換工具列 ===
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledTonalButton(
+                            onClick = {
+                                val (updatedText, newCursor) = NoteChecklistLogic.insertChecklistItem(
+                                    content = contentFieldValue.text,
+                                    selectionStart = contentFieldValue.selection.start,
+                                    selectionEnd = contentFieldValue.selection.end
+                                )
+                                content = updatedText
+                                contentFieldValue = TextFieldValue(updatedText, TextRange(newCursor))
+                            },
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckBox,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("插入核取項目 (- [ ])", style = MaterialTheme.typography.labelMedium)
+                        }
+
+                        if (taskRepository != null) {
+                            Box {
+                                OutlinedButton(
+                                    onClick = {
+                                        if (cursorLineTitle.isBlank()) {
+                                            showFeedback(context, "請先選取文字或將游標移至要轉換的文字行")
+                                        } else {
+                                            showSelectionMenu = true
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text("轉待辦 / 排程", style = MaterialTheme.typography.labelMedium)
+                                }
+                                DropdownMenu(
+                                    expanded = showSelectionMenu,
+                                    onDismissRequest = { showSelectionMenu = false }
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("轉換為待辦事項 (ToDo)") },
+                                        leadingIcon = {
+                                            Icon(Icons.AutoMirrored.Filled.FormatListBulleted, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            showSelectionMenu = false
+                                            pendingConvertToDoTitle = cursorLineTitle
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("排入今日時間規劃 (TimeBlock)") },
+                                        leadingIcon = {
+                                            Icon(Icons.Default.Schedule, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            showSelectionMenu = false
+                                            pendingConvertTimeBlockTitle = cursorLineTitle
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 選取文字時自動顯示高顯眼一鍵轉換快捷列
+                AnimatedVisibility(visible = taskRepository != null && selectedTextTitle.isNotBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "已選取文字：「$selectedTextTitle」",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Button(
+                                    onClick = { pendingConvertToDoTitle = selectedTextTitle },
+                                    colors = AppButtonThemeDefaults.filledColors(),
+                                    border = AppButtonThemeDefaults.filledBorder(),
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Filled.FormatListBulleted,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("一鍵轉待辦", style = MaterialTheme.typography.labelMedium)
+                                }
+                                FilledTonalButton(
+                                    onClick = { pendingConvertTimeBlockTitle = selectedTextTitle },
+                                    modifier = Modifier.weight(1f),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Schedule,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("排入今日規劃", style = MaterialTheme.typography.labelMedium)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 內文輸入（支援 Markdown `- [ ]` 換行自動延續與游標／選區追蹤）
                 OutlinedTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("記事內容（可留白）") },
-                    placeholder = { Text("寫下您的筆記、想法或重點...") },
-                    minLines = 8,
+                    value = contentFieldValue,
+                    onValueChange = { incoming ->
+                        val autoContinued = NoteChecklistLogic.handleEnterAutoContinue(
+                            oldContent = contentFieldValue.text,
+                            newContent = incoming.text,
+                            newCursor = incoming.selection.start
+                        )
+                        if (autoContinued != null) {
+                            val (nextText, nextCursor) = autoContinued
+                            content = nextText
+                            contentFieldValue = TextFieldValue(nextText, TextRange(nextCursor))
+                        } else {
+                            content = incoming.text
+                            contentFieldValue = incoming
+                        }
+                    },
+                    label = { Text("記事內容（可留白，支援 - [ ] 核取清單）") },
+                    placeholder = { Text("寫下您的筆記、想法，或輸入 - [ ] 建立核取清單...") },
+                    minLines = 7,
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // === 互動式核取方塊清單卡片（可即時勾選並同步回 Markdown 內文）===
+                if (checklistItems.isNotEmpty()) {
+                    val completedCount = checklistItems.count { it.isChecked }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.35f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "☑ 記事內嵌待辦清單",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "$completedCount / ${checklistItems.size} 已完成",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                            checklistItems.forEach { item ->
+                                var itemMenuExpanded by remember(item.lineIndex) { mutableStateOf(false) }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable {
+                                            val toggled = NoteChecklistLogic.toggleChecklistLine(
+                                                content = content,
+                                                lineIndex = item.lineIndex
+                                            )
+                                            content = toggled
+                                            val clampedCursor = contentFieldValue.selection.start
+                                                .coerceIn(0, toggled.length)
+                                            contentFieldValue = TextFieldValue(toggled, TextRange(clampedCursor))
+                                        }
+                                        .padding(vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = item.isChecked,
+                                        onCheckedChange = {
+                                            val toggled = NoteChecklistLogic.toggleChecklistLine(
+                                                content = content,
+                                                lineIndex = item.lineIndex
+                                            )
+                                            content = toggled
+                                            val clampedCursor = contentFieldValue.selection.start
+                                                .coerceIn(0, toggled.length)
+                                            contentFieldValue = TextFieldValue(toggled, TextRange(clampedCursor))
+                                        }
+                                    )
+                                    Text(
+                                        text = item.text.ifEmpty { "（空白待辦項目）" },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textDecoration = if (item.isChecked) {
+                                            TextDecoration.LineThrough
+                                        } else {
+                                            TextDecoration.None
+                                        },
+                                        color = if (item.isChecked) {
+                                            MaterialTheme.colorScheme.outline
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    if (taskRepository != null && item.text.isNotBlank()) {
+                                        Box {
+                                            IconButton(
+                                                onClick = { itemMenuExpanded = true },
+                                                modifier = Modifier.size(32.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MoreVert,
+                                                    contentDescription = "轉換項目動作",
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            DropdownMenu(
+                                                expanded = itemMenuExpanded,
+                                                onDismissRequest = { itemMenuExpanded = false }
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = { Text("轉為待辦事項 (ToDo)") },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            Icons.AutoMirrored.Filled.FormatListBulleted,
+                                                            contentDescription = null
+                                                        )
+                                                    },
+                                                    onClick = {
+                                                        itemMenuExpanded = false
+                                                        pendingConvertToDoTitle = item.text
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("排入今日時間規劃") },
+                                                    leadingIcon = {
+                                                        Icon(Icons.Default.Schedule, contentDescription = null)
+                                                    },
+                                                    onClick = {
+                                                        itemMenuExpanded = false
+                                                        pendingConvertTimeBlockTitle = item.text
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
+        }
+    }
+
+    pendingConvertToDoTitle?.let { todoTitle ->
+        if (taskRepository != null) {
+            AddToDoDialog(
+                initialTitle = todoTitle,
+                dialogTitle = "從記事轉換為待辦事項",
+                onDismiss = { pendingConvertToDoTitle = null },
+                onSave = { newToDo ->
+                    coroutineScope.launch {
+                        try {
+                            taskRepository.insertToDo(newToDo)
+                            showFeedback(context, "已將「${newToDo.title}」加入待辦事項")
+                            pendingConvertToDoTitle = null
+                        } catch (e: Exception) {
+                            showFeedback(context, "轉換待辦失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    pendingConvertTimeBlockTitle?.let { blockTitle ->
+        if (taskRepository != null) {
+            val todayMillis = remember { RecurringTaskLogic.normalizeStartOfDay(System.currentTimeMillis()) }
+            AddTimeBlockDialog(
+                dateMillis = todayMillis,
+                initialTitle = blockTitle,
+                dialogTitle = "排入今日時間規劃",
+                onDismiss = { pendingConvertTimeBlockTitle = null },
+                onSave = { newBlock ->
+                    coroutineScope.launch {
+                        try {
+                            taskRepository.insertTimeBlock(newBlock)
+                            showFeedback(context, "已將「${newBlock.title}」排入今日時間規劃")
+                            pendingConvertTimeBlockTitle = null
+                        } catch (e: Exception) {
+                            showFeedback(context, "排入規劃失敗: ${e.localizedMessage ?: "發生錯誤"}")
+                        }
+                    }
+                }
+            )
         }
     }
 

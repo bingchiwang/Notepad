@@ -4,6 +4,16 @@
 
 ---
 
+## [1.12.0] - 2026-11-25
+### 新增 (Added)
+- **記事內嵌核取方塊（Checklist）與一鍵轉待辦／今日規劃（`NoteChecklistLogic` / `NoteEditorScreen`）**：
+  - 新增 [NoteChecklistLogic.kt](app/src/main/java/com/example/notepad/data/repository/NoteChecklistLogic.kt)，支援 Markdown 風格核取清單（`- [ ]`／`- [x]`）之解析、行勾選切換、游標與多行選取插入切換、Enter 自動延續下一項及空項結束清單。
+  - 擴充 [NoteEditorScreen.kt](app/src/main/java/com/example/notepad/ui/screens/NoteEditorScreen.kt) 與 [AppNavigation.kt](app/src/main/java/com/example/notepad/ui/app/AppNavigation.kt)：於編輯器內建「插入核取項目 (`- [ ]`)」與「轉待辦 / 排程」快捷選單、選取文字即時浮現一鍵「轉換為待辦事項 (`ToDo`)」與「排入今日時間規劃 (`TimeBlock`)」行動列，並於下方呈現可即時點擊勾選／轉換的互動核取清單卡片。
+  - 於 [ItemDialogs.kt](app/src/main/java/com/example/notepad/ui/components/ItemDialogs.kt) 抽取共用 `AddTimeBlockDialog`（並簡化重構 [ScheduleScreen.kt](app/src/main/java/com/example/notepad/ui/screens/ScheduleScreen.kt) 遵循 DRY），同步擴充 `AddToDoDialog` 支援 `initialTitle` 預填帶入。
+- **測試覆蓋擴充**：新增 [NoteChecklistLogicTest](app/src/test/java/com/example/notepad/data/repository/NoteChecklistLogicTest.kt)（5 項），全專案單元測試擴充至 **93 項**（20 個測試套件，0 失敗、0 略過、0 Lint 錯誤）。
+
+---
+
 ## [1.11.0] - 2026-11-25
 ### 新增 (Added)
 - **自動化重複任務（Recurring Tasks，`RecurrenceRule` / `MIGRATION_5_6`）**：

@@ -48,6 +48,7 @@
   - 支援「釘選置頂」切換，列表依 `isPinned DESC, updatedAt DESC` 排序。
   - 刪除記事前必須經由 `ConfirmDeleteDialog` 二次確認；確認刪除後同步清理對應草稿並寫入 `SyncTombstone`。
   - 編輯器自動保存未儲存變更至 `NoteDraftPreferences`，離開未儲存時於記事列表頂部顯示草稿恢復橫幅。
+  - 支援 Markdown 風格內嵌核取方塊清單（`- [ ]` / `- [x]`）即時互動勾選、Enter 自動延續與結束清單，以及選取文字或清單項目一鍵「轉換為待辦事項 (`ToDo`)」或「排入今日時間規劃 (`TimeBlock`)」。
 - **分類管理**：
   - 每個分類具有唯一 `id`，新增與編輯時透過資料庫唯一索引及忽略大小寫／前後空白比對（`CategoryDao.getCategoryByName`）防止名稱重複。
   - 刪除分類時提供確認對話框，讓使用者選擇將該分類下記事轉移至「未分類（`categoryId = null`）」或移轉至其他既有分類。
@@ -142,11 +143,12 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **19 個測試類別、88 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **20 個測試類別、93 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
 2. `PriorityAndConvertersTest`（5 項）：驗證優先級權重與 Room 型別轉換器（含 `RecurrenceType`）。
 3. `NoteRepositoryTest`（9 項）：驗證記事 CRUD、釘選排序、分類防重、分類刪除記事重歸類、全文搜尋與離線墓碑。
+4. `NoteChecklistLogicTest`（5 項）：驗證 Markdown 核取方塊（`- [ ]` / `- [x]`）解析、切換、游標插入、換行延續與選字轉待辦標題萃取。
 4. `TaskRepositoryTest`（5 項）：驗證待辦非空檢核、完成狀態分離、優先級排序、重複任務完成自動產生下期、截止日與提醒分離及離線墓碑。
 5. `RecurringTaskLogicTest`（5 項）：驗證每天／每週／每月（含月底 31 日保留）下期計算、標籤格式與防重複衍生。
 5. `ReminderSchedulerLogicTest`（5 項）：驗證過期時間攔截、通知總開關、開機／更新後重排篩選與系統廣播動作白名單。

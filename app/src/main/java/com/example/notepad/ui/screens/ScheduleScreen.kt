@@ -331,147 +331,21 @@ fun ScheduleScreen(
 
     // --- Add Time Block Dialog ---
     if (showAddDialog) {
-        var title by remember { mutableStateOf("") }
-        var startTime by remember { mutableStateOf("09:00") }
-        var endTime by remember { mutableStateOf("10:00") }
-        var tag by remember { mutableStateOf("工作") }
-        var description by remember { mutableStateOf("") }
-        var selectedColor by remember { mutableLongStateOf(PRESET_COLORS[1].colorLong) } // Forest Green
-
-        val quickTags = listOf("工作", "學習", "會議", "運動", "閱讀", "休息", "生活")
-
-        Dialog(onDismissRequest = { showAddDialog = false }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "安排每日時間區塊",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    OutlinedTextField(
-                        value = title,
-                        onValueChange = { title = it },
-                        label = { Text("活動名稱 *") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = startTime,
-                            onValueChange = { startTime = it },
-                            label = { Text("開始時間") },
-                            placeholder = { Text("09:00") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        OutlinedTextField(
-                            value = endTime,
-                            onValueChange = { endTime = it },
-                            label = { Text("結束時間") },
-                            placeholder = { Text("10:00") },
-                            singleLine = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    // Quick Tag Selector
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "分類標籤：",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            quickTags.take(4).forEach { t ->
-                                FilterChip(
-                                    selected = tag == t,
-                                    onClick = { tag = t },
-                                    label = { Text(t, style = MaterialTheme.typography.labelSmall) }
-                                )
-                            }
-                        }
-                    }
-
-                    // Color Picker
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            text = "色彩標記：",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        ColorPickerRow(
-                            selectedColor = selectedColor,
-                            onColorSelected = { selectedColor = it }
-                        )
-                    }
-
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("備註 (選填)") },
-                        maxLines = 2,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(onClick = { showAddDialog = false }) {
-                            Text("取消")
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                if (title.isNotBlank()) {
-                                    coroutineScope.launch {
-                                        try {
-                                            taskRepository.insertTimeBlock(
-                                                TimeBlock(
-                                                    date = selectedDateMillis,
-                                                    startTime = startTime.trim(),
-                                                    endTime = endTime.trim(),
-                                                    title = title.trim(),
-                                                    description = description.trim(),
-                                                    tag = tag.trim().ifEmpty { "日程" },
-                                                    color = selectedColor
-                                                )
-                                            )
-                                            showFeedback(context, "已成功安排行程")
-                                            showAddDialog = false
-                                        } catch (e: Exception) {
-                                            showFeedback(context, "安排行程失敗: ${e.localizedMessage ?: "發生錯誤"}")
-                                        }
-                                    }
-                                }
-                            },
-                            enabled = title.isNotBlank(),
-                            colors = AppButtonThemeDefaults.filledColors(),
-                            border = AppButtonThemeDefaults.filledBorder()
-                        ) {
-                            Text("儲存")
-                        }
+        AddTimeBlockDialog(
+            dateMillis = selectedDateMillis,
+            onDismiss = { showAddDialog = false },
+            onSave = { newBlock ->
+                coroutineScope.launch {
+                    try {
+                        taskRepository.insertTimeBlock(newBlock)
+                        showFeedback(context, "已成功安排行程")
+                        showAddDialog = false
+                    } catch (e: Exception) {
+                        showFeedback(context, "安排行程失敗: ${e.localizedMessage ?: "發生錯誤"}")
                     }
                 }
             }
-        }
+        )
     }
 
     // --- Dialog: Edit Time Block ---

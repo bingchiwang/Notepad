@@ -284,6 +284,16 @@
   - 支援不重複／每天／每週（一～日）／每月（1～31 日含月底保護）設定與完成後自動建立下期待辦
   - Room v5→v6 無損 Migration、`./gradlew test build`（88 項測試）、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
+### Task_25_NoteChecklistAndQuickConvert: 實作記事內嵌 Markdown 核取方塊清單（`- [ ]`）與選取文字一鍵轉待辦／排入今日時間規劃。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 新增 `NoteChecklistLogic` 提供 `- [ ]`／`- [x]` 解析、點擊切換狀態、游標與跨行插入、Enter 自動延續／結束清單與選取文字清理萃取標題。
+  - 改版 `NoteEditorScreen` 加入工具列「插入核取項目」、選取文字一鍵轉待辦／排入今日規劃快捷條、下拉選單與可即時勾選轉換之互動核取清單卡片，並於 `ItemDialogs` 抽取共用 `AddTimeBlockDialog` 與擴充 `AddToDoDialog.initialTitle`。
+  - 新增 `NoteChecklistLogicTest`（5 項），全專案單元測試擴充至 **20 套件、93 項單元測試** 全部通過且 0 Lint 錯誤。
+- **驗收標準 (Acceptance Criteria):**
+  - 支援記事 Markdown 核取清單即時互動勾選、Enter 延續與選字轉換待辦／時間規劃
+  - 全專案 93 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

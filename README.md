@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-88%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-93%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -45,6 +45,7 @@
 - **無阻礙快速記事**：每篇記事具備唯一 `id` 與跨裝置 `syncId`，標題與內文均允許留白；儲存或編輯時自動更新 `updatedAt` 時間戳。
 - **釘選置頂排序**：支援一鍵釘選／取消釘選，釘選記事固定置於列表最前方（`isPinned DESC, updatedAt DESC`）。
 - **草稿即時持久化**：透過 `NoteDraftPreferences`（DataStore）於輸入期間即時備份未保存內容；切換分頁或系統回收後返回，皆可由列表頂部橫幅一鍵恢復編輯。
+- **內嵌核取方塊清單與一鍵轉換**：編輯器支援 Markdown 核取清單（`- [ ]`／`- [x]`）即時勾選、換行自動延續，以及選取文字或清單項目一鍵「轉為待辦事項（ToDo）」或「排入今日時間規劃（TimeBlock）」。
 - **防重分類與全文檢索**：分類具資料庫唯一索引與不分大小寫防重檢查；刪除分類時可選擇將所屬記事移至「未分類」或轉移至其他分類。全文搜尋同時比對標題與內文，查無結果時提供清晰 Empty State 與一鍵重置。
 
 ### 2. 📋 雙軌任務與自由多日提醒 (`TaskScreen` / `TaskDetailScreen` / `ReminderScheduler`)
@@ -224,7 +225,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **19 個單元測試套件、共 88 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **20 個單元測試套件、共 93 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -232,6 +233,7 @@ com.example.notepad/
 | `PriorityAndConvertersTest` | 5 | 優先級權重排序與 Room `DatabaseConverters`（含 `RecurrenceType`）雙向轉換 |
 | `RecurringTaskLogicTest` | 5 | 每天／每週／每月（含月底 31 日保留不偏移）下期計算、標籤格式與防重生成保護 |
 | `NoteRepositoryTest` | 9 | 記事空白標題/內文保存、`updatedAt` 更新、釘選排序、分類防重、刪除分類記事歸屬、全文搜尋與離線刪除墓碑 |
+| `NoteChecklistLogicTest` | 5 | 記事內嵌 Markdown 核取清單（`- [ ]` / `- [x]`）解析、切換、游標插入、換行延續與選字轉待辦標題萃取 |
 | `TaskRepositoryTest` | 5 | 待辦空白名稱攔截、進行中/已完成分離、優先級排序、重複任務完成自動建下期與防重複衍生、離線刪除墓碑 |
 | `ReminderSchedulerLogicTest` | 5 | 過期時間攔截、未來時間允許、通知總開關關閉攔截與開機／更新後未過期提醒重排篩選測試 |
 | `ThemePreferencesTest` | 6 | 淺色/深色/系統模式、自訂按鍵色、月曆樣式、字體大小持久化與一鍵重設預設值 |
@@ -278,7 +280,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 88 項單元測試
+# 1. 執行全部 93 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK
