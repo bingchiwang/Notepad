@@ -35,7 +35,7 @@ import com.example.notepad.data.local.entity.ToDo
         Category::class,
         SyncTombstone::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(DatabaseConverters::class)
@@ -160,6 +160,19 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * v5 升級至 v6 之結構遷移：為待辦事項 (`todos`) 補齊自動化重複任務欄位
+         * (`recurrenceType`、`recurrenceDayOfWeek`、`recurrenceDayOfMonth`、`nextOccurrenceGenerated`)。
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `recurrenceType` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `recurrenceDayOfWeek` INTEGER")
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `recurrenceDayOfMonth` INTEGER")
+                db.execSQL("ALTER TABLE `todos` ADD COLUMN `nextOccurrenceGenerated` INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -167,7 +180,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "notepad_database"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .fallbackToDestructiveMigration(dropAllTables = true)
                     .build()
                 INSTANCE = instance

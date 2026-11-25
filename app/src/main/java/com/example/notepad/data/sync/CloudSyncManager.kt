@@ -11,6 +11,7 @@ import com.example.notepad.data.local.entity.Category
 import com.example.notepad.data.local.entity.Note
 import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurrenceType
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.SyncEntityType
 import com.example.notepad.data.local.entity.SyncStatus
@@ -975,13 +976,18 @@ class CloudSyncManager(
             "tag" to tag,
             "color" to color,
             "createdAt" to createdAt,
-            "priorityLevel" to priority.level
+            "priorityLevel" to priority.level,
+            "recurrenceType" to recurrenceType.code,
+            "recurrenceDayOfWeek" to recurrenceDayOfWeek,
+            "recurrenceDayOfMonth" to recurrenceDayOfMonth,
+            "nextOccurrenceGenerated" to nextOccurrenceGenerated
         )
     )
 
     private fun CloudSyncDocument.toToDo(existingId: Int): ToDo? {
         val todoTitle = (payload["title"] as? String)?.takeIf { it.isNotBlank() } ?: return null
         val priorityLevel = (payload["priorityLevel"] as? Number)?.toInt() ?: Priority.MEDIUM.level
+        val recurrenceCode = (payload["recurrenceType"] as? Number)?.toInt() ?: RecurrenceType.NONE.code
         return ToDo(
             id = existingId,
             title = todoTitle,
@@ -992,6 +998,10 @@ class CloudSyncManager(
             color = (payload["color"] as? Number)?.toLong() ?: 0xFF2196F3L,
             createdAt = (payload["createdAt"] as? Number)?.toLong() ?: updatedAt,
             priority = Priority.fromLevel(priorityLevel),
+            recurrenceType = RecurrenceType.fromCode(recurrenceCode),
+            recurrenceDayOfWeek = (payload["recurrenceDayOfWeek"] as? Number)?.toInt(),
+            recurrenceDayOfMonth = (payload["recurrenceDayOfMonth"] as? Number)?.toInt(),
+            nextOccurrenceGenerated = (payload["nextOccurrenceGenerated"] as? Boolean) ?: false,
             syncId = syncId,
             updatedAt = updatedAt,
             syncStatus = SyncStatus.SYNCED

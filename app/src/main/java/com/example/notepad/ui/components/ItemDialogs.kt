@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurrenceType
+import com.example.notepad.data.local.entity.RecurringTaskLogic
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.TimeBlock
 import com.example.notepad.data.local.entity.ToDo
@@ -444,7 +446,111 @@ private fun HourMinuteStepperRow(
 }
 
 /**
- * 新增待辦事項共用對話框（支援規範 4.2：非空驗證、高/中/低優先級、截止日期分離管理）
+ * 重複任務規則選擇區塊（DRY 共用元件：供新增與編輯待辦對話框使用）
+ * 支援不重複、每天、每週（選擇星期一至日）、每月（選擇每月 1..31 日）
+ */
+@Composable
+fun RecurrenceSelectorSection(
+    recurrenceType: RecurrenceType,
+    dayOfWeek: Int,
+    dayOfMonth: Int,
+    onRecurrenceTypeChange: (RecurrenceType) -> Unit,
+    onDayOfWeekChange: (Int) -> Unit,
+    onDayOfMonthChange: (Int) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "🔁 重複規則（完成本次時自動建立下一期）：",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(RecurrenceType.entries) { option ->
+                FilterChip(
+                    selected = recurrenceType == option,
+                    onClick = { onRecurrenceTypeChange(option) },
+                    label = { Text(option.label, style = MaterialTheme.typography.labelSmall) }
+                )
+            }
+        }
+
+        if (recurrenceType == RecurrenceType.WEEKLY) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(RecurringTaskLogic.WEEKDAY_OPTIONS) { (calDay, shortName) ->
+                    FilterChip(
+                        selected = dayOfWeek == calDay,
+                        onClick = { onDayOfWeekChange(calDay) },
+                        label = { Text("週$shortName", style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+        } else if (recurrenceType == RecurrenceType.MONTHLY) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = "每月固定日：",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedButton(
+                    onClick = {
+                        val prev = if (dayOfMonth <= 1) 31 else dayOfMonth - 1
+                        onDayOfMonthChange(prev)
+                    },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text("-")
+                }
+                Text(
+                    text = "${dayOfMonth.coerceIn(1, 31)} 日",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                OutlinedButton(
+                    onClick = {
+                        val next = if (dayOfMonth >= 31) 1 else dayOfMonth + 1
+                        onDayOfMonthChange(next)
+                    },
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Text("+")
+                }
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                items(listOf(1, 5, 10, 15, 20, 25, 31)) { presetDay ->
+                    val label = if (presetDay == 31) "月底/31日" else "${presetDay}日"
+                    FilterChip(
+                        selected = dayOfMonth == presetDay,
+                        onClick = { onDayOfMonthChange(presetDay) },
+                        label = { Text(label, style = MaterialTheme.typography.labelSmall) }
+                    )
+                }
+            }
+        }
+
+        if (recurrenceType != RecurrenceType.NONE) {
+            val summary = RecurringTaskLogic.formatRuleLabel(
+                recurrenceType = recurrenceType,
+                dayOfWeek = dayOfWeek,
+                dayOfMonth = dayOfMonth
+            )
+            Text(
+                text = "目前設定：$summary（未設定到期日則依完成日推算下期）",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
+    }
+}
+
+/**
+ * 新增待辦事項共用對話框（支援規範 4.2：非空驗證、高/中/低優先級、截止日期分離管理與重複規則）
  */
 @Composable
 fun AddToDoDialog(
@@ -479,6 +585,28 @@ fun AddToDoDialog(
     var month by remember { mutableIntStateOf(defaultCal.get(Calendar.MONTH) + 1) }
     var day by remember { mutableIntStateOf(defaultCal.get(Calendar.DAY_OF_MONTH)) }
     var showCalendarPicker by remember { mutableStateOf(false) }
+
+    var recurrenceType by remember { mutableStateOf(RecurrenceType.NONE) }
+    var recurrenceDayOfWeek by remember { mutableIntStateOf(defaultCal.get(Calendar.DAY_OF_WEEK)) }
+    var recurrenceDayOfMonth by remember { mutableIntStateOf(defaultCal.get(Calendar.DAY_OF_MONTH)) }
+
+    fun applySuggestedDate(
+        rule: RecurrenceType,
+        weekDay: Int,
+        monthDay: Int
+    ) {
+        if (rule == RecurrenceType.NONE) return
+        val suggestedMillis = RecurringTaskLogic.resolveInitialDueDate(
+            recurrenceType = rule,
+            dayOfWeek = weekDay,
+            dayOfMonth = monthDay
+        ) ?: return
+        val cal = Calendar.getInstance().apply { timeInMillis = suggestedMillis }
+        year = cal.get(Calendar.YEAR)
+        month = cal.get(Calendar.MONTH) + 1
+        day = cal.get(Calendar.DAY_OF_MONTH)
+        hasDueDate = true
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -602,6 +730,30 @@ fun AddToDoDialog(
                     }
                 }
 
+                RecurrenceSelectorSection(
+                    recurrenceType = recurrenceType,
+                    dayOfWeek = recurrenceDayOfWeek,
+                    dayOfMonth = recurrenceDayOfMonth,
+                    onRecurrenceTypeChange = { newType ->
+                        recurrenceType = newType
+                        if (!hasDueDate && newType != RecurrenceType.NONE) {
+                            applySuggestedDate(newType, recurrenceDayOfWeek, recurrenceDayOfMonth)
+                        }
+                    },
+                    onDayOfWeekChange = { newWeekDay ->
+                        recurrenceDayOfWeek = newWeekDay
+                        if (!hasDueDate && recurrenceType == RecurrenceType.WEEKLY) {
+                            applySuggestedDate(recurrenceType, newWeekDay, recurrenceDayOfMonth)
+                        }
+                    },
+                    onDayOfMonthChange = { newMonthDay ->
+                        recurrenceDayOfMonth = newMonthDay
+                        if (!hasDueDate && recurrenceType == RecurrenceType.MONTHLY) {
+                            applySuggestedDate(recurrenceType, recurrenceDayOfWeek, newMonthDay)
+                        }
+                    }
+                )
+
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         text = "色彩標記：",
@@ -644,7 +796,14 @@ fun AddToDoDialog(
                                         dueDate = dueMillis,
                                         tag = tag.trim().ifEmpty { "日常" },
                                         color = selectedColor,
-                                        priority = selectedPriority
+                                        priority = selectedPriority,
+                                        recurrenceType = recurrenceType,
+                                        recurrenceDayOfWeek = if (recurrenceType == RecurrenceType.WEEKLY) {
+                                            recurrenceDayOfWeek
+                                        } else null,
+                                        recurrenceDayOfMonth = if (recurrenceType == RecurrenceType.MONTHLY) {
+                                            recurrenceDayOfMonth
+                                        } else null
                                     )
                                 )
                             }
@@ -1351,6 +1510,14 @@ fun EditToDoDialog(
     var day by remember { mutableIntStateOf(initialCal.get(Calendar.DAY_OF_MONTH)) }
     var showCalendarPicker by remember { mutableStateOf(false) }
 
+    var recurrenceType by remember { mutableStateOf(toDo.recurrenceType) }
+    var recurrenceDayOfWeek by remember {
+        mutableIntStateOf(toDo.recurrenceDayOfWeek ?: initialCal.get(Calendar.DAY_OF_WEEK))
+    }
+    var recurrenceDayOfMonth by remember {
+        mutableIntStateOf(toDo.recurrenceDayOfMonth ?: initialCal.get(Calendar.DAY_OF_MONTH))
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -1434,6 +1601,15 @@ fun EditToDoDialog(
                     }
                 }
 
+                RecurrenceSelectorSection(
+                    recurrenceType = recurrenceType,
+                    dayOfWeek = recurrenceDayOfWeek,
+                    dayOfMonth = recurrenceDayOfMonth,
+                    onRecurrenceTypeChange = { recurrenceType = it },
+                    onDayOfWeekChange = { recurrenceDayOfWeek = it },
+                    onDayOfMonthChange = { recurrenceDayOfMonth = it }
+                )
+
                 OutlinedTextField(
                     value = tag,
                     onValueChange = { tag = it },
@@ -1484,7 +1660,19 @@ fun EditToDoDialog(
                                         dueDate = dueMillis,
                                         tag = tag.trim().ifEmpty { "日常" },
                                         color = selectedColor,
-                                        priority = selectedPriority
+                                        priority = selectedPriority,
+                                        recurrenceType = recurrenceType,
+                                        recurrenceDayOfWeek = if (recurrenceType == RecurrenceType.WEEKLY) {
+                                            recurrenceDayOfWeek
+                                        } else null,
+                                        recurrenceDayOfMonth = if (recurrenceType == RecurrenceType.MONTHLY) {
+                                            recurrenceDayOfMonth
+                                        } else null,
+                                        nextOccurrenceGenerated = if (toDo.isCompleted) {
+                                            toDo.nextOccurrenceGenerated
+                                        } else {
+                                            false
+                                        }
                                     )
                                 )
                             }

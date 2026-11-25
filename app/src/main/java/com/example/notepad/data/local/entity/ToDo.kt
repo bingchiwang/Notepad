@@ -25,6 +25,10 @@ data class ToDo(
     val color: Long = 0xFF2196F3L,
     val createdAt: Long = System.currentTimeMillis(),
     val priority: Priority = Priority.MEDIUM,
+    val recurrenceType: RecurrenceType = RecurrenceType.NONE,
+    val recurrenceDayOfWeek: Int? = null,
+    val recurrenceDayOfMonth: Int? = null,
+    val nextOccurrenceGenerated: Boolean = false,
     val syncId: String = UUID.randomUUID().toString(),
     val updatedAt: Long = System.currentTimeMillis(),
     val syncStatus: SyncStatus = SyncStatus.PENDING_UPLOAD

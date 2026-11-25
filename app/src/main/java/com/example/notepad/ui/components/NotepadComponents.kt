@@ -317,6 +317,7 @@ fun DeadlineAlertCard(
     priority: Priority? = null,
     isCompleted: Boolean = false,
     dueDateText: String? = null,
+    recurrenceText: String? = null,
     onCheckedChange: ((Boolean) -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -421,7 +422,7 @@ fun DeadlineAlertCard(
                     )
                 }
 
-                if (priority != null || !dueDateText.isNullOrEmpty()) {
+                if (priority != null || !dueDateText.isNullOrEmpty() || !recurrenceText.isNullOrEmpty()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -429,6 +430,20 @@ fun DeadlineAlertCard(
                     ) {
                         if (priority != null) {
                             PriorityBadge(priority = priority)
+                        }
+                        if (!recurrenceText.isNullOrEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.75f)
+                            ) {
+                                Text(
+                                    text = recurrenceText,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    fontWeight = FontWeight.Medium,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                         if (!dueDateText.isNullOrEmpty()) {
                             Text(

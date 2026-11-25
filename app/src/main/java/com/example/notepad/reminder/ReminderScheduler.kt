@@ -15,7 +15,16 @@ import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.preferences.NotificationPreferences
 import com.example.notepad.data.repository.TaskRepository
+import com.example.notepad.ui.components.DateFormatter
 import kotlinx.coroutines.flow.first
+
+/**
+ * 待辦任務切換完成狀態的綜合結果
+ */
+data class ToDoCompletionOutcome(
+    val cancelledReminderCount: Int = 0,
+    val nextRecurringToDo: ToDo? = null
+)
 
 /**
  * 系統提醒排程管理器（規範 4.4）
@@ -157,24 +166,54 @@ object ReminderScheduler {
     }
 
     /**
-     * 切換任務完成狀態並連動取消尚未觸發的關聯提醒（規範 4.4）
-     * @return 本次被自動取消的關聯提醒數量
+     * 切換任務完成狀態、自動生成重複任務之下一期待辦，並連動取消尚未觸發的關聯提醒（規範 4.4）
+     * @return 本次被自動取消的關聯提醒數量與自動生成的下期待辦（若有）
      */
     suspend fun updateToDoCompletionAndSyncReminders(
         context: Context,
         taskRepository: TaskRepository,
         toDo: ToDo,
         isCompleted: Boolean
-    ): Int {
-        taskRepository.updateToDo(toDo.copy(isCompleted = isCompleted))
-        if (!isCompleted) return 0
+    ): ToDoCompletionOutcome {
+        val nextRecurringToDo = taskRepository.completeToDoWithRecurrence(
+            toDo = toDo,
+            isCompleted = isCompleted
+        )
+        if (!isCompleted) return ToDoCompletionOutcome()
 
         val pendingReminders = taskRepository.getPendingRemindersByToDoId(toDo.id)
         pendingReminders.forEach { reminder ->
             cancelReminder(context, reminder.id)
             taskRepository.markReminderAsFired(reminder.id)
         }
-        return pendingReminders.size
+        return ToDoCompletionOutcome(
+            cancelledReminderCount = pendingReminders.size,
+            nextRecurringToDo = nextRecurringToDo
+        )
+    }
+
+    /**
+     * 統一組裝待辦狀態切換後的使用者提示反饋訊息（遵循 DRY 原則）
+     */
+    fun formatCompletionFeedback(
+        title: String,
+        isCompleted: Boolean,
+        outcome: ToDoCompletionOutcome
+    ): String {
+        if (!isCompleted) {
+            return "已將「$title」標記為進行中"
+        }
+        val parts = mutableListOf("已完成「$title」")
+        val nextDue = outcome.nextRecurringToDo?.dueDate
+        if (nextDue != null) {
+            parts.add("已自動產生下期（${DateFormatter.formatDate(nextDue)}）")
+        } else if (outcome.nextRecurringToDo != null) {
+            parts.add("已自動產生下期任務")
+        }
+        if (outcome.cancelledReminderCount > 0) {
+            parts.add("並取消 ${outcome.cancelledReminderCount} 個關聯提醒")
+        }
+        return parts.joinToString("，")
     }
 
     /**

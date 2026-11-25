@@ -274,6 +274,16 @@
   - 雲端同步對話框僅保留 Google 帳號連結與雙向同步功能
   - 全專案 81 項單元測試與 `./gradlew build` 驗證通過並推送至 GitHub
 
+### Task_24_RecurringTasks: 實作自動化重複任務（每天／每週／每月重複規則與完成時自動產生下一期待辦）。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 新增 `RecurrenceRule.kt`（`RecurrenceType` 與 `RecurringTaskLogic`）、擴充 `ToDo` 與 `DatabaseConverters`，並完成 `AppDatabase` 無損升級至 **Room v6（`MIGRATION_5_6`）**。
+  - 擴充 `TaskRepository.completeToDoWithRecurrence`、`ReminderScheduler`、`WidgetTaskActions` 與 `CloudSyncManager`，確保於 App 內或桌面小工具完成例行任務時自動生成下期項目並防止重勾重複生成。
+  - 抽取共用元件 `RecurrenceSelectorSection` 整合至新增／編輯待辦對話框，並於任務卡片與詳情頁顯示週期徽章；擴充測試至 **19 套件、88 項單元測試** 全部通過且 0 Lint 錯誤。
+- **驗收標準 (Acceptance Criteria):**
+  - 支援不重複／每天／每週（一～日）／每月（1～31 日含月底保護）設定與完成後自動建立下期待辦
+  - Room v5→v6 無損 Migration、`./gradlew test build`（88 項測試）、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

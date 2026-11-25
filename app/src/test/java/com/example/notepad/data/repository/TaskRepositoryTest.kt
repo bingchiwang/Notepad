@@ -6,6 +6,7 @@ import com.example.notepad.data.local.dao.TimeBlockDao
 import com.example.notepad.data.local.dao.ToDoDao
 import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurrenceType
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.SyncStatus
 import com.example.notepad.data.local.entity.TimeBlock
@@ -83,6 +84,51 @@ class TaskRepositoryTest {
         assertEquals(1, pending.size)
         assertEquals("待觸發提醒", pending.first().title)
         assertTrue(pending.none { it.isFired })
+    }
+
+    @Test
+    fun `completing recurring task inserts next period occurrence once and preserves history`() = runTest {
+        val cal = java.util.Calendar.getInstance().apply {
+            set(2026, java.util.Calendar.NOVEMBER, 23, 0, 0, 0)
+            set(java.util.Calendar.MILLISECOND, 0)
+        }
+        val firstDue = cal.timeInMillis
+        cal.add(java.util.Calendar.DAY_OF_YEAR, 7)
+        val expectedSecondDue = cal.timeInMillis
+
+        repository.insertToDo(
+            ToDo(
+                title = "每週一例會",
+                dueDate = firstDue,
+                priority = Priority.HIGH,
+                recurrenceType = RecurrenceType.WEEKLY,
+                recurrenceDayOfWeek = java.util.Calendar.MONDAY
+            )
+        )
+        val initialSaved = repository.activeToDos.first().single()
+
+        val generated = repository.completeToDoWithRecurrence(
+            toDo = initialSaved,
+            isCompleted = true,
+            completedAtMillis = firstDue + 3_600_000L
+        )
+        assertEquals(expectedSecondDue, generated?.dueDate)
+
+        val activeAfterFirst = repository.activeToDos.first()
+        val completedAfterFirst = repository.completedToDos.first()
+        assertEquals(1, activeAfterFirst.size)
+        assertEquals("每週一例會", activeAfterFirst.single().title)
+        assertEquals(expectedSecondDue, activeAfterFirst.single().dueDate)
+        assertEquals(1, completedAfterFirst.size)
+        assertTrue(completedAfterFirst.single().nextOccurrenceGenerated)
+
+        // 若將已產生下期的歷史任務取消完成再重勾完成，不得重複產生第二份下期任務
+        val markedCompleted = completedAfterFirst.single()
+        repository.completeToDoWithRecurrence(toDo = markedCompleted, isCompleted = false)
+        val unchecked = repository.activeToDos.first().first { it.id == markedCompleted.id }
+        val duplicateCheck = repository.completeToDoWithRecurrence(toDo = unchecked, isCompleted = true)
+        assertEquals(null, duplicateCheck)
+        assertEquals(1, repository.activeToDos.first().size)
     }
 }
 

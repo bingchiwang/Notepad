@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.notepad.calendar.LunarCalendarFacade
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurringTaskLogic
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.ToDo
 import com.example.notepad.data.repository.TaskRepository
@@ -280,6 +281,11 @@ fun TaskScreen(
                             val dueDateString = toDo.dueDate?.let {
                                 "📅 到期日: ${DateFormatter.formatDate(it)}"
                             }
+                            val recurrenceLabel = RecurringTaskLogic.formatRuleLabel(
+                                recurrenceType = toDo.recurrenceType,
+                                dayOfWeek = toDo.recurrenceDayOfWeek,
+                                dayOfMonth = toDo.recurrenceDayOfMonth
+                            )
 
                             DeadlineAlertCard(
                                 title = toDo.title,
@@ -290,22 +296,22 @@ fun TaskScreen(
                                 priority = toDo.priority,
                                 isCompleted = toDo.isCompleted,
                                 dueDateText = dueDateString,
+                                recurrenceText = recurrenceLabel.takeIf { it.isNotEmpty() },
                                 onClick = { onTaskClick(toDo.id) },
                                 onCheckedChange = { checked ->
                                     coroutineScope.launch {
                                         try {
-                                            val cancelledCount = ReminderScheduler.updateToDoCompletionAndSyncReminders(
+                                            val outcome = ReminderScheduler.updateToDoCompletionAndSyncReminders(
                                                 context = context,
                                                 taskRepository = taskRepository,
                                                 toDo = toDo,
                                                 isCompleted = checked
                                             )
-                                            val feedback = when {
-                                                checked && cancelledCount > 0 ->
-                                                    "已完成「${toDo.title}」，並取消 $cancelledCount 個關聯提醒"
-                                                checked -> "已完成「${toDo.title}」"
-                                                else -> "已將「${toDo.title}」標記為進行中"
-                                            }
+                                            val feedback = ReminderScheduler.formatCompletionFeedback(
+                                                title = toDo.title,
+                                                isCompleted = checked,
+                                                outcome = outcome
+                                            )
                                             showFeedback(context, feedback)
                                         } catch (e: Exception) {
                                             showFeedback(context, "狀態更新失敗: ${e.localizedMessage ?: "發生錯誤"}")
@@ -641,6 +647,20 @@ fun TaskDetailScreen(
                     )
                 }
 
+                val taskRecurrenceLabel = RecurringTaskLogic.formatRuleLabel(
+                    recurrenceType = task.recurrenceType,
+                    dayOfWeek = task.recurrenceDayOfWeek,
+                    dayOfMonth = task.recurrenceDayOfMonth
+                )
+                if (taskRecurrenceLabel.isNotEmpty()) {
+                    Text(
+                        text = "重複規則：$taskRecurrenceLabel（勾選完成後自動產生下期）",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -650,19 +670,17 @@ fun TaskDetailScreen(
                         onCheckedChange = { checked ->
                             coroutineScope.launch {
                                 try {
-                                    val cancelled = ReminderScheduler.updateToDoCompletionAndSyncReminders(
+                                    val outcome = ReminderScheduler.updateToDoCompletionAndSyncReminders(
                                         context = context,
                                         taskRepository = taskRepository,
                                         toDo = task,
                                         isCompleted = checked
                                     )
-                                    val msg = if (checked && cancelled > 0) {
-                                        "任務已完成，已自動取消 $cancelled 個關聯提醒"
-                                    } else if (checked) {
-                                        "任務已標記完成"
-                                    } else {
-                                        "任務已恢復為進行中"
-                                    }
+                                    val msg = ReminderScheduler.formatCompletionFeedback(
+                                        title = task.title,
+                                        isCompleted = checked,
+                                        outcome = outcome
+                                    )
                                     showFeedback(context, msg)
                                 } catch (e: Exception) {
                                     showFeedback(context, "更新失敗: ${e.localizedMessage ?: "發生錯誤"}")

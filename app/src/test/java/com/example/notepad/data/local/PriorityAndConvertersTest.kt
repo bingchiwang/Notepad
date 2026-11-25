@@ -1,6 +1,7 @@
 package com.example.notepad.data.local
 
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurrenceType
 import com.example.notepad.data.local.entity.ToDo
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -42,5 +43,16 @@ class PriorityAndConvertersTest {
         assertEquals(Priority.LOW, Priority.fromString("low"))
         assertEquals(Priority.LOW, Priority.fromString("低"))
         assertEquals(Priority.MEDIUM, Priority.fromString(null))
+    }
+
+    @Test
+    fun `DatabaseConverters round trip works for all RecurrenceTypes`() {
+        for (type in RecurrenceType.entries) {
+            val code = converters.fromRecurrenceType(type)
+            val restored = converters.toRecurrenceType(code)
+            assertEquals(type, restored)
+        }
+        assertEquals(RecurrenceType.NONE, converters.toRecurrenceType(-1))
+        assertEquals(RecurrenceType.NONE, ToDo(title = "單次任務").recurrenceType)
     }
 }

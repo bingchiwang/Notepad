@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-81%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-88%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -51,6 +51,7 @@
 - **待辦事項（To-Dos）**：
   - 強制檢核任務名稱不得為空白，支援 **高（`HIGH`）／中（`MEDIUM`）／低（`LOW`）** 三段優先級選擇與高對比色彩徽章。
   - 「進行中」與「已完成」清單嚴格分離，已完成任務絕不混入未完成視圖。
+  - **自動化重複任務（Recurring Tasks）**：支援每天、每週（一～日）與每月（1～31 日含月底自動截斷不偏移）例行規則設定；於主應用或桌面小工具勾選完成當期任務時，自動產生下一期待辦並防止重複衍生。
   - 任務截止日期（`dueDate`）與提醒通知時間（`Reminder.triggerAt`）分離管理，可獨立排定或透過 `linkedToDoId` 綁定。
   - **明日到期動態警示**：次日到期且未完成的任務，於任務列表與萬年曆同步觸發橘紅呼吸虛線外框（`breathingDashedBorder`）與彈跳「`⚠️ 明日到期！`」徽章（`BouncingBadge`）。
 - **提醒通知（Reminders）**：
@@ -223,14 +224,15 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **18 個單元測試套件、共 81 項自動化測試案例**，涵蓋所有核心演算法、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **19 個單元測試套件、共 88 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
 | `LunarCalendarFacadeTest` | 4 | 春節農曆換算、清明節氣、聖誕節慶與明日到期判定 |
-| `PriorityAndConvertersTest` | 4 | 優先級列舉權重排序與 Room `DatabaseConverters` 雙向轉換 |
+| `PriorityAndConvertersTest` | 5 | 優先級權重排序與 Room `DatabaseConverters`（含 `RecurrenceType`）雙向轉換 |
+| `RecurringTaskLogicTest` | 5 | 每天／每週／每月（含月底 31 日保留不偏移）下期計算、標籤格式與防重生成保護 |
 | `NoteRepositoryTest` | 9 | 記事空白標題/內文保存、`updatedAt` 更新、釘選排序、分類防重、刪除分類記事歸屬、全文搜尋與離線刪除墓碑 |
-| `TaskRepositoryTest` | 4 | 待辦空白名稱攔截、進行中/已完成分離、優先級排序、截止日與獨立提醒分離及離線刪除墓碑 |
+| `TaskRepositoryTest` | 5 | 待辦空白名稱攔截、進行中/已完成分離、優先級排序、重複任務完成自動建下期與防重複衍生、離線刪除墓碑 |
 | `ReminderSchedulerLogicTest` | 5 | 過期時間攔截、未來時間允許、通知總開關關閉攔截與開機／更新後未過期提醒重排篩選測試 |
 | `ThemePreferencesTest` | 6 | 淺色/深色/系統模式、自訂按鍵色、月曆樣式、字體大小持久化與一鍵重設預設值 |
 | `NotificationPreferencesTest` | 1 | 全域通知總開關預設值與切換持久化驗證 |
@@ -276,7 +278,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 81 項單元測試
+# 1. 執行全部 88 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

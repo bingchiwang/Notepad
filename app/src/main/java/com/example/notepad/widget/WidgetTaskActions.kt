@@ -31,7 +31,7 @@ object WidgetTaskActions {
             pomodoroDao = database.pomodoroDao(),
             syncTombstoneDao = database.syncTombstoneDao()
         )
-        ReminderScheduler.updateToDoCompletionAndSyncReminders(
+        val outcome = ReminderScheduler.updateToDoCompletionAndSyncReminders(
             context = appContext,
             taskRepository = taskRepository,
             toDo = toDo,
@@ -43,9 +43,14 @@ object WidgetTaskActions {
         TodayScheduleWidgetUpdater.refreshAllBlocking(appContext)
         CalendarWidgetUpdater.refreshAllBlocking(appContext)
 
+        val feedbackMessage = ReminderScheduler.formatCompletionFeedback(
+            title = toDo.title,
+            isCompleted = true,
+            outcome = outcome
+        )
         Handler(Looper.getMainLooper()).post {
             runCatching {
-                Toast.makeText(appContext, "已完成：「${toDo.title}」", Toast.LENGTH_SHORT).show()
+                Toast.makeText(appContext, feedbackMessage, Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -6,26 +6,27 @@
 - **開發語言與框架**：Kotlin 2.0+、Jetpack Compose（Material Design 3）、Jetpack Navigation 3、Compose Material Adaptive
 - **SDK 支援範圍**：`minSdk = 26`（Android 8.0 Oreo）、`compileSdk = 37`、`targetSdk = 37`
 - **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Google Drive / Firebase Cloud Sync（`CloudSyncManager` / `RoutingCloudRemoteDataSource`）
-- **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 5`
+- **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 6`
 
 ---
 
 ## 2. 系統模組架構與資料模型
 
-### 2.1 本機資料庫結構（Room Database v5 - `AppDatabase`）
+### 2.1 本機資料庫結構（Room Database v6 - `AppDatabase`）
 | 資料表名稱 | 實體類別 | 主要欄位 | 索引與關聯規則 |
 | :--- | :--- | :--- | :--- |
 | `notes` | `Note` | `id` (PK), `title`, `content`, `isPinned`, `categoryId`, `color`, `createdAt`, `updatedAt`, `syncId`, `syncStatus` | 外鍵參照 `categories(id)`，`onDelete = ForeignKey.SET_NULL`；索引 `index_notes_categoryId`、唯一索引 `syncId` |
 | `categories` | `Category` | `id` (PK), `name`, `color`, `createdAt`, `syncId`, `updatedAt`, `syncStatus` | `index_categories_name` 與 `syncId` 唯一索引（`unique = true`） |
-| `todos` | `ToDo` | `id` (PK), `title`, `description`, `isCompleted`, `dueDate`, `tag`, `color`, `createdAt`, `priority`, `syncId`, `updatedAt`, `syncStatus` | `priority` 透過 `DatabaseConverters` 轉換（`HIGH=3`, `MEDIUM=2`, `LOW=1`）；唯一索引 `syncId` |
+| `todos` | `ToDo` | `id` (PK), `title`, `description`, `isCompleted`, `dueDate`, `tag`, `color`, `createdAt`, `priority`, `recurrenceType`, `recurrenceDayOfWeek`, `recurrenceDayOfMonth`, `nextOccurrenceGenerated`, `syncId`, `updatedAt`, `syncStatus` | `priority`、`recurrenceType` 透過 `DatabaseConverters` 轉換（`NONE=0`, `DAILY=1`, `WEEKLY=2`, `MONTHLY=3`）；唯一索引 `syncId` |
 | `reminders` | `Reminder` | `id` (PK), `title`, `message`, `triggerAt`, `tag`, `color`, `isFired`, `createdAt`, `linkedToDoId`, `syncId`, `updatedAt`, `syncStatus` | `linkedToDoId` 用於待辦完成時連動取消未觸發通知；唯一索引 `syncId` |
 | `time_blocks` | `TimeBlock` | `id` (PK), `date`, `startTime`, `endTime`, `title`, `description`, `isCompleted`, `tag`, `color`, `syncId`, `updatedAt`, `syncStatus` | 依日期儲存每日時間規劃區塊；唯一索引 `syncId` |
 | `pomodoro_records` | `PomodoroRecord` | `id` (PK), `timestamp`, `durationMinutes`, `taskTitle`, `date`, `syncId`, `updatedAt`, `syncStatus` | 記錄每日專注完成次數與歷史紀錄；唯一索引 `syncId` |
 | `sync_tombstones` | `SyncTombstone` | `id` (PK), `entityType`, `syncId`, `deletedAt` | 複合唯一索引 `(entityType, syncId)`，記錄離線刪除動作供連網後推播刪除與衝突比對 |
 
-* **資料庫無損版本遷移（`MIGRATION_3_4` & `MIGRATION_4_5`）**：
+* **資料庫無損版本遷移（`MIGRATION_3_4`、`MIGRATION_4_5` & `MIGRATION_5_6`）**：
   * `MIGRATION_3_4`：自 v3 無損升級至 v4，建立 `notes`、`categories` 資料表與 `todos.priority`、`reminders.linkedToDoId` 欄位。
   * `MIGRATION_4_5`：自 v4 無損升級至 v5，為上述 6 張資料表補齊 `syncId`（為舊資料自動產生唯一識別字串）、`updatedAt`、`syncStatus` 欄位與唯一索引，並建立 `sync_tombstones` 離線刪除墓碑表。
+  * `MIGRATION_5_6`：自 v5 無損升級至 v6，為 `todos` 補齊自動化重複任務欄位（`recurrenceType`、`recurrenceDayOfWeek`、`recurrenceDayOfMonth`、`nextOccurrenceGenerated`）。
 
 ### 2.2 偏好設定持久化（DataStore Preferences）
 | 類別 | DataStore 檔名 | 儲存資料結構與預設狀態 | 功能說明 |
@@ -55,13 +56,16 @@
   - 搜尋結果依最新修改時間（`updatedAt DESC`）排列。
   - 無搜尋結果時顯示明確的 Empty State 圖示、提示文字與一鍵清除搜尋按鈕。
 
-### 3.2 雙軌待辦事項與優先級管理（`TaskScreen` / `TaskDetailScreen` / `TaskRepository`）
+### 3.2 雙軌待辦事項、優先級與自動化重複任務（`TaskScreen` / `TaskDetailScreen` / `TaskRepository` / `RecurringTaskLogic`）
 - **任務檢核與優先級**：
   - 強制檢核任務名稱不可為空白（UI 行內錯誤提示 + `TaskRepository.requireValidTitle` 前置防禦）。
   - 優先級分為 **高（`HIGH`, level=3）**、**中（`MEDIUM`, level=2）**、**低（`LOW`, level=1）**，提供選取器與高對比色彩徽章（`PrioritySelectorRow` / `PriorityBadge`），列表預設依未完成、高優先級與到期日排序。
   - 進行中（`activeToDos`）與已完成（`completedToDos`）清單明確隔離，已完成任務不會繼續顯示於未完成列表。
   - `ToDo.dueDate`（截止日期）與 `Reminder.triggerAt`（通知排程）分離管理，可獨立設定並透過 `linkedToDoId` 建立關聯；於 `TaskDetailScreen` 內亦可直接新增、編輯或經二次確認刪除關聯提醒。
   - 次日到期且未完成之任務同步於清單與月曆觸發橘紅呼吸虛線外框與跳動「`⚠️ 明日到期！`」徽章。
+- **自動化重複任務（Recurring Tasks）**：
+  - 支援 **不重複（`NONE`）**、**每天（`DAILY`）**、**每週（`WEEKLY`，自選週一至週日）** 與 **每月（`MONTHLY`，自選每月 1–31 日且於短月自動截斷、次期恢復原日期）**。
+  - 無論從主應用待辦列表、任務詳情頁、農曆萬年曆或桌面小工具勾選完成當期重複任務，皆經由 `TaskRepository.completeToDoWithRecurrence` 自動建立下一期待辦項目並標記 `nextOccurrenceGenerated = true` 防止重複產生。
 
 ### 3.3 提醒通知排程（`ReminderScheduler` / `ReminderReceiver` / `BootCompletedReceiver`）
 - 支援自選任意未來年份與月份的多日提醒（`AddMultiDayReminderDialog`）及日期時間編輯（`EditReminderDialog`）。
@@ -138,12 +142,13 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **18 個測試類別、81 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **19 個測試類別、88 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
-2. `PriorityAndConvertersTest`（4 項）：驗證優先級權重與 Room 型別轉換器。
+2. `PriorityAndConvertersTest`（5 項）：驗證優先級權重與 Room 型別轉換器（含 `RecurrenceType`）。
 3. `NoteRepositoryTest`（9 項）：驗證記事 CRUD、釘選排序、分類防重、分類刪除記事重歸類、全文搜尋與離線墓碑。
-4. `TaskRepositoryTest`（4 項）：驗證待辦非空檢核、完成狀態分離、優先級排序、截止日與提醒分離及離線墓碑。
+4. `TaskRepositoryTest`（5 項）：驗證待辦非空檢核、完成狀態分離、優先級排序、重複任務完成自動產生下期、截止日與提醒分離及離線墓碑。
+5. `RecurringTaskLogicTest`（5 項）：驗證每天／每週／每月（含月底 31 日保留）下期計算、標籤格式與防重複衍生。
 5. `ReminderSchedulerLogicTest`（5 項）：驗證過期時間攔截、通知總開關、開機／更新後重排篩選與系統廣播動作白名單。
 6. `ThemePreferencesTest`（6 項）：驗證主題模式、按鍵色、月曆樣式、字體大小持久化與重設預設值。
 7. `NotificationPreferencesTest`（1 項）：驗證通知總開關 DataStore 持久化。

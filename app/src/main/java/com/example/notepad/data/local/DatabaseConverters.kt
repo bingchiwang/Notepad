@@ -2,6 +2,7 @@ package com.example.notepad.data.local
 
 import androidx.room.TypeConverter
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurrenceType
 import com.example.notepad.data.local.entity.SyncEntityType
 import com.example.notepad.data.local.entity.SyncStatus
 
@@ -44,5 +45,21 @@ class DatabaseConverters {
     @TypeConverter
     fun toSyncEntityType(value: String): SyncEntityType {
         return SyncEntityType.fromValue(value) ?: SyncEntityType.NOTE
+    }
+
+    /**
+     * 將待辦重複週期列舉轉為資料庫整數欄位
+     */
+    @TypeConverter
+    fun fromRecurrenceType(type: RecurrenceType): Int {
+        return type.code
+    }
+
+    /**
+     * 將資料庫整數值還原為待辦重複週期列舉
+     */
+    @TypeConverter
+    fun toRecurrenceType(code: Int): RecurrenceType {
+        return RecurrenceType.fromCode(code)
     }
 }

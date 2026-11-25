@@ -7,6 +7,8 @@ import com.example.notepad.data.local.dao.TimeBlockDao
 import com.example.notepad.data.local.dao.ToDoDao
 import com.example.notepad.data.local.entity.PomodoroRecord
 import com.example.notepad.data.local.entity.Priority
+import com.example.notepad.data.local.entity.RecurrenceType
+import com.example.notepad.data.local.entity.RecurringTaskLogic
 import com.example.notepad.data.local.entity.Reminder
 import com.example.notepad.data.local.entity.SyncEntityType
 import com.example.notepad.data.local.entity.SyncStatus
@@ -83,6 +85,45 @@ class TaskRepository(
             )
         )
         onLocalDataChanged?.invoke()
+    }
+
+    /**
+     * 更新待辦完成狀態；若為具備重複規則且尚未產生過下期的任務，於標記完成時自動建立下一期待辦項目。
+     * @return 自動產生的下一期待辦項目；若非重複任務或未產生則回傳 `null`
+     */
+    suspend fun completeToDoWithRecurrence(
+        toDo: ToDo,
+        isCompleted: Boolean,
+        completedAtMillis: Long = System.currentTimeMillis()
+    ): ToDo? {
+        require(toDo.title.isNotBlank()) { "任務名稱不得為空白" }
+        if (!isCompleted) {
+            updateToDo(toDo.copy(isCompleted = false))
+            return null
+        }
+
+        val nextToDo = RecurringTaskLogic.createNextOccurrence(
+            completedToDo = toDo,
+            completedAtMillis = completedAtMillis
+        )?.let { candidate ->
+            candidate.copy(title = candidate.title.trim())
+        }
+
+        toDoDao.updateToDo(
+            toDo.copy(
+                title = toDo.title.trim(),
+                isCompleted = true,
+                nextOccurrenceGenerated = toDo.nextOccurrenceGenerated || nextToDo != null,
+                updatedAt = completedAtMillis,
+                syncStatus = SyncStatus.PENDING_UPLOAD
+            )
+        )
+        if (nextToDo != null) {
+            syncTombstoneDao?.deleteTombstone(SyncEntityType.TODO, nextToDo.syncId)
+            toDoDao.insertToDo(nextToDo)
+        }
+        onLocalDataChanged?.invoke()
+        return nextToDo
     }
 
     suspend fun deleteToDo(toDo: ToDo) {

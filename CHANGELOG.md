@@ -4,6 +4,16 @@
 
 ---
 
+## [1.11.0] - 2026-11-25
+### 新增 (Added)
+- **自動化重複任務（Recurring Tasks，`RecurrenceRule` / `MIGRATION_5_6`）**：
+  - 新增 [RecurrenceRule.kt](app/src/main/java/com/example/notepad/data/local/entity/RecurrenceRule.kt)（`RecurrenceType`：`NONE`／`DAILY`／`WEEKLY`／`MONTHLY` 與 `RecurringTaskLogic`），支援指定每週星期或每月日期（含月底 31 日於短月自動截斷且下期恢復原日期），並於 [ToDo.kt](app/src/main/java/com/example/notepad/data/local/entity/ToDo.kt)、[DatabaseConverters.kt](app/src/main/java/com/example/notepad/data/local/DatabaseConverters.kt) 與 [AppDatabase.kt](app/src/main/java/com/example/notepad/data/local/AppDatabase.kt) 實作無損資料庫升級 **Room v5 → v6（`MIGRATION_5_6`）**。
+  - 擴充 `TaskRepository.completeToDoWithRecurrence`、`ReminderScheduler.updateToDoCompletionAndSyncReminders`／`formatCompletionFeedback` 與 `WidgetTaskActions.completeToDo`：無論於任務清單、任務詳情頁、農曆萬年曆或桌面小工具勾選完成當期重複任務時，皆自動產生下一期待辦項目、取消關聯提醒並防止重複衍生（`nextOccurrenceGenerated` 保護）；同步更新 `CloudSyncManager` 支援重複欄位跨裝置雲端同步。
+  - 於 [ItemDialogs.kt](app/src/main/java/com/example/notepad/ui/components/ItemDialogs.kt) 抽取共用 `RecurrenceSelectorSection` 整合至 `AddToDoDialog` 與 `EditToDoDialog`，並於 [DeadlineAlertCard](app/src/main/java/com/example/notepad/ui/components/NotepadComponents.kt)、[TaskScreen.kt](app/src/main/java/com/example/notepad/ui/screens/TaskScreen.kt) 與 [CalendarScreen.kt](app/src/main/java/com/example/notepad/ui/screens/CalendarScreen.kt) 顯示重複週期徽章（如 `🔁 每週一`、`🔁 每月15日`）。
+- **測試覆蓋擴充**：新增 [RecurringTaskLogicTest](app/src/test/java/com/example/notepad/data/local/entity/RecurringTaskLogicTest.kt)（5 項）並擴充 `PriorityAndConvertersTest`（+1 項）與 `TaskRepositoryTest`（+1 項），全專案單元測試擴充至 **88 項**（19 個測試套件，0 失敗、0 略過、0 Lint 錯誤）。
+
+---
+
 ## [1.10.1] - 2026-11-25
 ### 調整 (Changed)
 - **精簡雲端同步對話框為純 Google 雲端硬碟同步介面（`CloudSyncDialog` / `MainActivity`）**：
