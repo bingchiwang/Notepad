@@ -27,7 +27,7 @@
 
 ## 核心技術棧 (High-Level Tech Stack)
 * **開發語言 (Language)**：Kotlin 2.0+ (Coroutines / Flow)
-* **系統版本支援 (SDK Support)**：`minSdk = 26` (Android 8.0 Oreo) ~ `targetSdk = 37`
+* **系統版本支援 (SDK Support)**：`minSdk = 31` (Android 12) ~ `targetSdk = 37`
 * **UI 框架 (UI Framework)**：Jetpack Compose (Material Design 3)
 * **導航與自適應策略 (Navigation & Adaptive Strategy)**：**Jetpack Navigation 3** 與 **Compose Material Adaptive** (`NavigationSuiteScaffold`)
 * **架構設計 (Architecture)**：**外觀模式 (Facade Pattern)** + **倉儲模式 (Repository Pattern)** + **Offline-First Cloud Sync**
@@ -332,6 +332,15 @@
   - 重繪四款 `ic_widget_picker_*.xml` 為迷你小工具卡片外觀，並將 Android 8–11 備援圖 `widget_preview_calendar.xml` 升級為 7 欄星期、週日紅字與 5 週橫線排版。
 - **驗收標準 (Acceptance Criteria):**
   - 新增小工具選單於 Android 12+ 呈現真實小工具即時預覽、於 Android 8–11 呈現 7 欄擬真備援圖，且 0 Lint／`NewApi` 錯誤
+  - 全專案 98 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
+### Task_30_UpgradeMinSdkTo31: 將最低支援 Android 版本調整為 `minSdk = 31`（Android 12）並清理 API 31 以下冗餘相容程式碼。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 更新 `app/build.gradle.kts` 之 `minSdk = 31`，並移除 `ReminderScheduler`、`Theme`、`QuickNoteWidgetProvider`、`ToDoWidgetProvider`、`TodayScheduleWidgetProvider` 與四份 `*_widget_info.xml` 中所有 API 31 以下之冗餘相容判斷與 `tools:targetApi="s"`。
+  - 移除已不再使用之舊版 `ToDoWidgetService`、`TodayScheduleWidgetService` 及其 `AndroidManifest.xml` 宣告，同步更新 `AGENTS.md`、`SPECIFICATION.md`、`README.md` 與 `CHANGELOG.md`。
+- **驗收標準 (Acceptance Criteria):**
+  - `minSdk = 31` 生效且 Android Lint 0 `NewApi`／`ObsoleteSdkInt` 錯誤
   - 全專案 98 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
 ---

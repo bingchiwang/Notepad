@@ -58,7 +58,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val channelId = "notepad_reminder_channel"
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // minSdk = 26 (Android 8.0) 起一律建立 NotificationChannel 以確保通知正常顯示
+        // minSdk = 31 (Android 12) 起一律建立 NotificationChannel 以確保通知正常顯示
         val channel = NotificationChannel(
             channelId,
             "任務提醒通知",

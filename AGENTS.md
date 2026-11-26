@@ -79,8 +79,8 @@
 - **記錄最後同步時間**：同步成功後即時更新並持久化 `lastSyncAt` 最後同步時間；離線或失敗時不得覆蓋既有成功時間。
 - **智慧衝突解決**：當本機與雲端資料不一致時，透過 `SyncConflictResolver` 依最新修改時間優先（Last-Write-Wins, `updatedAt`）原則進行智慧合併。
 
-### 3.7 系統相容性與介面安全規範 (`minSdk = 26` / `AppNavigation`)
-- **Android 版本支援**：支援 **Android 8.0（API 26）** 至 **Android API 37**，不得引入未受版本保護之高版本專屬 API（Android Lint `NewApi` 錯誤必須為 `0`）。
+### 3.7 系統相容性與介面安全規範 (`minSdk = 31` / `AppNavigation`)
+- **Android 版本支援**：支援 **Android 12（API 31）** 至 **Android API 37**，不得引入未受版本保護之高版本專屬 API（Android Lint `NewApi` 錯誤必須為 `0`）。
 - **防導覽列與挖孔遮擋**：全面啟用 Edge-to-Edge 並套用 `statusBarsPadding()`、`navigationBarsPadding()`、`displayCutoutPadding()` 與編輯器 `imePadding()`，確保介面與按鈕絕不遭手機導覽列、狀態欄、螢幕挖孔或鍵盤遮擋。
 
 ---

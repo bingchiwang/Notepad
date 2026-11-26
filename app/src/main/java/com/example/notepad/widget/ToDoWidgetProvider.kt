@@ -7,8 +7,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import com.example.notepad.R
@@ -29,32 +27,16 @@ class ToDoWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        when (intent.action) {
-            ACTION_COMPLETE_TODO,
-            ACTION_LEGACY_TEMPLATE_BROADCAST -> {
-                val subAction = intent.getStringExtra(EXTRA_ITEM_ACTION) ?: intent.action
-                val todoId = intent.getIntExtra(EXTRA_TODO_ID, QuickNoteWidgetContract.INVALID_ID)
-                if (todoId <= 0) return
+        if (intent.action == ACTION_COMPLETE_TODO) {
+            val todoId = intent.getIntExtra(EXTRA_TODO_ID, QuickNoteWidgetContract.INVALID_ID)
+            if (todoId <= 0) return
 
-                when (subAction) {
-                    ACTION_COMPLETE_TODO -> {
-                        val pendingResult = goAsync()
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                WidgetTaskActions.completeToDo(context.applicationContext, todoId)
-                            } finally {
-                                pendingResult.finish()
-                            }
-                        }
-                    }
-                    ACTION_OPEN_TODO_DETAIL -> {
-                        runCatching {
-                            val detailIntent = QuickNoteWidgetContract.buildOpenToDoDetailIntent(context, todoId)
-                            context.startActivity(detailIntent)
-                        }.onFailure { e ->
-                            Log.w("ToDoWidgetProvider", "無法開啟待辦詳情頁: ${e.message}")
-                        }
-                    }
+            val pendingResult = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    WidgetTaskActions.completeToDo(context.applicationContext, todoId)
+                } finally {
+                    pendingResult.finish()
                 }
             }
         }
@@ -77,24 +59,7 @@ class ToDoWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_COMPLETE_TODO = "com.example.notepad.ACTION_WIDGET_COMPLETE_TODO"
-        const val ACTION_OPEN_TODO_DETAIL = "com.example.notepad.ACTION_WIDGET_OPEN_TODO_DETAIL"
-        private const val ACTION_LEGACY_TEMPLATE_BROADCAST = "com.example.notepad.ACTION_WIDGET_TODO_TEMPLATE"
-        private const val EXTRA_ITEM_ACTION = "com.example.notepad.EXTRA_TODO_ITEM_ACTION"
         const val EXTRA_TODO_ID = "com.example.notepad.EXTRA_WIDGET_TODO_TARGET_ID"
-
-        fun buildCompleteFillInIntent(todoId: Int): Intent {
-            return Intent().apply {
-                putExtra(EXTRA_ITEM_ACTION, ACTION_COMPLETE_TODO)
-                putExtra(EXTRA_TODO_ID, todoId)
-            }
-        }
-
-        fun buildOpenDetailFillInIntent(todoId: Int): Intent {
-            return Intent().apply {
-                putExtra(EXTRA_ITEM_ACTION, ACTION_OPEN_TODO_DETAIL)
-                putExtra(EXTRA_TODO_ID, todoId)
-            }
-        }
 
         /**
          * 從本機資料庫載入尚未完成的待辦任務，並更新所有指定桌面小工具實例
@@ -117,10 +82,6 @@ class ToDoWidgetProvider : AppWidgetProvider() {
                     resolved = resolved
                 )
                 appWidgetManager.updateAppWidget(appWidgetId, views)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                    @Suppress("DEPRECATION")
-                    appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_todo_list)
-                }
             }
         }
 
@@ -163,78 +124,49 @@ class ToDoWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_todo_count_chip, openListPendingIntent)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // Android 12+ 使用 RemoteCollectionItems，支援單列中分別直接綁定廣播勾選與詳情頁導航，並完全符合 BAL 規範
-                if (resolved.items.isEmpty()) {
-                    views.setViewVisibility(R.id.widget_todo_list, View.GONE)
-                    views.setViewVisibility(R.id.widget_todo_empty_view, View.VISIBLE)
-                } else {
-                    views.setViewVisibility(R.id.widget_todo_list, View.VISIBLE)
-                    views.setViewVisibility(R.id.widget_todo_empty_view, View.GONE)
-
-                    val collectionBuilder = RemoteViews.RemoteCollectionItems.Builder()
-                    resolved.items.forEach { item ->
-                        val rowViews = ToDoWidgetRowBinder.bindRow(context, item).apply {
-                            val completeIntent = Intent(context, ToDoWidgetProvider::class.java).apply {
-                                action = ACTION_COMPLETE_TODO
-                                data = Uri.parse("notepad://widget/todo/complete/${item.id}")
-                                putExtra(EXTRA_TODO_ID, item.id)
-                            }
-                            val completePendingIntent = PendingIntent.getBroadcast(
-                                context,
-                                60_000 + item.id,
-                                completeIntent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                            )
-                            setOnClickPendingIntent(R.id.widget_todo_checkbox_container, completePendingIntent)
-
-                            val detailIntent = QuickNoteWidgetContract.buildOpenToDoDetailIntent(
-                                context = context,
-                                taskId = item.id
-                            ).apply {
-                                data = Uri.parse("notepad://widget/todo/detail/${item.id}")
-                            }
-                            val detailPendingIntent = PendingIntent.getActivity(
-                                context,
-                                70_000 + item.id,
-                                detailIntent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                            )
-                            setOnClickPendingIntent(R.id.widget_todo_content_area, detailPendingIntent)
-                        }
-                        collectionBuilder.addItem(item.id.toLong(), rowViews)
-                    }
-                    collectionBuilder.setHasStableIds(true)
-                    collectionBuilder.setViewTypeCount(1)
-                    views.setRemoteAdapter(R.id.widget_todo_list, collectionBuilder.build())
-                }
+            // Android 12+（minSdk = 31）使用 RemoteCollectionItems 直接綁定廣播勾選與詳情頁導航
+            if (resolved.items.isEmpty()) {
+                views.setViewVisibility(R.id.widget_todo_list, View.GONE)
+                views.setViewVisibility(R.id.widget_todo_empty_view, View.VISIBLE)
             } else {
-                // Android 8.0–11 採用 RemoteViewsService + 顯式 Broadcast Template
                 views.setViewVisibility(R.id.widget_todo_list, View.VISIBLE)
-                val adapterIntent = Intent(context, ToDoWidgetService::class.java).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-                }
-                @Suppress("DEPRECATION")
-                views.setRemoteAdapter(R.id.widget_todo_list, adapterIntent)
-                views.setEmptyView(R.id.widget_todo_list, R.id.widget_todo_empty_view)
+                views.setViewVisibility(R.id.widget_todo_empty_view, View.GONE)
 
-                val templateIntent = Intent(context, ToDoWidgetProvider::class.java).apply {
-                    action = ACTION_LEGACY_TEMPLATE_BROADCAST
-                    data = Uri.parse("notepad://widget/todo/template/$appWidgetId")
+                val collectionBuilder = RemoteViews.RemoteCollectionItems.Builder()
+                resolved.items.forEach { item ->
+                    val rowViews = ToDoWidgetRowBinder.bindRow(context, item).apply {
+                        val completeIntent = Intent(context, ToDoWidgetProvider::class.java).apply {
+                            action = ACTION_COMPLETE_TODO
+                            data = Uri.parse("notepad://widget/todo/complete/${item.id}")
+                            putExtra(EXTRA_TODO_ID, item.id)
+                        }
+                        val completePendingIntent = PendingIntent.getBroadcast(
+                            context,
+                            60_000 + item.id,
+                            completeIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        setOnClickPendingIntent(R.id.widget_todo_checkbox_container, completePendingIntent)
+
+                        val detailIntent = QuickNoteWidgetContract.buildOpenToDoDetailIntent(
+                            context = context,
+                            taskId = item.id
+                        ).apply {
+                            data = Uri.parse("notepad://widget/todo/detail/${item.id}")
+                        }
+                        val detailPendingIntent = PendingIntent.getActivity(
+                            context,
+                            70_000 + item.id,
+                            detailIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                        )
+                        setOnClickPendingIntent(R.id.widget_todo_content_area, detailPendingIntent)
+                    }
+                    collectionBuilder.addItem(item.id.toLong(), rowViews)
                 }
-                val mutableFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.FLAG_MUTABLE
-                } else {
-                    0
-                }
-                val templatePendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    80_000 + appWidgetId,
-                    templateIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or mutableFlag
-                )
-                views.setPendingIntentTemplate(R.id.widget_todo_list, templatePendingIntent)
+                collectionBuilder.setHasStableIds(true)
+                collectionBuilder.setViewTypeCount(1)
+                views.setRemoteAdapter(R.id.widget_todo_list, collectionBuilder.build())
             }
 
             return views

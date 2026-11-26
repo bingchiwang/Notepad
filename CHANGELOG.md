@@ -4,6 +4,14 @@
 
 ---
 
+## [1.15.0] - 2026-11-26
+### 調整與精簡 (Changed / Cleaned Up)
+- **最低支援系統版本升級為 Android 12（`minSdk = 31`）並清理 API 31 以下舊版相容碼**：
+  - 於 [app/build.gradle.kts](app/build.gradle.kts) 將 `minSdk` 由 `26` 調整為 **`31`**（Android 12）。
+  - 精簡 [ReminderScheduler.kt](app/src/main/java/com/example/notepad/reminder/ReminderScheduler.kt)、[Theme.kt](app/src/main/java/com/example/notepad/ui/theme/Theme.kt)、[QuickNoteWidgetProvider.kt](app/src/main/java/com/example/notepad/widget/QuickNoteWidgetProvider.kt)、[ToDoWidgetProvider.kt](app/src/main/java/com/example/notepad/widget/ToDoWidgetProvider.kt) 與 [TodayScheduleWidgetProvider.kt](app/src/main/java/com/example/notepad/widget/TodayScheduleWidgetProvider.kt) 中所有 API 31 以下之冗餘 `Build.VERSION.SDK_INT` 判斷，移除四份 `res/xml/*_widget_info.xml` 之 `tools:targetApi="s"` 標註，並移除已不再需要的舊版 `ToDoWidgetService` 與 `TodayScheduleWidgetService`（含 `AndroidManifest.xml` 註冊），全面採用 Android 12+ `RemoteCollectionItems` 與原生 `previewLayout` 擬真小工具預覽。
+
+---
+
 ## [1.14.2] - 2026-11-26
 ### 優化 (Improved)
 - **全面升級四大桌面小工具「新增小工具」擬真預覽版面與選單圖示（`previewLayout` / `ic_widget_picker_*` / `widget_preview_calendar`）**：

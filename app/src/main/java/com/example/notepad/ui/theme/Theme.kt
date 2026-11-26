@@ -1,6 +1,5 @@
 package com.example.notepad.ui.theme
 
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -104,7 +103,7 @@ fun NotepadTheme(
     content: @Composable () -> Unit
 ) {
     val baseScheme = when {
-        dynamicColor && personalization.buttonColorLong == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+        dynamicColor && personalization.buttonColorLong == null -> {
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }

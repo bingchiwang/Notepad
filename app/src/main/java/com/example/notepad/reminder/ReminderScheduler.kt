@@ -74,7 +74,7 @@ object ReminderScheduler {
     }
 
     /**
-     * 檢查目前是否具備系統通知權限（Android 13+ 需 POST_NOTIFICATIONS，Android 8.0+ 同步檢查系統通知開關狀態）
+     * 檢查目前是否具備系統通知權限（Android 13+ 需 POST_NOTIFICATIONS，並同步檢查系統通知開關狀態）
      */
     fun hasNotificationPermission(context: Context): Boolean {
         val runtimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -117,22 +117,14 @@ object ReminderScheduler {
         )
 
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        reminder.triggerAt,
-                        pendingIntent
-                    )
-                } else {
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        reminder.triggerAt,
-                        pendingIntent
-                    )
-                }
-            } else {
+            if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    reminder.triggerAt,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     reminder.triggerAt,
                     pendingIntent

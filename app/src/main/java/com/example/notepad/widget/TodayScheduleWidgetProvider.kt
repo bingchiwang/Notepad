@@ -7,8 +7,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.util.Log
 import android.widget.RemoteViews
 import com.example.notepad.R
 import com.example.notepad.data.local.AppDatabase
@@ -28,47 +26,19 @@ class TodayScheduleWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        when (intent.action) {
-            ACTION_COMPLETE_TODAY_TODO,
-            ACTION_LEGACY_TODAY_TEMPLATE -> {
-                val subAction = intent.getStringExtra(EXTRA_ITEM_ACTION) ?: intent.action
-                val todoId = intent.getIntExtra(
-                    ToDoWidgetProvider.EXTRA_TODO_ID,
-                    QuickNoteWidgetContract.INVALID_ID
-                )
+        if (intent.action == ACTION_COMPLETE_TODAY_TODO) {
+            val todoId = intent.getIntExtra(
+                ToDoWidgetProvider.EXTRA_TODO_ID,
+                QuickNoteWidgetContract.INVALID_ID
+            )
+            if (todoId <= 0) return
 
-                when (subAction) {
-                    ACTION_COMPLETE_TODAY_TODO,
-                    ToDoWidgetProvider.ACTION_COMPLETE_TODO -> {
-                        if (todoId <= 0) return
-                        val pendingResult = goAsync()
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                WidgetTaskActions.completeToDo(context.applicationContext, todoId)
-                            } finally {
-                                pendingResult.finish()
-                            }
-                        }
-                    }
-                    ToDoWidgetProvider.ACTION_OPEN_TODO_DETAIL -> {
-                        if (todoId <= 0) return
-                        runCatching {
-                            context.startActivity(
-                                QuickNoteWidgetContract.buildOpenToDoDetailIntent(context, todoId)
-                            )
-                        }.onFailure { e ->
-                            Log.w("TodayScheduleWidget", "無法開啟待辦詳情頁: ${e.message}")
-                        }
-                    }
-                    ACTION_OPEN_REMINDERS -> {
-                        runCatching {
-                            context.startActivity(
-                                QuickNoteWidgetContract.buildOpenRemindersTrackIntent(context)
-                            )
-                        }.onFailure { e ->
-                            Log.w("TodayScheduleWidget", "無法開啟提醒分頁: ${e.message}")
-                        }
-                    }
+            val pendingResult = goAsync()
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    WidgetTaskActions.completeToDo(context.applicationContext, todoId)
+                } finally {
+                    pendingResult.finish()
                 }
             }
         }
@@ -91,15 +61,6 @@ class TodayScheduleWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_COMPLETE_TODAY_TODO = "com.example.notepad.ACTION_WIDGET_TODAY_COMPLETE_TODO"
-        private const val ACTION_OPEN_REMINDERS = "com.example.notepad.ACTION_WIDGET_TODAY_OPEN_REMINDERS"
-        private const val ACTION_LEGACY_TODAY_TEMPLATE = "com.example.notepad.ACTION_WIDGET_TODAY_TEMPLATE"
-        private const val EXTRA_ITEM_ACTION = "com.example.notepad.EXTRA_TODO_ITEM_ACTION"
-
-        fun buildOpenRemindersFillInIntent(): Intent {
-            return Intent().apply {
-                putExtra(EXTRA_ITEM_ACTION, ACTION_OPEN_REMINDERS)
-            }
-        }
 
         /**
          * 讀取今日排程、待辦與提醒並重新繪製指定的今日行程桌面小工具
@@ -129,10 +90,6 @@ class TodayScheduleWidgetProvider : AppWidgetProvider() {
                     resolved = resolved
                 )
                 appWidgetManager.updateAppWidget(appWidgetId, views)
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-                    @Suppress("DEPRECATION")
-                    appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.widget_today_list)
-                }
             }
         }
 
@@ -175,87 +132,62 @@ class TodayScheduleWidgetProvider : AppWidgetProvider() {
             views.setOnClickPendingIntent(R.id.widget_today_date_chip, schedulePendingIntent)
             views.setOnClickPendingIntent(R.id.widget_today_progress_card, schedulePendingIntent)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val collectionBuilder = RemoteViews.RemoteCollectionItems.Builder()
-                resolved.rows.forEach { row ->
-                    val rowViews = TodayScheduleWidgetRowBinder.bindRow(context, row).apply {
-                        when (row) {
-                            is TodayScheduleRow.DueTodayToDoRow -> {
-                                val itemId = row.item.id
-                                val completeIntent = Intent(context, TodayScheduleWidgetProvider::class.java).apply {
-                                    action = ACTION_COMPLETE_TODAY_TODO
-                                    data = Uri.parse("notepad://widget/today/complete/$itemId")
-                                    putExtra(ToDoWidgetProvider.EXTRA_TODO_ID, itemId)
-                                }
-                                val completePendingIntent = PendingIntent.getBroadcast(
-                                    context,
-                                    110_000 + itemId,
-                                    completeIntent,
-                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                                )
-                                setOnClickPendingIntent(R.id.widget_todo_checkbox_container, completePendingIntent)
+            // Android 12+（minSdk = 31）使用 RemoteCollectionItems 直接綁定待辦勾選、詳情與提醒導航
+            val collectionBuilder = RemoteViews.RemoteCollectionItems.Builder()
+            resolved.rows.forEach { row ->
+                val rowViews = TodayScheduleWidgetRowBinder.bindRow(context, row).apply {
+                    when (row) {
+                        is TodayScheduleRow.DueTodayToDoRow -> {
+                            val itemId = row.item.id
+                            val completeIntent = Intent(context, TodayScheduleWidgetProvider::class.java).apply {
+                                action = ACTION_COMPLETE_TODAY_TODO
+                                data = Uri.parse("notepad://widget/today/complete/$itemId")
+                                putExtra(ToDoWidgetProvider.EXTRA_TODO_ID, itemId)
+                            }
+                            val completePendingIntent = PendingIntent.getBroadcast(
+                                context,
+                                110_000 + itemId,
+                                completeIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                            setOnClickPendingIntent(R.id.widget_todo_checkbox_container, completePendingIntent)
 
-                                val detailIntent = QuickNoteWidgetContract.buildOpenToDoDetailIntent(
-                                    context = context,
-                                    taskId = itemId
-                                ).apply {
-                                    data = Uri.parse("notepad://widget/today/detail/$itemId")
-                                }
-                                val detailPendingIntent = PendingIntent.getActivity(
-                                    context,
-                                    120_000 + itemId,
-                                    detailIntent,
-                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                                )
-                                setOnClickPendingIntent(R.id.widget_todo_content_area, detailPendingIntent)
+                            val detailIntent = QuickNoteWidgetContract.buildOpenToDoDetailIntent(
+                                context = context,
+                                taskId = itemId
+                            ).apply {
+                                data = Uri.parse("notepad://widget/today/detail/$itemId")
                             }
-                            is TodayScheduleRow.UpcomingReminderRow -> {
-                                val reminderId = row.reminder.id
-                                val reminderIntent = QuickNoteWidgetContract.buildOpenRemindersTrackIntent(context).apply {
-                                    data = Uri.parse("notepad://widget/today/reminder/$reminderId")
-                                }
-                                val reminderPendingIntent = PendingIntent.getActivity(
-                                    context,
-                                    130_000 + reminderId,
-                                    reminderIntent,
-                                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                                )
-                                setOnClickPendingIntent(R.id.widget_reminder_item_root, reminderPendingIntent)
-                            }
-                            is TodayScheduleRow.SectionHeader,
-                            is TodayScheduleRow.EmptyNoticeRow -> Unit
+                            val detailPendingIntent = PendingIntent.getActivity(
+                                context,
+                                120_000 + itemId,
+                                detailIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                            setOnClickPendingIntent(R.id.widget_todo_content_area, detailPendingIntent)
                         }
+                        is TodayScheduleRow.UpcomingReminderRow -> {
+                            val reminderId = row.reminder.id
+                            val reminderIntent = QuickNoteWidgetContract.buildOpenRemindersTrackIntent(context).apply {
+                                data = Uri.parse("notepad://widget/today/reminder/$reminderId")
+                            }
+                            val reminderPendingIntent = PendingIntent.getActivity(
+                                context,
+                                130_000 + reminderId,
+                                reminderIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                            )
+                            setOnClickPendingIntent(R.id.widget_reminder_item_root, reminderPendingIntent)
+                        }
+                        is TodayScheduleRow.SectionHeader,
+                        is TodayScheduleRow.EmptyNoticeRow -> Unit
                     }
-                    collectionBuilder.addItem(row.stableId, rowViews)
                 }
-                collectionBuilder.setHasStableIds(true)
-                collectionBuilder.setViewTypeCount(TodayScheduleWidgetRowBinder.VIEW_TYPE_COUNT)
-                views.setRemoteAdapter(R.id.widget_today_list, collectionBuilder.build())
-            } else {
-                val adapterIntent = Intent(context, TodayScheduleWidgetService::class.java).apply {
-                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
-                }
-                @Suppress("DEPRECATION")
-                views.setRemoteAdapter(R.id.widget_today_list, adapterIntent)
-
-                val templateIntent = Intent(context, TodayScheduleWidgetProvider::class.java).apply {
-                    action = ACTION_LEGACY_TODAY_TEMPLATE
-                    data = Uri.parse("notepad://widget/today/template/$appWidgetId")
-                }
-                val mutableFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.FLAG_MUTABLE
-                } else {
-                    0
-                }
-                val templatePendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    140_000 + appWidgetId,
-                    templateIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or mutableFlag
-                )
-                views.setPendingIntentTemplate(R.id.widget_today_list, templatePendingIntent)
+                collectionBuilder.addItem(row.stableId, rowViews)
             }
+            collectionBuilder.setHasStableIds(true)
+            collectionBuilder.setViewTypeCount(TodayScheduleWidgetRowBinder.VIEW_TYPE_COUNT)
+            views.setRemoteAdapter(R.id.widget_today_list, collectionBuilder.build())
 
             return views
         }

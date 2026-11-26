@@ -7,7 +7,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.widget.RemoteViews
 import com.example.notepad.MainActivity
 import com.example.notepad.R
@@ -143,16 +142,11 @@ class QuickNoteWidgetProvider : AppWidgetProvider() {
                 data = Uri.parse("notepad://widget/edit/$appWidgetId")
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
-            val mutableFlag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                PendingIntent.FLAG_MUTABLE
-            } else {
-                0
-            }
             val editTemplatePendingIntent = PendingIntent.getActivity(
                 context,
                 30_000 + appWidgetId,
                 editTemplateIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or mutableFlag
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )
             views.setPendingIntentTemplate(R.id.widget_notes_list, editTemplatePendingIntent)
 

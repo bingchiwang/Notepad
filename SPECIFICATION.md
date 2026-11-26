@@ -4,7 +4,7 @@
 - **應用程式名稱**：Lunar To-Do & Notepad App（農曆萬年曆與雙軌待辦提醒記事）
 - **套件識別碼 (`applicationId`)**：`com.example.notepad`
 - **開發語言與框架**：Kotlin 2.0+、Jetpack Compose（Material Design 3）、Jetpack Navigation 3、Compose Material Adaptive
-- **SDK 支援範圍**：`minSdk = 26`（Android 8.0 Oreo）、`compileSdk = 37`、`targetSdk = 37`
+- **SDK 支援範圍**：`minSdk = 31`（Android 12）、`compileSdk = 37`、`targetSdk = 37`
 - **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Google Drive / Firebase Cloud Sync（`CloudSyncManager` / `RoutingCloudRemoteDataSource`）
 - **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 6`
 
@@ -112,9 +112,9 @@
 - **可選擇顯示指定分類**：透過 `QuickNoteWidgetConfigureActivity`（`reconfigurable`）與 `QuickNoteWidgetPreferences` 為每個 `appWidgetId` 獨立保存 `WidgetCategoryFilter`（`All`、`Uncategorized`、`CategoryFilter(id)`）；若綁定分類已遭刪除，`QuickNoteWidgetLogic.resolveWidgetState` 自動退回顯示「全部記事」避免空白卡死。
 - **自動即時更新**：`NoteRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `QuickNoteWidgetUpdater.notifyDataChanged`，於本機變更或雲端拉取完成後立即重整所有桌面小工具實例。
 
-### 3.9 待辦事項桌面小工具（`ToDoWidgetProvider` / `ToDoWidgetService` / `ToDoWidgetLogic`）
+### 3.9 待辦事項桌面小工具（`ToDoWidgetProvider` / `ToDoWidgetRowBinder` / `ToDoWidgetLogic`）
 - **僅顯示尚未完成任務**：透過 `ToDoWidgetLogic.resolveActiveTasks` 嚴格過濾 `isCompleted = false` 之待辦事項，依 `priority.level` 降冪、`dueDate` 升冪與 `createdAt` 降冪排序，並於頂部膠囊即時顯示待辦總數。
-- **直接勾選完成並連動提醒取消**：點擊任務核取方塊透過 `ToDoWidgetProvider` 發送廣播動作呼叫 `ReminderScheduler.updateToDoCompletionAndSyncReminders`，將任務設為已完成、標記 `SyncStatus.PENDING_UPLOAD` 並自動取消所有尚未觸發的關聯系統鬧鐘；Android 12+（API 31+）採用 `RemoteViews.RemoteCollectionItems` 與共用 `ToDoWidgetRowBinder`，Android 8.0–11（API 26–30）採用 `ToDoWidgetService`（`RemoteViewsService`），確保跨版本零權限或 BAL 例外。
+- **直接勾選完成並連動提醒取消**：點擊任務核取方塊透過 `ToDoWidgetProvider` 發送廣播動作呼叫 `ReminderScheduler.updateToDoCompletionAndSyncReminders`，將任務設為已完成、標記 `SyncStatus.PENDING_UPLOAD` 並自動取消所有尚未觸發的關聯系統鬧鐘；全面採用 Android 12+（`minSdk = 31`）`RemoteViews.RemoteCollectionItems` 與共用 `ToDoWidgetRowBinder`，確保零 BAL 例外與簡潔架構。
 - **截止日期緊急度標示**：依據本地時區午夜邊界計算 `DueDateUrgency`（`OVERDUE` 已逾期、`TODAY` 今天到期、`TOMORROW` 明天到期、`UPCOMING` 未來日期、`NONE` 未設截止日），套用對應提醒字色。
 - **高、中、低優先級識別與深度連結**：每筆任務同時顯示左側優先級色條（紅／橘／綠）與「`高優先`／`中優先`／`低優先`」高對比色彩徽章（支援淺／深色主題）；點擊頂部「+ 新增」直接進入 `TaskRoute` 並開啟 `AddToDoDialog`，點擊任務內容列直接進入 `TaskDetailRoute`。
 - **即時自動重新整理**：`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `ToDoWidgetUpdater.notifyDataChanged`，確保主應用異動與雲端拉回後即時刷新桌面小工具。

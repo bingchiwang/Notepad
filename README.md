@@ -4,7 +4,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0%2B-purple.svg)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-blue.svg)](https://developer.android.com/jetpack/compose)
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
-[![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
+[![Min SDK](https://img.shields.io/badge/Min%20SDK-31%20(Android%2012)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
 [![Unit Tests](https://img.shields.io/badge/Unit%20Tests-98%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -27,7 +27,7 @@
 
 ## 🌟 專案概述 (Overview)
 
-**Lunar To-Do & Notepad App** 是一款專為日常高效生產力設計的現代化 Android 應用程式（支援 **Android 8.0 API 26** 以上裝置）。本應用將六大核心工作流整合於單一清爽介面中：
+**Lunar To-Do & Notepad App** 是一款專為日常高效生產力設計的現代化 Android 應用程式（支援 **Android 12 API 31** 以上裝置）。本應用將六大核心工作流整合於單一清爽介面中：
 
 1. **📝 記事管理與分類全文搜尋**：支援草稿自動保存、釘選置頂、防重複分類管理與標題／內文即時搜尋。
 2. **📋 雙軌待辦事項與多日提醒**：將「待做任務（含高／中／低優先級與截止日）」與「自由跨年月多日提醒（精確系統鬧鐘推播）」分軌管理並支援完成連動取消。
@@ -277,7 +277,7 @@ com.example.notepad/
 ### 系統環境需求
 - **IDE**：Android Studio Ladybug (2024.2.1) 或更新版本
 - **JDK**：JDK 17（Android Studio 內建 JBR 21 亦完全相容）
-- **Android SDK**：`minSdk = 26`（Android 8.0 Oreo）~ `compileSdk = 37`
+- **Android SDK**：`minSdk = 31`（Android 12）~ `compileSdk = 37`
 
 ### 常用 Gradle 指令
 ```bash
