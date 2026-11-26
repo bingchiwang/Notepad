@@ -4,6 +4,17 @@
 
 ---
 
+## [1.14.0] - 2026-11-26
+### 新增與優化 (Added / Improved)
+- **小工具月曆日期字體大小調整（`CalendarWidgetLogic` / `CalendarWidgetPreferences` / `CalendarWidgetProvider` / `CalendarWidgetConfigureActivity`）**：
+  - 於 [CalendarWidgetLogic.kt](app/src/main/java/com/example/notepad/widget/CalendarWidgetLogic.kt) 新增 `CalendarWidgetDateFontSize` 四段字級列舉（`小 9.5sp`、`標準 11sp`、`大 13.5sp`、`特大 16sp`，並同步縮放農曆與節慶副標 `7sp`～`10sp`），透過 `CalendarWidgetPreferences` 持久化並由 [CalendarWidgetProvider.kt](app/src/main/java/com/example/notepad/widget/CalendarWidgetProvider.kt) 動態套用。
+  - 支援從 **App 設定中心（「月曆與桌面小工具」分類）**、**長按桌面小工具設定** 或 **直接點擊小工具左上角月曆圖示** 開啟 [CalendarWidgetConfigureActivity.kt](app/src/main/java/com/example/notepad/widget/CalendarWidgetConfigureActivity.kt) 即時預覽並調整日期字體大小。
+- **App 設定中心重構為摺疊式分類選單（`AppSettingsDialog` / `AppNavigation`）**：
+  - 重構 [AppSettingsDialog.kt](app/src/main/java/com/example/notepad/ui/components/AppSettingsDialog.kt)，將所有設定歸納為五大摺疊分類（**「主題與按鍵外觀」**、**「月曆與桌面小工具」**、**「全局字體大小」**、**「提醒與系統通知」**、**「Google 雲端硬碟同步」**），預設收合並顯示目前設定摘要，點擊分類項目後才展開細部設定。
+- **測試覆蓋擴充**：擴充 [CalendarWidgetLogicTest](app/src/test/java/com/example/notepad/widget/CalendarWidgetLogicTest.kt)（9 項），全專案單元測試達 **95 項**（20 個測試套件，0 失敗、0 略過、0 Lint 錯誤）。
+
+---
+
 ## [1.13.0] - 2026-11-26
 ### 優化與調整 (Changed / Improved)
 - **月曆標題、農曆台灣節慶、週日紅字與桌面小工具月曆同步改版（`LunarCalendarEngine` / `CalendarScreen` / `CalendarWidgetProvider`）**：

@@ -102,6 +102,48 @@ class CalendarWidgetPreferences(context: Context) {
     }
 
     /**
+     * 讀取全域預設的小工具月曆日期字體大小（供 App 設定頁與新增小工具時讀取）
+     */
+    fun getGlobalDateFontSize(): CalendarWidgetDateFontSize {
+        val raw = prefs.getString(KEY_DEFAULT_DATE_FONT_SIZE, CalendarWidgetDateFontSize.MEDIUM.name)
+        return CalendarWidgetDateFontSize.fromString(raw)
+    }
+
+    /**
+     * 讀取指定月曆小工具實例的日期字體大小（未個別設定時自動回退至全域預設值）
+     */
+    fun getDateFontSize(appWidgetId: Int): CalendarWidgetDateFontSize {
+        val instanceRaw = prefs.getString(fontSizeKey(appWidgetId), null)
+        return if (instanceRaw != null) {
+            CalendarWidgetDateFontSize.fromString(instanceRaw)
+        } else {
+            getGlobalDateFontSize()
+        }
+    }
+
+    /**
+     * 儲存指定月曆小工具實例的日期字體大小，並同步更新全域預設字級
+     */
+    fun setDateFontSize(appWidgetId: Int, fontSize: CalendarWidgetDateFontSize) {
+        prefs.edit()
+            .putString(fontSizeKey(appWidgetId), fontSize.name)
+            .putString(KEY_DEFAULT_DATE_FONT_SIZE, fontSize.name)
+            .apply()
+    }
+
+    /**
+     * 儲存全域預設日期字體大小，並同步套用至目前桌面上所有月曆小工具實例
+     */
+    fun setGlobalDateFontSize(appWidgetIds: IntArray, fontSize: CalendarWidgetDateFontSize) {
+        val editor = prefs.edit()
+            .putString(KEY_DEFAULT_DATE_FONT_SIZE, fontSize.name)
+        appWidgetIds.forEach { appWidgetId ->
+            editor.putString(fontSizeKey(appWidgetId), fontSize.name)
+        }
+        editor.apply()
+    }
+
+    /**
      * 移除已從桌面刪除之月曆小工具設定資料
      */
     fun removeWidget(appWidgetId: Int) {
@@ -109,6 +151,7 @@ class CalendarWidgetPreferences(context: Context) {
             .remove(yearKey(appWidgetId))
             .remove(monthKey(appWidgetId))
             .remove(lunarKey(appWidgetId))
+            .remove(fontSizeKey(appWidgetId))
             .apply()
     }
 
@@ -118,9 +161,12 @@ class CalendarWidgetPreferences(context: Context) {
 
     private fun lunarKey(appWidgetId: Int): String = "cal_lunar_$appWidgetId"
 
+    private fun fontSizeKey(appWidgetId: Int): String = "cal_font_size_$appWidgetId"
+
     companion object {
         private const val PREFS_NAME = "calendar_widget_prefs"
         private const val UNSET_VALUE = -1
+        private const val KEY_DEFAULT_DATE_FONT_SIZE = "cal_default_date_font_size"
         const val DEFAULT_SHOW_LUNAR = true
     }
 }

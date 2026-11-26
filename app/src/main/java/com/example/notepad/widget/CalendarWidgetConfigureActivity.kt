@@ -13,11 +13,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,7 +41,7 @@ import com.example.notepad.ui.theme.NotepadTheme
 import kotlinx.coroutines.launch
 
 /**
- * 月曆桌面小工具設定頁面（支援首次加入桌面及從系統長按設定重新配置農曆日期顯示選項）
+ * 月曆桌面小工具設定頁面（支援首次加入桌面、長按設定或點擊小工具左上角圖示配置日期字體大小與農曆顯示）
  */
 class CalendarWidgetConfigureActivity : ComponentActivity() {
 
@@ -62,6 +65,7 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
         val themePreferences = ThemePreferences(this)
         val widgetPrefs = CalendarWidgetPreferences(this)
         val initialShowLunar = widgetPrefs.getShowLunarDate(appWidgetId)
+        val initialDateFontSize = widgetPrefs.getDateFontSize(appWidgetId)
 
         setContent {
             val personalization by themePreferences.personalizationFlow.collectAsState(
@@ -69,6 +73,7 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
             )
             val useDarkTheme = personalization.themeMode.shouldUseDarkTheme(isSystemInDarkTheme())
             var selectedShowLunar by remember { mutableStateOf(initialShowLunar) }
+            var selectedDateFontSize by remember { mutableStateOf(initialDateFontSize) }
 
             LaunchedEffect(useDarkTheme) {
                 enableEdgeToEdge(
@@ -83,9 +88,13 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
                 )
             }
 
-            fun saveAndApply(showLunar: Boolean) {
+            fun saveAndApply(
+                showLunar: Boolean,
+                dateFontSize: CalendarWidgetDateFontSize
+            ) {
                 lifecycleScope.launch {
                     widgetPrefs.setShowLunarDate(appWidgetId, showLunar)
+                    widgetPrefs.setDateFontSize(appWidgetId, dateFontSize)
                     val appWidgetManager = AppWidgetManager.getInstance(this@CalendarWidgetConfigureActivity)
                     if (appWidgetManager != null) {
                         CalendarWidgetProvider.updateWidgetsInternal(
@@ -98,9 +107,10 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
                         putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
                     }
                     setResult(RESULT_OK, resultValue)
+                    val lunarSummary = if (showLunar) "顯示農曆" else "僅國曆"
                     showFeedback(
                         this@CalendarWidgetConfigureActivity,
-                        if (showLunar) "月曆小工具已啟用農曆日期顯示" else "月曆小工具已設為僅顯示國曆日期"
+                        "已套用月曆小工具設定（日期字體：${dateFontSize.label}・$lunarSummary）"
                     )
                     finish()
                 }
@@ -121,7 +131,7 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
                             .navigationBarsPadding()
                             .displayCutoutPadding()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalArrangement = Arrangement.spacedBy(14.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -146,83 +156,151 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
                             )
                         }
 
-                        Text(
-                            text = "日期均採「置中靠上」排版；您可選擇是否在格內同時顯示農曆日期、節慶與二十四節氣（亦可在桌面點擊頂部「農曆」按鈕隨時切換）。",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        // 即時預覽格子效果（置中靠上 + 農曆切換對比）
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
-                            )
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "格子排版即時預覽",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary
+                            Text(
+                                text = "可自由調整小工具月曆的「日期字體大小」及是否顯示「台灣農曆、節慶與二十四節氣」。",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            // 即時預覽格子效果（日期字級縮放 + 農曆切換對比）
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                                 )
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    PreviewDayCellCard(
-                                        modifier = Modifier.weight(1f),
-                                        dayNumber = "15",
-                                        lunarText = if (selectedShowLunar) "初六" else null,
-                                        isToday = false,
-                                        isSunday = true,
-                                        sampleEventTitle = "週日家庭聚餐"
+                                    Text(
+                                        text = "格子排版與字級即時預覽（目前：${selectedDateFontSize.label}）",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
                                     )
-                                    PreviewDayCellCard(
-                                        modifier = Modifier.weight(1f),
-                                        dayNumber = "16",
-                                        lunarText = if (selectedShowLunar) "初七" else null,
-                                        isToday = true,
-                                        sampleEventTitle = "完成企劃書"
-                                    )
-                                    PreviewDayCellCard(
-                                        modifier = Modifier.weight(1f),
-                                        dayNumber = "17",
-                                        lunarText = if (selectedShowLunar) "中秋節" else null,
-                                        isToday = false,
-                                        isLunarHighlight = true,
-                                        sampleEventTitle = "讀書筆記"
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        PreviewDayCellCard(
+                                            modifier = Modifier.weight(1f),
+                                            dayNumber = "15",
+                                            lunarText = if (selectedShowLunar) "初六" else null,
+                                            dateFontSize = selectedDateFontSize,
+                                            isToday = false,
+                                            isSunday = true,
+                                            sampleEventTitle = "週日家庭聚餐"
+                                        )
+                                        PreviewDayCellCard(
+                                            modifier = Modifier.weight(1f),
+                                            dayNumber = "16",
+                                            lunarText = if (selectedShowLunar) "初七" else null,
+                                            dateFontSize = selectedDateFontSize,
+                                            isToday = true,
+                                            sampleEventTitle = "完成企劃書"
+                                        )
+                                        PreviewDayCellCard(
+                                            modifier = Modifier.weight(1f),
+                                            dayNumber = "17",
+                                            lunarText = if (selectedShowLunar) "中秋節" else null,
+                                            dateFontSize = selectedDateFontSize,
+                                            isToday = false,
+                                            isLunarHighlight = true,
+                                            sampleEventTitle = "讀書筆記"
+                                        )
+                                    }
+                                    HorizontalDivider(
+                                        thickness = 1.dp,
+                                        color = MaterialTheme.colorScheme.outlineVariant
                                     )
                                 }
-                                HorizontalDivider(
-                                    thickness = 1.dp,
-                                    color = MaterialTheme.colorScheme.outlineVariant
-                                )
                             }
+
+                            // 日期字體大小設定區塊
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.FormatSize,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = "日期字體大小",
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CalendarWidgetDateFontSize.entries.forEach { sizeOption ->
+                                            val isSelected = sizeOption == selectedDateFontSize
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = { selectedDateFontSize = sizeOption },
+                                                label = {
+                                                    Text(
+                                                        text = sizeOption.label,
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        textAlign = TextAlign.Center,
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                    )
+                                                },
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = "國曆日期：${selectedDateFontSize.dayNumberSp}sp  ｜  農曆副標：${selectedDateFontSize.lunarSp}sp",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            LunarOptionCard(
+                                title = "顯示國曆與農曆日期（推薦）",
+                                subtitle = "在置中靠上的國曆日號下方顯示農曆初一～三十、台灣節慶與節氣",
+                                isSelected = selectedShowLunar,
+                                onClick = { selectedShowLunar = true }
+                            )
+
+                            LunarOptionCard(
+                                title = "僅顯示國曆日期",
+                                subtitle = "隱藏農曆文字，保留較大的記事與待辦事項文字呈現空間",
+                                isSelected = !selectedShowLunar,
+                                onClick = { selectedShowLunar = false }
+                            )
                         }
 
-                        LunarOptionCard(
-                            title = "顯示國曆與農曆日期（推薦）",
-                            subtitle = "在置中靠上的國曆日號下方顯示農曆初一～三十、傳統節慶與節氣",
-                            isSelected = selectedShowLunar,
-                            onClick = { selectedShowLunar = true }
-                        )
-
-                        LunarOptionCard(
-                            title = "僅顯示國曆日期",
-                            subtitle = "隱藏農曆文字，保留較大的記事與待辦事項文字呈現空間",
-                            isSelected = !selectedShowLunar,
-                            onClick = { selectedShowLunar = false }
-                        )
-
-                        Spacer(modifier = Modifier.weight(1f))
-
                         Button(
-                            onClick = { saveAndApply(selectedShowLunar) },
+                            onClick = { saveAndApply(selectedShowLunar, selectedDateFontSize) },
                             modifier = Modifier.fillMaxWidth(),
                             colors = AppButtonThemeDefaults.filledColors(),
                             border = AppButtonThemeDefaults.filledBorder(),
@@ -245,6 +323,7 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
 private fun PreviewDayCellCard(
     dayNumber: String,
     lunarText: String?,
+    dateFontSize: CalendarWidgetDateFontSize,
     isToday: Boolean,
     sampleEventTitle: String,
     modifier: Modifier = Modifier,
@@ -252,7 +331,7 @@ private fun PreviewDayCellCard(
     isSunday: Boolean = false
 ) {
     Surface(
-        modifier = modifier.height(82.dp),
+        modifier = modifier.height(90.dp),
         shape = RoundedCornerShape(10.dp),
         color = if (isToday) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
@@ -274,7 +353,7 @@ private fun PreviewDayCellCard(
         ) {
             Text(
                 text = dayNumber,
-                fontSize = 13.sp,
+                fontSize = dateFontSize.dayNumberSp.sp,
                 fontWeight = FontWeight.Bold,
                 color = when {
                     isSunday -> Color(0xFFD32F2F)
@@ -286,7 +365,7 @@ private fun PreviewDayCellCard(
             if (lunarText != null) {
                 Text(
                     text = lunarText,
-                    fontSize = 10.sp,
+                    fontSize = dateFontSize.lunarSp.sp,
                     color = if (isLunarHighlight) {
                         MaterialTheme.colorScheme.primary
                     } else {

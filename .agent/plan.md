@@ -304,6 +304,17 @@
   - App 月曆與小工具月曆之週日紅字、台灣節慶、動態週數與每週橫線區隔一致生效
   - 全專案 94 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
+### Task_27_WidgetDateFontSizeAndCategorizedSettings: 小工具月曆日期字體大小四段調整與 App 設定中心摺疊式分類選單重構。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 於 `CalendarWidgetLogic` 新增 `CalendarWidgetDateFontSize`（`小 9.5sp`、`標準 11sp`、`大 13.5sp`、`特大 16sp`，農曆副標同步縮放 `7sp`～`10sp`），整合 `CalendarWidgetPreferences`、`CalendarWidgetProvider`（`setTextViewTextSize` + 左上角圖示直達設定）與 `CalendarWidgetConfigureActivity` 即時預覽。
+  - 重構 `AppSettingsDialog` 為五大摺疊分類（「主題與按鍵外觀」、「月曆與桌面小工具」、「全局字體大小」、「提醒與系統通知」、「Google 雲端硬碟同步」），預設收合顯示摘要、點擊分類後展開設定，並於「月曆與桌面小工具」分類內建小工具月曆日期字體大小調整。
+  - 擴充 `CalendarWidgetLogicTest`（共 9 項），全專案達 **20 套件、95 項單元測試** 全部通過且 0 Lint 錯誤。
+- **驗收標準 (Acceptance Criteria):**
+  - 小工具月曆日期字體可於設定中心與小工具設定頁自由調整大小並即時生效
+  - App 設定中心完成分類摺疊設計，點擊分類後才展開對應設定項目
+  - 全專案 95 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

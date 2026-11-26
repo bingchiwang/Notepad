@@ -57,6 +57,9 @@ import com.example.notepad.ui.screens.PomodoroScreen
 import com.example.notepad.ui.screens.ScheduleScreen
 import com.example.notepad.ui.screens.TaskDetailScreen
 import com.example.notepad.ui.screens.TaskScreen
+import com.example.notepad.widget.CalendarWidgetDateFontSize
+import com.example.notepad.widget.CalendarWidgetPreferences
+import com.example.notepad.widget.CalendarWidgetUpdater
 import com.example.notepad.widget.WidgetDeepLink
 import kotlinx.coroutines.launch
 
@@ -498,10 +501,20 @@ fun AppNavigation(
     }
 
     if (showSettingsDialog) {
+        var widgetDateFontSize by remember {
+            mutableStateOf(CalendarWidgetPreferences(context).getGlobalDateFontSize())
+        }
+
         AppSettingsDialog(
             personalization = personalization,
             notificationsEnabled = notificationsEnabled,
             syncUiState = syncUiState,
+            widgetDateFontSize = widgetDateFontSize,
+            onWidgetDateFontSizeSelected = { fontSize ->
+                widgetDateFontSize = fontSize
+                CalendarWidgetUpdater.updateAllWidgetsDateFontSize(context, fontSize)
+                showFeedback(context, "已調整小工具月曆日期字體為「${fontSize.label}」")
+            },
             onThemeModeSelected = { mode ->
                 updatePersonalization("已切換為${mode.label}") {
                     themePreferences.setThemeMode(mode)
@@ -530,6 +543,11 @@ fun AppNavigation(
                 }
             },
             onResetPersonalization = {
+                widgetDateFontSize = CalendarWidgetDateFontSize.MEDIUM
+                CalendarWidgetUpdater.updateAllWidgetsDateFontSize(
+                    context = context,
+                    fontSize = CalendarWidgetDateFontSize.MEDIUM
+                )
                 updatePersonalization("已重設外觀、月曆樣式與字體大小為預設值") {
                     themePreferences.resetPersonalizationDefaults()
                 }

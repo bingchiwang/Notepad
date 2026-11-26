@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
@@ -132,13 +133,15 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                     defaultTodayMillis = nowMillis
                 )
                 val showLunarDate = preferences.getShowLunarDate(appWidgetId)
+                val dateFontSize = preferences.getDateFontSize(appWidgetId)
                 val resolvedState = CalendarWidgetLogic.resolveMonthGrid(
                     year = displayYear,
                     month = displayMonth,
                     notes = notes,
                     todos = todos,
                     todayMillis = nowMillis,
-                    showLunarDate = showLunarDate
+                    showLunarDate = showLunarDate,
+                    dateFontSize = dateFontSize
                 )
                 val views = buildWidgetRemoteViews(
                     context = context,
@@ -157,6 +160,21 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.widget_calendar)
 
             views.setTextViewText(R.id.widget_cal_month_title, resolved.headerTitle)
+
+            // 點擊左上角月曆圖示 -> 直接開啟該小工具的日期字體大小與農曆顯示設定頁
+            val configIntent = Intent(context, CalendarWidgetConfigureActivity::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_CONFIGURE
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                data = Uri.parse("notepad://widget/calendar/config/$appWidgetId")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val configPendingIntent = PendingIntent.getActivity(
+                context,
+                205_000 + appWidgetId,
+                configIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            views.setOnClickPendingIntent(R.id.widget_cal_config_button, configPendingIntent)
 
             // 左右切換月份與點擊年月標題回到當月
             views.setOnClickPendingIntent(
@@ -253,7 +271,8 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                             context = context,
                             appWidgetId = appWidgetId,
                             cellIndex = cellIndex,
-                            cell = cellState
+                            cell = cellState,
+                            dateFontSize = resolved.dateFontSize
                         )
                         views.addView(weekRowId, cellViews)
                     }
@@ -272,7 +291,8 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             context: Context,
             appWidgetId: Int,
             cellIndex: Int,
-            cell: CalendarDayCellState
+            cell: CalendarDayCellState,
+            dateFontSize: CalendarWidgetDateFontSize
         ): RemoteViews {
             val cellViews = RemoteViews(context.packageName, R.layout.widget_calendar_day_cell)
 
@@ -292,12 +312,17 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             }
             cellViews.setInt(R.id.widget_cal_cell_root, "setBackgroundResource", cellBackgroundRes)
             cellViews.setTextViewText(R.id.widget_cal_day_number, cell.dayOfMonth.toString())
+            cellViews.setTextViewTextSize(
+                R.id.widget_cal_day_number,
+                TypedValue.COMPLEX_UNIT_SP,
+                dateFontSize.dayNumberSp
+            )
             cellViews.setTextColor(
                 R.id.widget_cal_day_number,
                 ContextCompat.getColor(context, dayNumberColorRes)
             )
 
-            // 依設定顯示或隱藏至中靠上的農曆日期／節慶／節氣文字
+            // 依設定顯示或隱藏至中靠上的農曆日期／節慶／節氣文字，並同步套用對應字級
             val lunarText = cell.lunarLabel
             if (lunarText != null) {
                 val lunarColorRes = when {
@@ -307,6 +332,11 @@ class CalendarWidgetProvider : AppWidgetProvider() {
                 }
                 cellViews.setViewVisibility(R.id.widget_cal_lunar_date, View.VISIBLE)
                 cellViews.setTextViewText(R.id.widget_cal_lunar_date, lunarText)
+                cellViews.setTextViewTextSize(
+                    R.id.widget_cal_lunar_date,
+                    TypedValue.COMPLEX_UNIT_SP,
+                    dateFontSize.lunarSp
+                )
                 cellViews.setTextColor(
                     R.id.widget_cal_lunar_date,
                     ContextCompat.getColor(context, lunarColorRes)
@@ -499,6 +529,33 @@ object CalendarWidgetUpdater {
                 appWidgetManager = appWidgetManager,
                 appWidgetIds = appWidgetIds
             )
+        }
+    }
+
+    /**
+     * 更新全域預設小工具月曆日期字體大小，並立即套用刷新桌面所有月曆小工具實例
+     */
+    fun updateAllWidgetsDateFontSize(context: Context, fontSize: CalendarWidgetDateFontSize) {
+        val appContext = context.applicationContext
+        val appWidgetManager = AppWidgetManager.getInstance(appContext)
+        val appWidgetIds = if (appWidgetManager != null) {
+            val componentName = ComponentName(appContext, CalendarWidgetProvider::class.java)
+            appWidgetManager.getAppWidgetIds(componentName)
+        } else {
+            IntArray(0)
+        }
+        CalendarWidgetPreferences(appContext).setGlobalDateFontSize(
+            appWidgetIds = appWidgetIds,
+            fontSize = fontSize
+        )
+        if (appWidgetManager != null && appWidgetIds.isNotEmpty()) {
+            updateScope.launch {
+                CalendarWidgetProvider.updateWidgetsInternal(
+                    context = appContext,
+                    appWidgetManager = appWidgetManager,
+                    appWidgetIds = appWidgetIds
+                )
+            }
         }
     }
 

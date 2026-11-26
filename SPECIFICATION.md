@@ -95,6 +95,7 @@
 6. **智慧合併與最新修改優先衝突解決（`SyncConflictResolver`）**：雙向比對 `updatedAt` 時間戳記（與刪除時間 `deletedAt`），以最新修改時間勝出（Last-Write-Wins）；若離線雙邊修改同一資料且本機於雲端刪除後仍有更新編輯，智慧保留本機修改並復原雲端版本。
 
 ### 3.7 個人化設定管理與 WCAG 防重色演算法（`AppSettingsDialog` / `ColorContrastUtils` / `CalendarThemeResolver`）
+- **摺疊式五大設定分類架構（點擊分類後展開設定）**：`AppSettingsDialog` 將所有設定歸納為五大摺疊分類卡片（`主題與按鍵外觀`、`月曆與桌面小工具`、`全局字體大小`、`提醒與系統通知`、`Google 雲端硬碟同步`），預設全數收合並於標題列下方顯示目前設定摘要，點擊分類後才透過 `AnimatedVisibility` 展開細部選項。
 - **WCAG 2.1 相對明度與對比度公式**：
   - 對任意 RGB 色彩通道進行伽瑪線性化後計算相對明度 $L = 0.2126 R + 0.7152 G + 0.0722 B$，並以 $CR = \frac{\max(L_1, L_2) + 0.05}{\min(L_1, L_2) + 0.05}$ 計算對比度。
   - 當前景文字與背景色之對比度 $CR < 4.5$ 時，`ColorContrastUtils.ensureReadableTextColor` 自動將文字切換為高對比深墨色（`#121316`）或純白色（`#FFFFFF`）；當按鍵底色與卡片表面對比度 $CR < 1.6$ 時，自動啟用細邊框保護（`needsSubtleBorder`）。
@@ -125,7 +126,7 @@
 - **即時聯動刷新**：`ReminderReceiver`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆即時觸發 `TodayScheduleWidgetUpdater.notifyDataChanged`。
 
 ### 3.11 月曆桌面小工具與全小工具圖示系統（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences` / `CalendarWidgetConfigureActivity`）
-- **動態週數、每週橫線區隔與大字體年月標題（同步 App 月曆）**：透過 `CalendarWidgetLogic.resolveMonthGrid` 依當月實際週數動態產生 4～6 週 × 7 天（28／35／42 格，週日為首日）月曆列與放大版 `18sp`「`YYYY年 M月`」標題，星期日標題「日」與星期日日期數字均為紅色，每週之間以橫線區隔（不畫每日獨立方框），今天日期以藍色底色與外框（`widget_cal_today_bg.xml`）標示；格內國曆日號採「置中靠上（`top|center_horizontal`）」對齊，農曆欄位採繁體中文與台灣節慶（含除夕、春節、二二八、兒童節、母親節、端午節、父親節、中元節、教師節、中秋節、國慶日等），並於 App 切換年月或異動資料時即時同步桌面小工具。
+- **動態週數、每週橫線區隔、可調日期字體大小與大字體年月標題（同步 App 月曆）**：透過 `CalendarWidgetLogic.resolveMonthGrid` 依當月實際週數動態產生 4～6 週 × 7 天（28／35／42 格，週日為首日）月曆列與放大版 `18sp`「`YYYY年 M月`」標題，星期日標題「日」與星期日日期數字均為紅色，每週之間以橫線區隔（不畫每日獨立方框），今天日期以藍色底色與外框（`widget_cal_today_bg.xml`）標示；格內國曆日號採「置中靠上（`top|center_horizontal`）」對齊，支援透過 `CalendarWidgetDateFontSize` 調整 **小（`9.5sp`）／標準（`11sp`）／大（`13.5sp`）／特大（`16sp`）** 四段日期字體大小（農曆副標同步縮放 `7sp`～`10sp`，可於 App 設定中心「月曆與桌面小工具」分類、桌面小工具設定頁或點擊小工具左上角月曆圖示即時調整），農曆欄位採繁體中文與台灣節慶，並於 App 切換年月或異動資料時即時同步桌面小工具。
 - **直接顯示圖示＋文字標籤與多筆截斷規則（不使用小圓點）**：
   - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以附帶類型圖示（`ic_widget_cal_event_note` / `ic_widget_cal_event_todo` / `ic_widget_cal_event_todo_done`）之單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
   - 每個日期格最多直接顯示 2 筆事項（`MAX_VISIBLE_EVENTS = 2`）；當同一天超過 2 筆事項時，自動計算剩餘筆數並顯示「`＋N 項`」標籤（例如共 5 筆時顯示前 2 筆及「`＋3 項`」）。
@@ -143,7 +144,7 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **20 個測試類別、94 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **20 個測試類別、95 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（4 項）：驗證繁體中文農曆日期換算、二十四節氣、台灣節慶（含除夕、二二八、母親節、父親節、教師節、國慶日等）與明日判定。
 2. `PriorityAndConvertersTest`（5 項）：驗證優先級權重與 Room 型別轉換器（含 `RecurrenceType`）。
@@ -164,7 +165,7 @@
 17. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
 18. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
 19. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
-20. `CalendarWidgetLogicTest`（8 項）：驗證月曆小工具跨年月份進退位、4／5／6 週動態週數列與週日紅字標記、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、台灣節慶與農曆顯示切換及深度連結解析。
+20. `CalendarWidgetLogicTest`（9 項）：驗證月曆小工具跨年月份進退位、4／5／6 週動態週數列與週日紅字標記、四段日期字體大小解析與傳遞、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、台灣節慶與農曆顯示切換及深度連結解析。
 
 ---
 

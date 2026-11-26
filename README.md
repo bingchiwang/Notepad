@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-94%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-95%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -59,7 +59,8 @@
   - **跨年月自由多選**：內建 `MonthNavigatorHeader` 與 `MonthCalendarGrid`，可跨任意年份與月份勾選多天提醒並設定時／分。
   - **智慧排程與連動取消**：嚴格攔截過去時間（不安排過期通知）；支援全域「通知總開關」（`NotificationPreferences`）；當關聯待辦勾選完成時，自動呼叫 `AlarmManager.cancel` 取消尚未觸發的提醒通知。
 
-### 3. 🎨 個人化設定管理與 WCAG 防重色引擎 (`AppSettingsDialog` / `ColorContrastUtils`)
+### 3. 🎨 摺疊式分類設定中心與 WCAG 防重色引擎 (`AppSettingsDialog` / `ColorContrastUtils`)
+- **五大摺疊分類選單（點擊展開設定）**：將設定歸納為「主題與按鍵外觀」、「月曆與桌面小工具」、「全局字體大小」、「提醒與系統通知」、「Google 雲端硬碟同步」五大分類，預設收合並顯示摘要，點擊分類後展開對應設定。
 - **主題與自訂按鍵配色**：支援淺色、深色、跟隨系統三模式；提供 12 款精選按鍵色票與 `#RRGGBB` 色碼自訂輸入。
 - **6 款月曆視覺樣式（`CalendarStyle`）**：內建「經典簡約」、「水墨東方」、「青翠森境」、「湛藍晴空」、「暖陽暮靄」、「極簡高對比」6 種風格，並可自訂選日強調色。
 - **WCAG 2.1 自動文字對比保護**：當使用者選擇與文字顏色相近或一致的按鍵／月曆底色（如純白、亮黃、珊瑚紅或曜石黑）時，`ColorContrastUtils` 與 `CalendarThemeResolver` 會即時計算相對明度與對比度（$\ge 4.5:1$），自動將文字、圖示、節慶紅字或節氣綠字切換為高對比深墨色（`#121316`）或純白色（`#FFFFFF`），並為近底色按鍵補上細邊框。
@@ -93,7 +94,7 @@
 - **即將到來的提醒**：列出尚未觸發且未過期的最近提醒，標示「今天」、「明天」或跨日時間並可一鍵直達提醒管理頁面。
 
 ### 9. 📆 月曆桌面小工具 (`CalendarWidgetProvider` / `CalendarWidgetConfigureActivity` / `CalendarWidgetLogic`)
-- **完整月份、日期置中靠上與可選農曆日期**：顯示月曆圖示、完整年月標題、星期列與 6 週 × 7 天網格；格內日期採置中靠上對齊，今天以醒目藍色底與藍色外框標示，並支援點擊頂部「`農曆`」按鈕一鍵切換或於配置頁選擇是否顯示農曆日期、節慶與二十四節氣。
+- **動態週數、每週橫線區隔與可調日期字體大小**：顯示 `18sp` 放大年月標題、週日紅字星期列與依當月實際週數（4～6 週）動態增減之週次列（每週以橫線區隔）；支援調整 **小／標準／大／特大** 四段日期字體大小（可於 App 設定中心、長按小工具設定或點擊小工具左上角圖示即時調整），並支援一鍵切換台灣農曆、節慶與二十四節氣。
 - **格內直接顯示圖示＋文字與 `＋N 項` 摺疊（不使用小圓點）**：有記事或待辦事項的日期直接在格子內顯示附帶專屬小圖示的單行省略文字，並以暖琥珀色與湛藍色底區分記事與待辦；每格最多顯示 2 筆，超過 2 筆時自動顯示「`＋3 項`」等剩餘筆數標籤。
 - **五維度直覺點擊互動與小工具選單預覽圖示**：點擊日期格開啟該日記事與待辦清單、點擊記事進入編輯頁、點擊待辦查看或修改詳情、點擊左右箭頭切換月份、點擊「`+ 新增`」快速選擇建立該日記事或待辦；四大桌面小工具均配備專屬 Launcher 選單圖示與預覽插圖。
 
@@ -225,7 +226,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **20 個單元測試套件、共 94 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **20 個單元測試套件、共 95 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -247,7 +248,7 @@ com.example.notepad/
 | `QuickNoteWidgetLogicTest` | 7 | 記事小工具分類編解碼、釘選與更新時間排序、分類刪除退回、空白標題／多行摘要格式化與深度連結解析 |
 | `ToDoWidgetLogicTest` | 5 | 待辦小工具未完成過濾、優先級與截止日排序、徽章標籤格式、逾期／今日／明日判別與深度連結解析 |
 | `TodayScheduleWidgetLogicTest` | 5 | 今日行程小工具今日到期待辦、綜合完成進度計算、即將到來提醒排序與格式及深度連結解析 |
-| `CalendarWidgetLogicTest` | 8 | 月曆小工具跨年月份切換、4／5／6 週動態週數與週日標記、記事與待辦歸類、超過 2 筆顯示 `＋3 項`、農曆顯示切換與深度連結解析 |
+| `CalendarWidgetLogicTest` | 9 | 月曆小工具跨年月份切換、4／5／6 週動態週數與週日標記、四段日期字體大小解析與傳遞、記事與待辦歸類、超過 2 筆顯示 `＋3 項`、台灣節慶農曆切換與深度連結解析 |
 | `ExampleUnitTest` | 1 | 基礎 JUnit 測試環境驗證 |
 
 ---
@@ -280,7 +281,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 94 項單元測試
+# 1. 執行全部 95 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

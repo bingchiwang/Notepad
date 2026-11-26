@@ -260,4 +260,39 @@ class CalendarWidgetLogicTest {
         )
         assertNull(invalidDate)
     }
+
+    @Test
+    fun `小工具月曆日期字體大小支援四段縮放解析與網格狀態傳遞`() {
+        assertEquals(CalendarWidgetDateFontSize.MEDIUM, CalendarWidgetDateFontSize.fromString(null))
+        assertEquals(CalendarWidgetDateFontSize.MEDIUM, CalendarWidgetDateFontSize.fromString("  "))
+        assertEquals(CalendarWidgetDateFontSize.MEDIUM, CalendarWidgetDateFontSize.fromString("UNKNOWN"))
+        assertEquals(CalendarWidgetDateFontSize.SMALL, CalendarWidgetDateFontSize.fromString("small"))
+        assertEquals(CalendarWidgetDateFontSize.LARGE, CalendarWidgetDateFontSize.fromString("LARGE"))
+        assertEquals(CalendarWidgetDateFontSize.EXTRA_LARGE, CalendarWidgetDateFontSize.fromString(" extra_large "))
+
+        assertTrue(CalendarWidgetDateFontSize.SMALL.dayNumberSp < CalendarWidgetDateFontSize.MEDIUM.dayNumberSp)
+        assertTrue(CalendarWidgetDateFontSize.MEDIUM.dayNumberSp < CalendarWidgetDateFontSize.LARGE.dayNumberSp)
+        assertTrue(CalendarWidgetDateFontSize.LARGE.dayNumberSp < CalendarWidgetDateFontSize.EXTRA_LARGE.dayNumberSp)
+        assertTrue(CalendarWidgetDateFontSize.SMALL.lunarSp < CalendarWidgetDateFontSize.EXTRA_LARGE.lunarSp)
+
+        val defaultState = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 11,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 11, 26)
+        )
+        assertEquals(CalendarWidgetDateFontSize.MEDIUM, defaultState.dateFontSize)
+
+        val extraLargeState = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 11,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 11, 26),
+            dateFontSize = CalendarWidgetDateFontSize.EXTRA_LARGE
+        )
+        assertEquals(CalendarWidgetDateFontSize.EXTRA_LARGE, extraLargeState.dateFontSize)
+        assertEquals(16f, extraLargeState.dateFontSize.dayNumberSp, 0.01f)
+    }
 }

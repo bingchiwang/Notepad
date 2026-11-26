@@ -15,6 +15,30 @@ enum class CalendarEventType {
 }
 
 /**
+ * 月曆桌面小工具日期字體大小選項（同步調整國曆日號與農曆／節慶副標字級）
+ */
+enum class CalendarWidgetDateFontSize(
+    val label: String,
+    val dayNumberSp: Float,
+    val lunarSp: Float
+) {
+    SMALL(label = "小", dayNumberSp = 9.5f, lunarSp = 7f),
+    MEDIUM(label = "標準", dayNumberSp = 11f, lunarSp = 8f),
+    LARGE(label = "大", dayNumberSp = 13.5f, lunarSp = 9f),
+    EXTRA_LARGE(label = "特大", dayNumberSp = 16f, lunarSp = 10f);
+
+    companion object {
+        /**
+         * 依儲存字串解析小工具日期字體大小，無效或空白時預設為 [MEDIUM]
+         */
+        fun fromString(value: String?): CalendarWidgetDateFontSize {
+            if (value.isNullOrBlank()) return MEDIUM
+            return entries.find { it.name.equals(value.trim(), ignoreCase = true) } ?: MEDIUM
+        }
+    }
+}
+
+/**
  * 月曆格子內直接顯示的單筆事項摘要
  */
 data class CalendarDayEvent(
@@ -51,7 +75,8 @@ data class ResolvedCalendarWidgetState(
     val quickAddDefaultDateMillis: Long,
     val showLunarDate: Boolean,
     val cells: List<CalendarDayCellState>,
-    val weekCount: Int = (cells.size / CalendarWidgetLogic.DAYS_PER_WEEK).coerceAtLeast(1)
+    val weekCount: Int = (cells.size / CalendarWidgetLogic.DAYS_PER_WEEK).coerceAtLeast(1),
+    val dateFontSize: CalendarWidgetDateFontSize = CalendarWidgetDateFontSize.MEDIUM
 )
 
 /**
@@ -117,6 +142,7 @@ object CalendarWidgetLogic {
         todos: List<ToDo>,
         todayMillis: Long = System.currentTimeMillis(),
         showLunarDate: Boolean = false,
+        dateFontSize: CalendarWidgetDateFontSize = CalendarWidgetDateFontSize.MEDIUM,
         dateNormalizer: (Long) -> Long = ToDoWidgetLogic::normalizeToLocalMidnight,
         lunarLabelProvider: (Long) -> Pair<String, Boolean> = ::resolveLunarLabel
     ): ResolvedCalendarWidgetState {
@@ -196,7 +222,8 @@ object CalendarWidgetLogic {
             quickAddDefaultDateMillis = quickAddDefaultDateMillis,
             showLunarDate = showLunarDate,
             cells = cells,
-            weekCount = weekCount
+            weekCount = weekCount,
+            dateFontSize = dateFontSize
         )
     }
 

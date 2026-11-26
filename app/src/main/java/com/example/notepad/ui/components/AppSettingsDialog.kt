@@ -6,6 +6,11 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,11 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Notifications
@@ -38,8 +46,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -56,15 +67,28 @@ import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.theme.CalendarThemeResolver
 import com.example.notepad.ui.theme.ColorContrastUtils
 import com.example.notepad.ui.theme.LocalCustomButtonColors
+import com.example.notepad.widget.CalendarWidgetDateFontSize
 
 /**
- * 個人化設定管理中心對話框
+ * 設定管理中心的五大摺疊分類列舉（預設全數收合，點擊分類項目後才展開對應設定）
+ */
+private enum class SettingsCategory {
+    THEME_AND_BUTTON,
+    CALENDAR_AND_WIDGET,
+    FONT_SCALE,
+    NOTIFICATIONS,
+    CLOUD_SYNC
+}
+
+/**
+ * 個人化設定管理中心對話框（採用分類摺疊架構，點擊分類後展開設定）
  *
- * 整合四大核心管理模組：
- * 1. 主題設定（淺／深／系統模式、自訂按鍵顏色、自訂月曆樣式與全域文字高對比自動防重色）
- * 2. 字體大小調整（即時全局縮放與預覽）
- * 3. 通知開關與 Android 8.0+ / 13+ 權限狀態檢查
- * 4. 雲端同步狀態檢視、一鍵同步與連線設定入口
+ * 整合五大分類模組：
+ * 1. 主題與按鍵外觀（淺／深／系統模式、自訂按鍵顏色與全域文字高對比自動防重色）
+ * 2. 月曆與桌面小工具（小工具月曆日期字體大小、App 月曆視覺樣式與選取底色）
+ * 3. 全局字體大小（即時全局縮放與預覽）
+ * 4. 提醒與系統通知（通知總開關與 Android 8.0+ / 13+ 權限狀態檢查）
+ * 5. Google 雲端硬碟同步（連線狀態檢視、一鍵同步與連線設定入口）
  */
 @Composable
 fun AppSettingsDialog(
@@ -80,12 +104,21 @@ fun AppSettingsDialog(
     onNotificationsToggled: (Boolean) -> Unit,
     onSyncNow: () -> Unit,
     onOpenCloudSyncSettings: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    widgetDateFontSize: CalendarWidgetDateFontSize = CalendarWidgetDateFontSize.MEDIUM,
+    onWidgetDateFontSizeSelected: (CalendarWidgetDateFontSize) -> Unit = {}
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var hasPermission by remember {
         mutableStateOf(ReminderScheduler.hasNotificationPermission(context))
+    }
+
+    // 預設所有分類皆為收合狀態（null），使用者點擊任一分類後才展開設定內容
+    var expandedCategory by remember { mutableStateOf<SettingsCategory?>(null) }
+
+    fun toggleCategory(category: SettingsCategory) {
+        expandedCategory = if (expandedCategory == category) null else category
     }
 
     // 自訂 Hex 色碼輸入狀態
@@ -139,7 +172,39 @@ fun AppSettingsDialog(
     val hasAnyCustomStyle = personalization.buttonColorLong != null ||
         personalization.calendarStyle != CalendarStyle.CLASSIC ||
         personalization.calendarAccentColorLong != null ||
-        personalization.fontScale != AppFontScale.MEDIUM
+        personalization.fontScale != AppFontScale.MEDIUM ||
+        widgetDateFontSize != CalendarWidgetDateFontSize.MEDIUM
+
+    // 各分類收合時的目前設定摘要文字
+    val themeSummary = buildString {
+        append(personalization.themeMode.label)
+        append("・")
+        if (personalization.buttonColorLong != null) {
+            append("自訂按鍵色 (${ColorContrastUtils.formatHexColor(personalization.buttonColorLong)})")
+        } else {
+            append("預設按鍵色")
+        }
+    }
+    val calendarAndWidgetSummary =
+        "小工具字體：${widgetDateFontSize.label}・月曆：${personalization.calendarStyle.label}"
+    val fontScaleSummary = "目前比例：${personalization.fontScale.label}"
+    val notificationSummary = when {
+        !notificationsEnabled -> "已關閉提醒通知"
+        !hasPermission -> "已開啟（⚠️ 尚未授與系統通知權限）"
+        else -> "已開啟・系統通知權限已就緒"
+    }
+    val cloudSyncSummary = when {
+        syncUiState.isSyncing -> "正在同步資料..."
+        syncUiState.isCloudConfigured -> {
+            val pendingInfo = if (syncUiState.pendingCount > 0) {
+                "待上傳 ${syncUiState.pendingCount} 筆"
+            } else {
+                "無待同步異動"
+            }
+            "已連結 Google 帳號・$pendingInfo"
+        }
+        else -> "尚未連結 Google 帳號"
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -152,7 +217,7 @@ fun AppSettingsDialog(
                 modifier = Modifier
                     .padding(18.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // 頂部標題與一鍵重設
                 Row(
@@ -160,11 +225,18 @@ fun AppSettingsDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "⚙️ 管理個人化設定",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "⚙️ 設定中心",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "請點選下方分類展開並調整設定",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     if (hasAnyCustomStyle) {
                         TextButton(onClick = onResetPersonalization) {
                             Icon(
@@ -178,337 +250,455 @@ fun AppSettingsDialog(
                     }
                 }
 
-                // === 1. 主題設定（顯示模式 + 按鍵顏色 + 月曆樣式） ===
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "主題與外觀風格（含自動防重色對比保護）",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                Spacer(modifier = Modifier.height(2.dp))
 
-                    // 1A. 淺色 / 深色 / 跟隨系統切換
-                    ThemeMode.entries.forEach { mode ->
-                        val isSelected = mode == personalization.themeMode
-                        val icon = when (mode) {
-                            ThemeMode.LIGHT -> Icons.Default.LightMode
-                            ThemeMode.DARK -> Icons.Default.DarkMode
-                            ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
-                        }
-                        val description = when (mode) {
-                            ThemeMode.LIGHT -> "固定使用明亮舒適的淺色介面"
-                            ThemeMode.DARK -> "固定使用護眼省電的深色介面"
-                            ThemeMode.SYSTEM -> "自動依據手機系統設定切換淺色或深色"
-                        }
-
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable { onThemeModeSelected(mode) },
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                // === 分類 1：主題與按鍵外觀 ===
+                SettingsCategorySection(
+                    icon = Icons.Default.Palette,
+                    title = "主題與按鍵外觀",
+                    summary = themeSummary,
+                    expanded = expandedCategory == SettingsCategory.THEME_AND_BUTTON,
+                    onToggle = { toggleCategory(SettingsCategory.THEME_AND_BUTTON) }
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // 1A. 淺色 / 深色 / 跟隨系統切換
+                        ThemeMode.entries.forEach { mode ->
+                            val isSelected = mode == personalization.themeMode
+                            val icon = when (mode) {
+                                ThemeMode.LIGHT -> Icons.Default.LightMode
+                                ThemeMode.DARK -> Icons.Default.DarkMode
+                                ThemeMode.SYSTEM -> Icons.Default.BrightnessAuto
                             }
-                        ) {
-                            Row(
+                            val description = when (mode) {
+                                ThemeMode.LIGHT -> "固定使用明亮舒適的淺色介面"
+                                ThemeMode.DARK -> "固定使用護眼省電的深色介面"
+                                ThemeMode.SYSTEM -> "自動依據手機系統設定切換淺色或深色"
+                            }
+
+                            Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = mode.label,
-                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = mode.label,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        text = description,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { onThemeModeSelected(mode) },
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
                                 }
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = { onThemeModeSelected(mode) }
-                                )
-                            }
-                        }
-                    }
-
-                    // 1B. 自訂按鍵顏色（含白/黃/黑等對比度實測與 Hex 輸入）
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "自訂按鍵顏色",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                if (personalization.buttonColorLong != null) {
-                                    TextButton(
-                                        onClick = {
-                                            hexInputError = null
-                                            onButtonColorSelected(null)
-                                        },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("恢復主題預設", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
-                            }
-
-                            PresetSwatchRow(
-                                selectedColorLong = personalization.buttonColorLong,
-                                onColorSelected = {
-                                    hexInputError = null
-                                    onButtonColorSelected(it)
-                                }
-                            )
-
-                            // 自訂 Hex 色碼輸入
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedTextField(
-                                    value = hexColorInput,
-                                    onValueChange = {
-                                        hexColorInput = it
-                                        hexInputError = null
-                                    },
-                                    label = { Text("自訂色碼 (#RRGGBB)") },
-                                    placeholder = { Text("#2196F3 或 #FFFFFF") },
-                                    isError = hexInputError != null,
-                                    singleLine = true,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                OutlinedButton(
-                                    onClick = {
-                                        val parsed = ColorContrastUtils.parseHexColorOrNull(hexColorInput)
-                                        if (parsed == null) {
-                                            hexInputError = "格式需為 6 碼十六進位（例如 #FFEB3B）"
-                                            showFeedback(context, hexInputError!!)
-                                        } else {
-                                            hexInputError = null
-                                            onButtonColorSelected(parsed)
-                                        }
-                                    }
-                                ) {
-                                    Text("套用")
-                                }
-                            }
-                            hexInputError?.let { msg ->
-                                Text(
-                                    text = msg,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-
-                            // 即時按鍵與文字反色預覽
-                            val customBtnColors = LocalCustomButtonColors.current
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Button(
-                                    onClick = {
-                                        showFeedback(context, "按鍵對比效果清晰可辨！")
-                                    },
-                                    colors = AppButtonThemeDefaults.filledColors(),
-                                    border = AppButtonThemeDefaults.filledBorder(),
-                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-                                ) {
-                                    Text("按鍵效果預覽", style = MaterialTheme.typography.labelMedium)
-                                }
-                                Text(
-                                    text = if (customBtnColors.contentColor == ColorContrastUtils.DARK_INK) {
-                                        "淺色按鍵已自動搭配深墨文字"
-                                    } else {
-                                        "深色按鍵已自動搭配亮白文字"
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                    }
-
-                    // 1C. 自訂月曆樣式與重點色 + 即時對比預覽
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Text(
-                                text = "自訂月曆樣式",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold
-                            )
-
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                items(CalendarStyle.entries) { style ->
-                                    val selected = style == personalization.calendarStyle
-                                    FilterChip(
-                                        selected = selected,
-                                        onClick = { onCalendarStyleSelected(style) },
-                                        label = { Text(style.label) }
-                                    )
-                                }
-                            }
-                            Text(
-                                text = personalization.calendarStyle.description,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "自訂月曆選取底色（可選）",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                if (personalization.calendarAccentColorLong != null) {
-                                    TextButton(
-                                        onClick = { onCalendarAccentColorSelected(null) },
-                                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("依樣式預設", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
-                            }
-
-                            PresetSwatchRow(
-                                selectedColorLong = personalization.calendarAccentColorLong,
-                                onColorSelected = { onCalendarAccentColorSelected(it) }
-                            )
-
-                            // 迷你月曆即時預覽（驗證節慶紅/星期紅與選日底色不會同色隱形）
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = calendarPreviewPalette.cardBgColor,
-                                border = calendarPreviewPalette.cardBorderColor?.let { BorderStroke(1.dp, it) },
-                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(8.dp),
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = mode.label,
+                                        tint = if (isSelected) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = mode.label,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = description,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    RadioButton(
+                                        selected = isSelected,
+                                        onClick = { onThemeModeSelected(mode) }
+                                    )
+                                }
+                            }
+                        }
+
+                        // 1B. 自訂按鍵顏色（含對比度自動防重色與 Hex 輸入）
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "自訂按鍵顏色",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    if (personalization.buttonColorLong != null) {
+                                        TextButton(
+                                            onClick = {
+                                                hexInputError = null
+                                                onButtonColorSelected(null)
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                        ) {
+                                            Text("恢復主題預設", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
+
+                                PresetSwatchRow(
+                                    selectedColorLong = personalization.buttonColorLong,
+                                    onColorSelected = {
+                                        hexInputError = null
+                                        onButtonColorSelected(it)
+                                    }
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // 預覽 A：今日／未選節慶格
-                                    Box(
+                                    OutlinedTextField(
+                                        value = hexColorInput,
+                                        onValueChange = {
+                                            hexColorInput = it
+                                            hexInputError = null
+                                        },
+                                        label = { Text("自訂色碼 (#RRGGBB)") },
+                                        placeholder = { Text("#2196F3 或 #FFFFFF") },
+                                        isError = hexInputError != null,
+                                        singleLine = true,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    OutlinedButton(
+                                        onClick = {
+                                            val parsed = ColorContrastUtils.parseHexColorOrNull(hexColorInput)
+                                            if (parsed == null) {
+                                                hexInputError = "格式需為 6 碼十六進位（例如 #FFEB3B）"
+                                                showFeedback(context, hexInputError!!)
+                                            } else {
+                                                hexInputError = null
+                                                onButtonColorSelected(parsed)
+                                            }
+                                        }
+                                    ) {
+                                        Text("套用")
+                                    }
+                                }
+                                hexInputError?.let { msg ->
+                                    Text(
+                                        text = msg,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+
+                                val customBtnColors = LocalCustomButtonColors.current
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            showFeedback(context, "按鍵對比效果清晰可辨！")
+                                        },
+                                        colors = AppButtonThemeDefaults.filledColors(),
+                                        border = AppButtonThemeDefaults.filledBorder(),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                    ) {
+                                        Text("按鍵效果預覽", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                    Text(
+                                        text = if (customBtnColors.contentColor == ColorContrastUtils.DARK_INK) {
+                                            "淺色按鍵已自動搭配深墨文字"
+                                        } else {
+                                            "深色按鍵已自動搭配亮白文字"
+                                        },
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // === 分類 2：月曆與桌面小工具（含小工具月曆日期字體大小調整） ===
+                SettingsCategorySection(
+                    icon = Icons.Default.CalendarMonth,
+                    title = "月曆與桌面小工具",
+                    summary = calendarAndWidgetSummary,
+                    expanded = expandedCategory == SettingsCategory.CALENDAR_AND_WIDGET,
+                    onToggle = { toggleCategory(SettingsCategory.CALENDAR_AND_WIDGET) }
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        // 2A. 桌面小工具月曆日期字體大小設定
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "小工具月曆日期字體大小",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "${widgetDateFontSize.dayNumberSp}sp",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    CalendarWidgetDateFontSize.entries.forEach { sizeOption ->
+                                        val selected = sizeOption == widgetDateFontSize
+                                        FilterChip(
+                                            selected = selected,
+                                            onClick = { onWidgetDateFontSizeSelected(sizeOption) },
+                                            label = {
+                                                Text(
+                                                    text = sizeOption.label,
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    textAlign = TextAlign.Center,
+                                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+
+                                Text(
+                                    text = "同步套用至桌面月曆小工具（國曆：${widgetDateFontSize.dayNumberSp}sp ／ 農曆：${widgetDateFontSize.lunarSp}sp）",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                // 小工具日期字級即時預覽列
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .clip(calendarPreviewPalette.cellShape)
-                                            .background(calendarPreviewPalette.todayBgColor)
-                                            .border(
-                                                1.dp,
-                                                calendarPreviewPalette.todayBorderColor,
-                                                calendarPreviewPalette.cellShape
-                                            )
-                                            .padding(vertical = 6.dp),
-                                        contentAlignment = Alignment.Center
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp, horizontal = 10.dp),
+                                        horizontalArrangement = Arrangement.SpaceEvenly,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
                                                 text = "14",
-                                                style = MaterialTheme.typography.labelLarge,
+                                                fontSize = widgetDateFontSize.dayNumberSp.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = calendarPreviewPalette.resolveDayNumberColor(
-                                                    isSelected = false,
-                                                    dayOfWeekIndex = 0
-                                                )
+                                                color = Color(0xFFD32F2F)
                                             )
                                             Text(
-                                                text = "端陽節氣",
-                                                fontSize = 10.sp,
-                                                color = calendarPreviewPalette.resolveLunarLabelColor(
-                                                    isSelected = false,
-                                                    hasFestival = false,
-                                                    hasSolarTerm = true
-                                                )
+                                                text = "初五",
+                                                fontSize = widgetDateFontSize.lunarSp.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
-                                    }
-
-                                    // 預覽 B：選中狀態＋節慶標籤（背景色若偏紅／黃／黑仍清楚反色）
-                                    Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(calendarPreviewPalette.cellShape)
-                                            .background(calendarPreviewPalette.selectedBgColor)
-                                            .padding(vertical = 6.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
                                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                             Text(
                                                 text = "15",
-                                                style = MaterialTheme.typography.labelLarge,
+                                                fontSize = widgetDateFontSize.dayNumberSp.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = calendarPreviewPalette.resolveDayNumberColor(
-                                                    isSelected = true,
-                                                    dayOfWeekIndex = 0
-                                                )
+                                                color = MaterialTheme.colorScheme.primary
                                             )
                                             Text(
-                                                text = "端午節",
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = calendarPreviewPalette.resolveLunarLabelColor(
-                                                    isSelected = true,
-                                                    hasFestival = true,
-                                                    hasSolarTerm = false
-                                                )
+                                                text = "中秋節",
+                                                fontSize = widgetDateFontSize.lunarSp.sp,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.primary
                                             )
+                                        }
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                            Text(
+                                                text = "16",
+                                                fontSize = widgetDateFontSize.dayNumberSp.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "十七",
+                                                fontSize = widgetDateFontSize.lunarSp.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // 2B. App 內月曆視覺樣式與重點色
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "App 月曆視覺樣式",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(CalendarStyle.entries) { style ->
+                                        val selected = style == personalization.calendarStyle
+                                        FilterChip(
+                                            selected = selected,
+                                            onClick = { onCalendarStyleSelected(style) },
+                                            label = { Text(style.label) }
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = personalization.calendarStyle.description,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "自訂月曆選取底色（可選）",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    if (personalization.calendarAccentColorLong != null) {
+                                        TextButton(
+                                            onClick = { onCalendarAccentColorSelected(null) },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                        ) {
+                                            Text("依樣式預設", style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                }
+
+                                PresetSwatchRow(
+                                    selectedColorLong = personalization.calendarAccentColorLong,
+                                    onColorSelected = { onCalendarAccentColorSelected(it) }
+                                )
+
+                                // 迷你月曆即時預覽（驗證週日紅／節慶紅與選日底色防重色反差）
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = calendarPreviewPalette.cardBgColor,
+                                    border = calendarPreviewPalette.cardBorderColor?.let { BorderStroke(1.dp, it) },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(calendarPreviewPalette.cellShape)
+                                                .background(calendarPreviewPalette.todayBgColor)
+                                                .border(
+                                                    1.dp,
+                                                    calendarPreviewPalette.todayBorderColor,
+                                                    calendarPreviewPalette.cellShape
+                                                )
+                                                .padding(vertical = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(
+                                                    text = "14",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = calendarPreviewPalette.resolveDayNumberColor(
+                                                        isSelected = false,
+                                                        dayOfWeekIndex = 0
+                                                    )
+                                                )
+                                                Text(
+                                                    text = "穀雨",
+                                                    fontSize = 10.sp,
+                                                    color = calendarPreviewPalette.resolveLunarLabelColor(
+                                                        isSelected = false,
+                                                        hasFestival = false,
+                                                        hasSolarTerm = true
+                                                    )
+                                                )
+                                            }
+                                        }
+
+                                        Box(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .clip(calendarPreviewPalette.cellShape)
+                                                .background(calendarPreviewPalette.selectedBgColor)
+                                                .padding(vertical = 6.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                Text(
+                                                    text = "15",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = calendarPreviewPalette.resolveDayNumberColor(
+                                                        isSelected = true,
+                                                        dayOfWeekIndex = 0
+                                                    )
+                                                )
+                                                Text(
+                                                    text = "端午節",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = calendarPreviewPalette.resolveLunarLabelColor(
+                                                        isSelected = true,
+                                                        hasFestival = true,
+                                                        hasSolarTerm = false
+                                                    )
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -517,99 +707,80 @@ fun AppSettingsDialog(
                     }
                 }
 
-                // === 2. 字體大小調整 ===
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FormatSize,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "字體大小（全應用即時縮放）",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        items(AppFontScale.entries) { fontScaleOption ->
-                            FilterChip(
-                                selected = fontScaleOption == personalization.fontScale,
-                                onClick = { onFontScaleSelected(fontScaleOption) },
-                                label = { Text(fontScaleOption.label) }
-                            )
+                // === 分類 3：全局字體大小 ===
+                SettingsCategorySection(
+                    icon = Icons.Default.FormatSize,
+                    title = "全局字體大小",
+                    summary = fontScaleSummary,
+                    expanded = expandedCategory == SettingsCategory.FONT_SCALE,
+                    onToggle = { toggleCategory(SettingsCategory.FONT_SCALE) }
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(AppFontScale.entries) { fontScaleOption ->
+                                FilterChip(
+                                    selected = fontScaleOption == personalization.fontScale,
+                                    onClick = { onFontScaleSelected(fontScaleOption) },
+                                    label = { Text(fontScaleOption.label) }
+                                )
+                            }
                         }
-                    }
 
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(10.dp)) {
-                            Text(
-                                text = "字體大小預覽標題（${personalization.fontScale.label}）",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "所有記事內容、待辦清單、農曆日曆與提醒字體皆已依此比例調整。",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Text(
+                                    text = "字體大小預覽標題（${personalization.fontScale.label}）",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "所有記事內容、待辦清單、月曆與提醒字體皆已依此比例調整。",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 }
 
-                // === 3. 通知開關與授權管理 ===
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "🔔 提醒通知開關",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
+                // === 分類 4：提醒與系統通知 ===
+                SettingsCategorySection(
+                    icon = if (notificationsEnabled) {
+                        Icons.Default.Notifications
+                    } else {
+                        Icons.Default.NotificationsOff
+                    },
+                    iconTint = if (notificationsEnabled && hasPermission) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                    title = "提醒與系統通知",
+                    summary = notificationSummary,
+                    expanded = expandedCategory == SettingsCategory.NOTIFICATIONS,
+                    onToggle = { toggleCategory(SettingsCategory.NOTIFICATIONS) }
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
                         ) {
                             Row(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 14.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Icon(
-                                    imageVector = if (notificationsEnabled) {
-                                        Icons.Default.Notifications
-                                    } else {
-                                        Icons.Default.NotificationsOff
-                                    },
-                                    contentDescription = "通知總開關",
-                                    tint = if (notificationsEnabled) {
-                                        MaterialTheme.colorScheme.primary
-                                    } else {
-                                        MaterialTheme.colorScheme.error
-                                    }
-                                )
-                                Column {
+                                Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "啟用提醒通知功能",
                                         style = MaterialTheme.typography.bodyLarge,
@@ -625,95 +796,85 @@ fun AppSettingsDialog(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                            }
-                            Switch(
-                                checked = notificationsEnabled,
-                                onCheckedChange = onNotificationsToggled
-                            )
-                        }
-                    }
-
-                    if (!hasPermission) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.errorContainer
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "⚠️ 尚未授與系統通知權限，提醒時間到時將無法顯示通知。",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    fontWeight = FontWeight.SemiBold
+                                Switch(
+                                    checked = notificationsEnabled,
+                                    onCheckedChange = onNotificationsToggled
                                 )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        Button(
-                                            colors = AppButtonThemeDefaults.filledColors(),
-                                            border = AppButtonThemeDefaults.filledBorder(),
+                            }
+                        }
+
+                        if (!hasPermission) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.errorContainer
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "⚠️ 尚未授與系統通知權限，提醒時間到時將無法顯示通知。",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            Button(
+                                                colors = AppButtonThemeDefaults.filledColors(),
+                                                border = AppButtonThemeDefaults.filledBorder(),
+                                                onClick = {
+                                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                }
+                                            ) {
+                                                Text("申請通知權限")
+                                            }
+                                        }
+                                        OutlinedButton(
                                             onClick = {
-                                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                val settingsIntent =
+                                                    Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                                    }
+                                                context.startActivity(settingsIntent)
                                             }
                                         ) {
-                                            Text("申請通知權限")
+                                            Text("開啟系統設定")
                                         }
-                                    }
-                                    OutlinedButton(
-                                        onClick = {
-                                            val settingsIntent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                                                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                                            }
-                                            context.startActivity(settingsIntent)
-                                        }
-                                    ) {
-                                        Text("開啟系統設定")
                                     }
                                 }
                             }
+                        } else {
+                            Text(
+                                text = "✅ Android 系統通知權限已就緒",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
                         }
-                    } else {
-                        Text(
-                            text = "✅ Android 系統通知權限已就緒",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline
-                        )
                     }
                 }
 
-                // === 4. 雲端同步狀態與快速控制 ===
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = when {
-                                syncUiState.isSyncing -> Icons.Default.CloudSync
-                                !syncUiState.isOnline ||
-                                    !syncUiState.syncSettings.syncEnabled ||
-                                    !syncUiState.isCloudConfigured -> Icons.Default.CloudOff
-                                else -> Icons.Default.CloudDone
-                            },
-                            contentDescription = null,
-                            tint = if (syncUiState.isOnline && syncUiState.isCloudConfigured) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            },
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = "雲端資料同步狀態",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
+                // === 分類 5：Google 雲端硬碟同步 ===
+                SettingsCategorySection(
+                    icon = when {
+                        syncUiState.isSyncing -> Icons.Default.CloudSync
+                        !syncUiState.isOnline ||
+                            !syncUiState.syncSettings.syncEnabled ||
+                            !syncUiState.isCloudConfigured -> Icons.Default.CloudOff
+                        else -> Icons.Default.CloudDone
+                    },
+                    iconTint = if (syncUiState.isOnline && syncUiState.isCloudConfigured) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.error
+                    },
+                    title = "Google 雲端硬碟同步",
+                    summary = cloudSyncSummary,
+                    expanded = expandedCategory == SettingsCategory.CLOUD_SYNC,
+                    onToggle = { toggleCategory(SettingsCategory.CLOUD_SYNC) }
+                ) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
@@ -799,6 +960,8 @@ fun AppSettingsDialog(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(4.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -810,6 +973,108 @@ fun AppSettingsDialog(
                     ) {
                         Text("完成")
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 可摺疊之設定分類卡片元件（點擊標題列後展開或收合該分類底下的細項設定）
+ */
+@Composable
+private fun SettingsCategorySection(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    content: @Composable () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(
+            width = if (expanded) 1.5.dp else 1.dp,
+            color = if (expanded) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            }
+        ),
+        color = if (expanded) {
+            MaterialTheme.colorScheme.surface
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+        }
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggle)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(iconTint.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = summary,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "收合分類" else "展開分類",
+                    tint = if (expanded) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 14.dp, end = 14.dp, bottom = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    HorizontalDivider(
+                        thickness = 0.8.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                    content()
                 }
             }
         }
