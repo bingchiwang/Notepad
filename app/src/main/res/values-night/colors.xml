@@ -3,7 +3,6 @@
     <!-- 快速記事桌面小工具配色（深色模式） -->
     <color name="widget_surface">#FF1B1D22</color>
     <color name="widget_surface_border">#FF2F333C</color>
-    <color name="widget_header_bg">#FF23262E</color>
     <color name="widget_card_bg">#FF262A33</color>
     <color name="widget_card_border">#FF343944</color>
     <color name="widget_text_primary">#FFF1F3F6</color>
@@ -28,7 +27,6 @@
 
     <!-- 今日行程桌面小工具進度條與提醒配色（深色模式） -->
     <color name="widget_progress_track">#FF333946</color>
-    <color name="widget_reminder_today_bg">#FF1E3A5F</color>
     <color name="widget_reminder_today_text">#FF93C5FD</color>
 
     <!-- 月曆桌面小工具配色（深色模式） -->
@@ -37,9 +35,7 @@
     <color name="widget_cal_today_text">#FF93C5FD</color>
     <color name="widget_cal_sunday_text">#FFFF5252</color>
     <color name="widget_cal_sunday_other_text">#FFAD5C5C</color>
-    <color name="widget_cal_cell_bg">#00000000</color>
     <color name="widget_cal_cell_border">#FF383E4C</color>
-    <color name="widget_cal_cell_other_bg">#00000000</color>
     <color name="widget_cal_text_other">#FF6B7280</color>
     <color name="widget_cal_note_bg">#FF451A03</color>
     <color name="widget_cal_note_text">#FFFDE68A</color>

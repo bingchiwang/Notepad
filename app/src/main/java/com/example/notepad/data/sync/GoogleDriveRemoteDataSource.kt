@@ -23,13 +23,18 @@ import java.util.concurrent.TimeUnit
  */
 class GoogleDriveRemoteDataSource(
     private val tokenProvider: suspend (SyncSettings) -> String,
-    private val httpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(25, TimeUnit.SECONDS)
-        .writeTimeout(25, TimeUnit.SECONDS)
-        .build(),
+    httpClient: OkHttpClient? = null,
     private val baseUrl: String = "https://www.googleapis.com"
 ) : CloudRemoteDataSource {
+
+    // 延遲初始化 OkHttpClient，降低冷啟動記憶體佔用並避免未同步時佔用網路資源
+    private val httpClient: OkHttpClient by lazy {
+        httpClient ?: OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(25, TimeUnit.SECONDS)
+            .writeTimeout(25, TimeUnit.SECONDS)
+            .build()
+    }
 
     constructor(authHelper: GoogleDriveAuthHelper) : this(
         tokenProvider = { settings -> authHelper.resolveFreshAccessToken(settings) }

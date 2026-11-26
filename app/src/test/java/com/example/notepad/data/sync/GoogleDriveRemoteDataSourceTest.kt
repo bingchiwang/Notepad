@@ -12,14 +12,12 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.Buffer
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * [GoogleDriveRemoteDataSource] 與 [RoutingCloudRemoteDataSource] 單元測試：
- * 驗證 Google Drive appDataFolder 檔案建立、增量更新合併既有 NO_OP 資料、檔案命名區隔、
- * 授權失敗提示與路由分派行為。
+ * [GoogleDriveRemoteDataSource] 單元測試：
+ * 驗證 Google Drive appDataFolder 檔案建立、增量更新合併既有 NO_OP 資料、檔案命名區隔與授權失敗提示。
  */
 class GoogleDriveRemoteDataSourceTest {
 
@@ -186,51 +184,5 @@ class GoogleDriveRemoteDataSourceTest {
         assertTrue(ex is IllegalStateException)
         assertTrue(ex?.message?.contains("401") == true)
         assertTrue(ex?.message?.contains("重新連結 Google 帳號") == true)
-    }
-
-    @Test
-    fun routingCloudRemoteDataSource_delegatesBySelectedProvider() = runTest {
-        val driveFake = object : CloudRemoteDataSource {
-            var fetchCalls = 0
-            override fun isConfigured(settings: SyncSettings) = settings.hasGoogleDriveConfig()
-            override suspend fun fetchAllDocuments(accountId: String, settings: SyncSettings): List<CloudSyncDocument> {
-                fetchCalls++
-                return emptyList()
-            }
-            override suspend fun upsertDocuments(accountId: String, settings: SyncSettings, documents: List<CloudSyncDocument>) {}
-        }
-        val firebaseFake = object : CloudRemoteDataSource {
-            var fetchCalls = 0
-            override fun isConfigured(settings: SyncSettings) = settings.hasManualFirebaseConfig()
-            override suspend fun fetchAllDocuments(accountId: String, settings: SyncSettings): List<CloudSyncDocument> {
-                fetchCalls++
-                return emptyList()
-            }
-            override suspend fun upsertDocuments(accountId: String, settings: SyncSettings, documents: List<CloudSyncDocument>) {}
-        }
-
-        val router = RoutingCloudRemoteDataSource(driveFake, firebaseFake)
-
-        val driveSettings = SyncSettings(
-            cloudProvider = CloudBackendProvider.GOOGLE_DRIVE,
-            googleAccountEmail = "drive@example.com"
-        )
-        assertTrue(router.isConfigured(driveSettings))
-        router.fetchAllDocuments("acct", driveSettings)
-        assertEquals(1, driveFake.fetchCalls)
-        assertEquals(0, firebaseFake.fetchCalls)
-
-        val unconfiguredDrive = SyncSettings(cloudProvider = CloudBackendProvider.GOOGLE_DRIVE)
-        assertFalse(router.isConfigured(unconfiguredDrive))
-
-        val firebaseSettings = SyncSettings(
-            cloudProvider = CloudBackendProvider.FIREBASE,
-            firebaseProjectId = "p",
-            firebaseAppId = "a",
-            firebaseApiKey = "k"
-        )
-        assertTrue(router.isConfigured(firebaseSettings))
-        router.fetchAllDocuments("acct", firebaseSettings)
-        assertEquals(1, firebaseFake.fetchCalls)
     }
 }

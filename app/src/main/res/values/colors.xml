@@ -1,17 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-
     <!-- 快速記事桌面小工具配色（淺色模式） -->
     <color name="widget_surface">#FFFDFBFF</color>
     <color name="widget_surface_border">#FFE0E3EB</color>
-    <color name="widget_header_bg">#FFF2F5FC</color>
     <color name="widget_card_bg">#FFF4F6FA</color>
     <color name="widget_card_border">#FFE3E7F0</color>
     <color name="widget_text_primary">#FF1A1C1E</color>
@@ -36,7 +27,6 @@
 
     <!-- 今日行程桌面小工具進度條與提醒配色（淺色模式） -->
     <color name="widget_progress_track">#FFE2E8F0</color>
-    <color name="widget_reminder_today_bg">#FFDBEAFE</color>
     <color name="widget_reminder_today_text">#FF1D4ED8</color>
 
     <!-- 月曆桌面小工具配色（淺色模式） -->
@@ -45,9 +35,7 @@
     <color name="widget_cal_today_text">#FF1D4ED8</color>
     <color name="widget_cal_sunday_text">#FFD32F2F</color>
     <color name="widget_cal_sunday_other_text">#FFE57373</color>
-    <color name="widget_cal_cell_bg">#00000000</color>
     <color name="widget_cal_cell_border">#FFD8DEE9</color>
-    <color name="widget_cal_cell_other_bg">#00000000</color>
     <color name="widget_cal_text_other">#FF9CA3AF</color>
     <color name="widget_cal_note_bg">#FFFEF3C7</color>
     <color name="widget_cal_note_text">#FF92400E</color>

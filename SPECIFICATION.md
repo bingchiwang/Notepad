@@ -5,7 +5,7 @@
 - **套件識別碼 (`applicationId`)**：`com.example.notepad`
 - **開發語言與框架**：Kotlin 2.0+、Jetpack Compose（Material Design 3）、Jetpack Navigation 3、Compose Material Adaptive
 - **SDK 支援範圍**：`minSdk = 31`（Android 12）、`compileSdk = 37`、`targetSdk = 37`
-- **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Google Drive / Firebase Cloud Sync（`CloudSyncManager` / `RoutingCloudRemoteDataSource`）
+- **架構設計模式**：Facade Pattern（`LunarCalendarFacade`）+ Repository Pattern（`TaskRepository`、`NoteRepository`）+ DataStore Preferences + Offline-First Google Drive Cloud Sync（`CloudSyncManager` / `GoogleDriveRemoteDataSource`）
 - **目前應用版本**：`versionName = "1.0"`（`versionCode = 1`）／Room 資料庫版本：`version = 6`
 
 ---
@@ -144,7 +144,7 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **20 個測試類別、98 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **20 個測試類別、97 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
 1. `LunarCalendarFacadeTest`（7 項）：驗證繁體中文農曆日期換算、2024–2028 年全部 120 個 VSOP87D 天文二十四節氣（對齊台灣中央氣象署 UTC+8）、2026 全年農曆初一、閏月初一「閏」字顯示、2060 年位元表修正、範圍邊界防護、台灣節慶與明日判定。
 2. `PriorityAndConvertersTest`（5 項）：驗證優先級權重與 Room 型別轉換器（含 `RecurrenceType`）。
@@ -159,7 +159,7 @@
 11. `SyncConflictResolverTest`（8 項）：驗證 LWW 雙向合併與刪除墓碑衝突決策。
 12. `CloudSyncManagerTest`（4 項）：驗證本地優先上傳、雲端下載合併、離線恢復補傳與個人化設定同步。
 13. `GoogleDriveSyncPayloadSerializerTest`（2 項）：驗證 Google 雲端硬碟快照 JSON 之 64 位元整數、空值、各實體與墓碑來回序列化與異常防護。
-14. `GoogleDriveRemoteDataSourceTest`（3 項）：驗證 Google Drive `appDataFolder` 建立與增量更新合併保留未異動文件、HTTP 401 提示與路由分派。
+14. `GoogleDriveRemoteDataSourceTest`（2 項）：驗證 Google Drive `appDataFolder` 建立與增量更新合併保留未異動文件及 HTTP 401 提示。
 15. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析、6 款月曆樣式對比度與星期日紅字保持。
 16. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
 17. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。

@@ -343,6 +343,15 @@
   - `minSdk = 31` 生效且 Android Lint 0 `NewApi`／`ObsoleteSdkInt` 錯誤
   - 全專案 98 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
+### Task_31_PruneUnusedFilesAndDependencies: 全面清除未使用之依賴套件、遺留原始碼、未使用資源檔與延遲初始化 `OkHttpClient`。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 清除 12 個未使用依賴與外掛（`CameraX`、`Firebase Firestore`、`Coil`、`Retrofit`、`converter-moshi`、`logging-interceptor`、`play-services-location`、`accompanist-permissions`、`moshi-kotlin-codegen`、`google-services`），移除 `FirebaseFirestoreDataSource.kt`、`RoutingCloudRemoteDataSource.kt`、`placeholder.png` 與 11 筆未使用色票，使 Android Lint `UnusedResources` 由 12 降至 0。
+  - 將 `GoogleDriveAuthHelper` 與 `GoogleDriveRemoteDataSource` 之 `OkHttpClient` 改為 `by lazy` 延遲初始化，減少冷啟動記憶體配置。
+- **驗收標準 (Acceptance Criteria):**
+  - Android Lint `UnusedResources = 0`、`NewApi = 0`、`ObsoleteSdkInt = 0`，APK 原生庫與資源體積大幅瘦身
+  - 全專案 97 項單元測試、`./gradlew test build`、R8 Release、模擬器啟動記憶體實測與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

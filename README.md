@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-31%20(Android%2012)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-98%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-97%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -226,7 +226,7 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **20 個單元測試套件、共 98 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **20 個單元測試套件、共 97 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
@@ -243,7 +243,7 @@ com.example.notepad/
 | `SyncConflictResolverTest` | 8 | 本機與雲端雙向新增、LWW 時間戳比對、本機/雲端刪除墓碑衝突與離線編輯復活決策 |
 | `CloudSyncManagerTest` | 4 | 本地優先上傳、雲端拉取合併、離線墓碑排隊與網路恢復自動上傳、個人化設定雲端同步 |
 | `GoogleDriveSyncPayloadSerializerTest` | 2 | Google 雲端硬碟 JSON 快照之 64 位元整數、空值與各實體／墓碑來回序列化與異常防護 |
-| `GoogleDriveRemoteDataSourceTest` | 3 | Google Drive `appDataFolder` 建立與增量更新保留既有文件、HTTP 401 提示與路由分派 |
+| `GoogleDriveRemoteDataSourceTest` | 2 | Google Drive `appDataFolder` 建立與增量更新保留既有文件及 HTTP 401 授權提示 |
 | `ColorContrastUtilsTest` | 5 | WCAG 相對明度與對比度、淺底深字/深底白字自動切換、同色邊框判定、Hex 色碼解析、6 款月曆樣式防重色與週日紅字保持 |
 | `QuickNoteWidgetLogicTest` | 7 | 記事小工具分類編解碼、釘選與更新時間排序、分類刪除退回、空白標題／多行摘要格式化與深度連結解析 |
 | `ToDoWidgetLogicTest` | 5 | 待辦小工具未完成過濾、優先級與截止日排序、徽章標籤格式、逾期／今日／明日判別與深度連結解析 |
@@ -281,7 +281,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 98 項單元測試
+# 1. 執行全部 97 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

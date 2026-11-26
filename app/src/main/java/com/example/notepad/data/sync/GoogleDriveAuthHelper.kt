@@ -50,12 +50,16 @@ sealed class GoogleDriveAuthStartResult {
  */
 class GoogleDriveAuthHelper(
     context: Context,
-    private val httpClient: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(20, TimeUnit.SECONDS)
-        .build()
+    httpClient: OkHttpClient? = null
 ) {
     private val appContext = context.applicationContext
+    // 延遲初始化 OkHttpClient，避免冷啟動階段於未同步時提前配置連線池與執行緒池
+    private val httpClient: OkHttpClient by lazy {
+        httpClient ?: OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .build()
+    }
 
     companion object {
         const val DRIVE_APP_DATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"

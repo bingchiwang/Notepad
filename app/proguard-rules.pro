@@ -12,6 +12,3 @@
 -keep public class * extends android.widget.RemoteViewsService
 -keep public class * extends android.content.BroadcastReceiver
 -keep public class * extends android.app.Activity
-
-# Suppress benign warning from transitive GMS dependency
--dontwarn com.google.android.gms.internal.location.**

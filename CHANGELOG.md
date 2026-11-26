@@ -4,6 +4,16 @@
 
 ---
 
+## [1.15.1] - 2026-11-26
+### 優化與清理 (Optimized / Cleaned Up)
+- **全面清除未使用檔案、多餘依賴與冷啟動延遲初始化優化**：
+  - 移除 [build.gradle.kts](build.gradle.kts)、[app/build.gradle.kts](app/build.gradle.kts)、[gradle/libs.versions.toml](gradle/libs.versions.toml) 與 [app/proguard-rules.pro](app/proguard-rules.pro) 中 12 個完全未使用之依賴與外掛：`CameraX`（`camera-core`/`camera2`/`lifecycle`/`view`，消除 8 個多餘 `.so` 原生庫）、`Firebase Firestore` / `firebase-bom` / `google-services`、`Coil`、`Retrofit`、`converter-moshi`、`logging-interceptor`、`play-services-location`、`accompanist-permissions` 與 `moshi-kotlin-codegen`。
+  - 刪除已無任何主程式引用之遺留檔案：`FirebaseFirestoreDataSource.kt`、`RoutingCloudRemoteDataSource.kt` 與未使用之 `res/drawable/placeholder.png`，並清除 `values/colors.xml` 與 `values-night/colors.xml` 中全部 11 筆未使用色票（Android Lint `UnusedResources` 正式歸零：`12 → 0`）。
+  - 優化 [GoogleDriveAuthHelper.kt](app/src/main/java/com/example/notepad/data/sync/GoogleDriveAuthHelper.kt) 與 [GoogleDriveRemoteDataSource.kt](app/src/main/java/com/example/notepad/data/sync/GoogleDriveRemoteDataSource.kt) 改採 `by lazy` 延遲建立 `OkHttpClient`，避免冷啟動階段於未同步時提前配置網路連線池與執行緒池。
+  - 產物優化成果：APK 內原生 `.so` 由 `232.7 KB` 降至 `71.9 KB`（**-69%**）、`res/` 資源檔由 `321` 減至 `83` 個（**-74%**）、`classes.dex` 減少 `187.6 KB`。
+
+---
+
 ## [1.15.0] - 2026-11-26
 ### 調整與精簡 (Changed / Cleaned Up)
 - **最低支援系統版本升級為 Android 12（`minSdk = 31`）並清理 API 31 以下舊版相容碼**：
