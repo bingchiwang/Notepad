@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 月曆小工具擬真預覽版面（真實 7 欄星期、週日紅字、台灣節氣、每週橫線區隔與事件膠囊） -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:orientation="vertical"
+    android:padding="10dp">
+
+    <!-- 頂部月份導覽列（與 widget_calendar.xml 100% 相同結構） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingBottom="6dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="5dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_widget_calendar" />
+
+        <LinearLayout
+            android:layout_width="24dp"
+            android:layout_height="26dp"
+            android:background="@drawable/widget_cal_nav_bg"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_chevron_left" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="4dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:maxLines="1"
+            android:text="2026年 11月"
+            android:textColor="@color/widget_text_primary"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="24dp"
+            android:layout_height="26dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_cal_nav_bg"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_chevron_right" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="26dp"
+            android:layout_marginEnd="4dp"
+            android:background="@drawable/widget_chip_bg"
+            android:gravity="center"
+            android:maxLines="1"
+            android:paddingHorizontal="6dp"
+            android:text="農曆 ✓"
+            android:textColor="@color/widget_chip_text"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="26dp"
+            android:background="@drawable/widget_button_bg"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingHorizontal="7dp">
+
+            <ImageView
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_add" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:text="新增"
+                android:textColor="@color/widget_on_accent"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 星期標題列（日 為紅色、六 為藍色） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="4dp"
+        android:weightSum="7">
+
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="日" android:textColor="@color/widget_cal_sunday_text" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="一" android:textColor="@color/widget_text_secondary" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="二" android:textColor="@color/widget_text_secondary" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="三" android:textColor="@color/widget_text_secondary" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="四" android:textColor="@color/widget_text_secondary" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="五" android:textColor="@color/widget_text_secondary" android:textSize="11sp" android:textStyle="bold" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:gravity="center" android:text="六" android:textColor="@color/widget_cal_today_text" android:textSize="11sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_cal_cell_border" />
+
+    <!-- 第 1 週（11/1 週日 ~ 11/7 立冬） -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:weightSum="7">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="1" android:textColor="@color/widget_cal_sunday_text" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿三" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="2" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿四" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1.5dp" android:background="@drawable/widget_cal_todo_pill_bg" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:paddingHorizontal="2dp" android:text="週會" android:textColor="@color/widget_cal_todo_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="3" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿五" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="4" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿六" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="5" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿七" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1.5dp" android:background="@drawable/widget_cal_note_pill_bg" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:paddingHorizontal="2dp" android:text="筆記" android:textColor="@color/widget_cal_note_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="6" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿八" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="7" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="立冬" android:textColor="@color/widget_cal_today_text" android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_cal_cell_border" />
+
+    <!-- 第 2 週（11/8 ~ 11/14，含農曆十月初一） -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:weightSum="7">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="8" android:textColor="@color/widget_cal_sunday_text" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="三十" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="9" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十月" android:textColor="@color/widget_cal_today_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="10" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初二" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="11" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初三" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1.5dp" android:background="@drawable/widget_cal_todo_pill_bg" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:paddingHorizontal="2dp" android:text="交報告" android:textColor="@color/widget_cal_todo_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="12" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初四" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="13" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初五" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="14" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初六" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_cal_cell_border" />
+
+    <!-- 第 3 週（11/15 ~ 11/21） -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:weightSum="7">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="15" android:textColor="@color/widget_cal_sunday_text" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初七" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1.5dp" android:background="@drawable/widget_cal_note_pill_bg" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:paddingHorizontal="2dp" android:text="聚餐" android:textColor="@color/widget_cal_note_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="16" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初八" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="17" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初九" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="18" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="初十" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="19" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十一" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="20" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十二" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="21" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十三" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_cal_cell_border" />
+
+    <!-- 第 4 週（11/22 小雪 ~ 11/28，含 11/26 今日高亮藍框） -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:weightSum="7">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="22" android:textColor="@color/widget_cal_sunday_text" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="小雪" android:textColor="@color/widget_cal_today_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="23" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十五" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="24" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十六" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="25" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十七" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_marginVertical="1dp" android:layout_weight="1" android:background="@drawable/widget_cal_today_bg" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="26" android:textColor="@color/widget_cal_today_text" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十八" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="1.5dp" android:background="@drawable/widget_cal_todo_pill_bg" android:ellipsize="end" android:gravity="center" android:maxLines="1" android:paddingHorizontal="2dp" android:text="簡報" android:textColor="@color/widget_cal_todo_text" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="27" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="十九" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="28" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="二十" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/widget_cal_cell_border" />
+
+    <!-- 第 5 週（11/29 ~ 12/5） -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:orientation="horizontal" android:weightSum="7">
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="29" android:textColor="@color/widget_cal_sunday_text" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿一" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="30" android:textColor="@color/widget_text_primary" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿二" android:textColor="@color/widget_text_secondary" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="1" android:textColor="@color/widget_cal_text_other" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿三" android:textColor="@color/widget_cal_text_other" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="2" android:textColor="@color/widget_cal_text_other" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿四" android:textColor="@color/widget_cal_text_other" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="3" android:textColor="@color/widget_cal_text_other" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿五" android:textColor="@color/widget_cal_text_other" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="4" android:textColor="@color/widget_cal_text_other" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿六" android:textColor="@color/widget_cal_text_other" android:textSize="8sp" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="top|center_horizontal" android:orientation="vertical" android:padding="2dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="5" android:textColor="@color/widget_cal_text_other" android:textSize="11sp" android:textStyle="bold" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:text="廿七" android:textColor="@color/widget_cal_text_other" android:textSize="8sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

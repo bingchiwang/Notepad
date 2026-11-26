@@ -325,6 +325,15 @@
   - 2024–2028 年全部 120 個二十四節氣（含 2026-11-07 立冬）與 2026 全年農曆初一 100% 精準匹配
   - 全專案 98 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
+### Task_29_RealisticWidgetPickerPreviewsAndIcons: 改善四大桌面小工具於「新增小工具」選單的預覽版面與圖示，使其貼近實際小工具外觀。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 新增四款 Android 12+ 擬真即時預覽 XML 版面（`widget_preview_layout_quick_note`、`widget_preview_layout_todo`、`widget_preview_layout_today_schedule`、`widget_preview_layout_calendar`），直接沿用實際小工具色彩與版型並支援淺／深色主題切換，並於 `res/xml/*_widget_info.xml` 綁定 `android:previewLayout`。
+  - 重繪四款 `ic_widget_picker_*.xml` 為迷你小工具卡片外觀，並將 Android 8–11 備援圖 `widget_preview_calendar.xml` 升級為 7 欄星期、週日紅字與 5 週橫線排版。
+- **驗收標準 (Acceptance Criteria):**
+  - 新增小工具選單於 Android 12+ 呈現真實小工具即時預覽、於 Android 8–11 呈現 7 欄擬真備援圖，且 0 Lint／`NewApi` 錯誤
+  - 全專案 98 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

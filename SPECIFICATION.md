@@ -130,8 +130,8 @@
 - **直接顯示圖示＋文字標籤與多筆截斷規則（不使用小圓點）**：
   - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以附帶類型圖示（`ic_widget_cal_event_note` / `ic_widget_cal_event_todo` / `ic_widget_cal_event_todo_done`）之單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
   - 每個日期格最多直接顯示 2 筆事項（`MAX_VISIBLE_EVENTS = 2`）；當同一天超過 2 筆事項時，自動計算剩餘筆數並顯示「`＋N 項`」標籤（例如共 5 筆時顯示前 2 筆及「`＋3 項`」）。
-- **四大桌面小工具圖示與預覽圖（Widget Picker Icons & Previews）**：
-  - 於 `AndroidManifest.xml` 為四大桌面小工具配置獨立高識別度圖示（`ic_widget_picker_note`、`ic_widget_picker_todo`、`ic_widget_picker_today`、`ic_widget_picker_calendar`），並於 `res/xml/*_widget_info.xml` 配置對應向量預覽圖（`widget_preview_*`）；小工具內部同步配備分類、記事文件、時間、截止日、標籤與進度統計圖示。
+- **四大桌面小工具擬真預覽版面與選單圖示（Widget Preview Layouts & Picker Icons）**：
+  - 於 `res/xml/*_widget_info.xml` 同時配置 Android 12+ 擬真即時預覽版面 `android:previewLayout`（`widget_preview_layout_quick_note`、`widget_preview_layout_todo`、`widget_preview_layout_today_schedule`、`widget_preview_layout_calendar`，自動隨系統淺／深色切換並還原實際排版）及 Android 8–11 備援預覽圖 `android:previewImage`（`widget_preview_*`）；並於 `AndroidManifest.xml` 配置貼近實際小工具外觀之迷你卡片選單圖示（`ic_widget_picker_*`）。
 - **點擊互動與深層連結**：
   - 點擊日期格或「`＋N 項`」：透過 `WidgetDeepLink.OpenCalendarDay(dateMillis, openQuickAdd = false)` 開啟 `CalendarRoute` 並跳轉至該日期，同時顯示該日記事清單、待辦清單與提醒清單。
   - 點擊格內記事膠囊：透過 `WidgetDeepLink.EditNote(noteId)` 直接開啟 `NoteEditorRoute` 編輯該篇記事。

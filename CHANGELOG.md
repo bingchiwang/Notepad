@@ -4,6 +4,14 @@
 
 ---
 
+## [1.14.2] - 2026-11-26
+### 優化 (Improved)
+- **全面升級四大桌面小工具「新增小工具」擬真預覽版面與選單圖示（`previewLayout` / `ic_widget_picker_*` / `widget_preview_calendar`）**：
+  - 新增四款 Android 12+ 擬真即時預覽版面（[widget_preview_layout_quick_note.xml](app/src/main/res/layout/widget_preview_layout_quick_note.xml)、[widget_preview_layout_todo.xml](app/src/main/res/layout/widget_preview_layout_todo.xml)、[widget_preview_layout_today_schedule.xml](app/src/main/res/layout/widget_preview_layout_today_schedule.xml)、[widget_preview_layout_calendar.xml](app/src/main/res/layout/widget_preview_layout_calendar.xml)），直接沿用實際小工具背景、字色、淺／深色主題切換與真實繁體中文範例內容（含月曆 7 欄星期、週日紅字、立冬／小雪節氣、每週橫線與今日藍框），並於四份 `res/xml/*_widget_info.xml` 註冊 `android:previewLayout`。
+  - 重新繪製四款 Launcher 選單圖示（`ic_widget_picker_note`、`ic_widget_picker_todo`、`ic_widget_picker_today`、`ic_widget_picker_calendar`）為迷你小工具卡片外觀，並將 Android 8–11 備援預覽圖 [widget_preview_calendar.xml](app/src/main/res/drawable/widget_preview_calendar.xml) 升級為 7 欄星期列與 5 週橫線排版。
+
+---
+
 ## [1.14.1] - 2026-11-26
 ### 修復 (Fixed)
 - **修復二十四節氣錯日問題（改採 VSOP87D 高精度天文太陽黃經演算法）與全面稽核 1900–2100 曆法日期（`SolarTermAstronomy` / `LunarCalendarEngine` / `LunarCalendarFacade`）**：

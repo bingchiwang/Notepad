@@ -1,61 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 待辦事項小工具選單圖示（迷你小工具卡片：頂部待辦計數＋雙待辦列、紅／橘優先色條與核取方塊） -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="48dp"
     android:height="48dp"
     android:viewportWidth="48"
     android:viewportHeight="48">
-    <!-- 圓角漸層底塊（翡翠綠） -->
-    <path android:pathData="M13,3 h22 a10,10 0 0 1 10,10 v22 a10,10 0 0 1 -10,10 h-22 a10,10 0 0 1 -10,-10 v-22 a10,10 0 0 1 10,-10 z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="24"
-                android:endY="45"
-                android:startX="24"
-                android:startY="3"
-                android:type="linear">
-                <item android:color="#FF34D399" android:offset="0.0" />
-                <item android:color="#FF059669" android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
+    <!-- 小工具圓角卡片外框 -->
     <path
-        android:fillColor="#00000000"
-        android:pathData="M13,3.75 h22 a9.25,9.25 0 0 1 9.25,9.25 v22 a9.25,9.25 0 0 1 -9.25,9.25 h-22 a9.25,9.25 0 0 1 -9.25,-9.25 v-22 a9.25,9.25 0 0 1 9.25,-9.25 z"
-        android:strokeColor="#33FFFFFF"
-        android:strokeWidth="1" />
-    <!-- 任務卡 1（已完成打勾＋紅高優識別） -->
+        android:fillColor="#1A0F172A"
+        android:pathData="M10,5.5 h28 a6,6 0 0 1 6,6 v27 a6,6 0 0 1 -6,6 h-28 a6,6 0 0 1 -6,-6 v-27 a6,6 0 0 1 6,-6 z" />
     <path
-        android:fillColor="#24000000"
-        android:pathData="M12.5,12.5 h24 a3,3 0 0 1 3,3 v6 a3,3 0 0 1 -3,3 h-24 a3,3 0 0 1 -3,-3 v-6 a3,3 0 0 1 3,-3 z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,11.5 h24 a3,3 0 0 1 3,3 v6 a3,3 0 0 1 -3,3 h-24 a3,3 0 0 1 -3,-3 v-6 a3,3 0 0 1 3,-3 z" />
+        android:fillColor="#FFF8FAFC"
+        android:strokeColor="#FFD4DCE8"
+        android:strokeWidth="1.2"
+        android:pathData="M10,4.5 h28 a6,6 0 0 1 6,6 v27 a6,6 0 0 1 -6,6 h-28 a6,6 0 0 1 -6,-6 v-27 a6,6 0 0 1 6,-6 z" />
+    <!-- 頂部：翡翠綠打勾圖示＋標題＋計數膠囊＋藍色新增鈕 -->
     <path
         android:fillColor="#FF10B981"
-        android:pathData="M13,14.5 h6 a1.2,1.2 0 0 1 1.2,1.2 v3.6 a1.2,1.2 0 0 1 -1.2,1.2 h-6 a1.2,1.2 0 0 1 -1.2,-1.2 v-3.6 a1.2,1.2 0 0 1 1.2,-1.2 z" />
+        android:pathData="M9.5,9 h4 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-4 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 z" />
     <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M15.4,19.1 l-1.6,-1.6 l0.75,-0.75 l0.85,0.85 l2.0,-2.0 l0.75,0.75 z" />
+        android:fillColor="#FF1F2937"
+        android:pathData="M17.5,11 h9 a1,1 0 0 1 0,2 h-9 a1,1 0 0 1 0,-2 z" />
     <path
-        android:fillColor="#FF374151"
-        android:pathData="M23,16 h12 a1,1 0 0 1 0,2 h-12 a1,1 0 0 1 0,-2 z" />
-    <!-- 任務卡 2（未完成方框＋高優先識別） -->
-    <path
-        android:fillColor="#24000000"
-        android:pathData="M12.5,27.5 h24 a3,3 0 0 1 3,3 v6 a3,3 0 0 1 -3,3 h-24 a3,3 0 0 1 -3,-3 v-6 a3,3 0 0 1 3,-3 z" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M12,26.5 h24 a3,3 0 0 1 3,3 v6 a3,3 0 0 1 -3,3 h-24 a3,3 0 0 1 -3,-3 v-6 a3,3 0 0 1 3,-3 z" />
-    <path
-        android:fillColor="#FFEF4444"
-        android:pathData="M10.5,28.5 h1.5 a0.75,0.75 0 0 1 0.75,0.75 v6.5 a0.75,0.75 0 0 1 -0.75,0.75 h-1.5 z" />
+        android:fillColor="#FF2563EB"
+        android:pathData="M34.5,9.2 h4.5 a2.5,2.5 0 0 1 0,5 h-4.5 a2.5,2.5 0 0 1 0,-5 z" />
     <path
         android:fillColor="#00000000"
-        android:pathData="M15,29.5 h4.2 a1.2,1.2 0 0 1 1.2,1.2 v3.6 a1.2,1.2 0 0 1 -1.2,1.2 h-4.2 a1.2,1.2 0 0 1 -1.2,-1.2 v-3.6 a1.2,1.2 0 0 1 1.2,-1.2 z"
-        android:strokeColor="#FF2563EB"
-        android:strokeWidth="1.5" />
+        android:pathData="M36.75,10.6 v2.2 M35.65,11.7 h2.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1" />
+    <!-- 待辦列 1（紅色高優先色條＋核取框＋高優紅徽章） -->
     <path
-        android:fillColor="#FF6B7280"
-        android:pathData="M23.5,31.5 h11.5 a1,1 0 0 1 0,2 h-11.5 a1,1 0 0 1 0,-2 z" />
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE2E8F0"
+        android:strokeWidth="0.9"
+        android:pathData="M10.5,18 h27 a2.5,2.5 0 0 1 2.5,2.5 v5.5 a2.5,2.5 0 0 1 -2.5,2.5 h-27 a2.5,2.5 0 0 1 -2.5,-2.5 v-5.5 a2.5,2.5 0 0 1 2.5,-2.5 z" />
+    <path
+        android:fillColor="#FFEF4444"
+        android:pathData="M10,20 h2 v6.5 h-2 z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF2563EB"
+        android:strokeWidth="1.2"
+        android:pathData="M14.5,21.2 h3.5 a0.8,0.8 0 0 1 0.8,0.8 v2.5 a0.8,0.8 0 0 1 -0.8,0.8 h-3.5 a0.8,0.8 0 0 1 -0.8,-0.8 v-2.5 a0.8,0.8 0 0 1 0.8,-0.8 z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M21.2,22.2 h9.5 a1,1 0 0 1 0,2 h-9.5 a1,1 0 0 1 0,-2 z" />
+    <path
+        android:fillColor="#FFFEE2E2"
+        android:pathData="M33,21.5 h4.8 a1.5,1.5 0 0 1 0,3 h-4.8 a1.5,1.5 0 0 1 0,-3 z" />
+    <!-- 待辦列 2（橘色中優先色條＋核取框＋中優橘徽章） -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:strokeColor="#FFE2E8F0"
+        android:strokeWidth="0.9"
+        android:pathData="M10.5,30.5 h27 a2.5,2.5 0 0 1 2.5,2.5 v4.5 a2.5,2.5 0 0 1 -2.5,2.5 h-27 a2.5,2.5 0 0 1 -2.5,-2.5 v-4.5 a2.5,2.5 0 0 1 2.5,-2.5 z" />
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M10,32.2 h2 v6 h-2 z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF2563EB"
+        android:strokeWidth="1.2"
+        android:pathData="M14.5,33.2 h3.5 a0.8,0.8 0 0 1 0.8,0.8 v2.5 a0.8,0.8 0 0 1 -0.8,0.8 h-3.5 a0.8,0.8 0 0 1 -0.8,-0.8 v-2.5 a0.8,0.8 0 0 1 0.8,-0.8 z" />
+    <path
+        android:fillColor="#FF374151"
+        android:pathData="M21.2,34.2 h8.5 a1,1 0 0 1 0,2 h-8.5 a1,1 0 0 1 0,-2 z" />
+    <path
+        android:fillColor="#FFFEF3C7"
+        android:pathData="M33,33.5 h4.8 a1.5,1.5 0 0 1 0,3 h-4.8 a1.5,1.5 0 0 1 0,-3 z" />
 </vector>
