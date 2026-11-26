@@ -177,19 +177,31 @@ class CalendarWidgetConfigureActivity : ComponentActivity() {
                                     PreviewDayCellCard(
                                         modifier = Modifier.weight(1f),
                                         dayNumber = "15",
-                                        lunarText = if (selectedShowLunar) "十月初六" else null,
+                                        lunarText = if (selectedShowLunar) "初六" else null,
+                                        isToday = false,
+                                        isSunday = true,
+                                        sampleEventTitle = "週日家庭聚餐"
+                                    )
+                                    PreviewDayCellCard(
+                                        modifier = Modifier.weight(1f),
+                                        dayNumber = "16",
+                                        lunarText = if (selectedShowLunar) "初七" else null,
                                         isToday = true,
                                         sampleEventTitle = "完成企劃書"
                                     )
                                     PreviewDayCellCard(
                                         modifier = Modifier.weight(1f),
-                                        dayNumber = "22",
-                                        lunarText = if (selectedShowLunar) "小雪" else null,
+                                        dayNumber = "17",
+                                        lunarText = if (selectedShowLunar) "中秋節" else null,
                                         isToday = false,
                                         isLunarHighlight = true,
                                         sampleEventTitle = "讀書筆記"
                                     )
                                 }
+                                HorizontalDivider(
+                                    thickness = 1.dp,
+                                    color = MaterialTheme.colorScheme.outlineVariant
+                                )
                             }
                         }
 
@@ -236,7 +248,8 @@ private fun PreviewDayCellCard(
     isToday: Boolean,
     sampleEventTitle: String,
     modifier: Modifier = Modifier,
-    isLunarHighlight: Boolean = false
+    isLunarHighlight: Boolean = false,
+    isSunday: Boolean = false
 ) {
     Surface(
         modifier = modifier.height(82.dp),
@@ -244,12 +257,13 @@ private fun PreviewDayCellCard(
         color = if (isToday) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
         } else {
-            MaterialTheme.colorScheme.surface
+            Color.Transparent
         },
-        border = BorderStroke(
-            width = if (isToday) 1.5.dp else 1.dp,
-            color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-        )
+        border = if (isToday) {
+            BorderStroke(width = 1.5.dp, color = MaterialTheme.colorScheme.primary)
+        } else {
+            null
+        }
     ) {
         Column(
             modifier = Modifier
@@ -262,7 +276,11 @@ private fun PreviewDayCellCard(
                 text = dayNumber,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                color = when {
+                    isSunday -> Color(0xFFD32F2F)
+                    isToday -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
                 textAlign = TextAlign.Center
             )
             if (lunarText != null) {

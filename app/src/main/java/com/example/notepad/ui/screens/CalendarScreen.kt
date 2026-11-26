@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +44,7 @@ import com.example.notepad.reminder.ReminderScheduler
 import com.example.notepad.ui.components.*
 import com.example.notepad.ui.theme.CalendarThemeResolver
 import com.example.notepad.ui.theme.LocalPersonalizationSettings
+import com.example.notepad.widget.CalendarWidgetUpdater
 import com.example.notepad.widget.ToDoWidgetLogic
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -160,6 +162,11 @@ fun CalendarScreen(
         }
     }
 
+    // 當使用者於 App 月曆切換瀏覽年月時，同步更新桌面月曆小工具顯示之年月與內容
+    LaunchedEffect(currentYear, currentMonth) {
+        CalendarWidgetUpdater.syncDisplayedMonth(context, currentYear, currentMonth)
+    }
+
     val selectedDayNotes = remember(allNotes, selectedDayStartMillis) {
         allNotes
             .filter { ToDoWidgetLogic.normalizeToLocalMidnight(it.createdAt) == selectedDayStartMillis }
@@ -225,8 +232,9 @@ fun CalendarScreen(
                             color = calendarPalette.headerContentColor
                         )
                         Text(
-                            text = selectedDateInfo.lunarDate.getYearCyclic(),
+                            text = "農曆 ${selectedDateInfo.lunarDate.getYearCyclic()}",
                             style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.SansSerif,
                             color = calendarPalette.headerSubContentColor
                         )
                     }
@@ -306,6 +314,13 @@ fun CalendarScreen(
                     val rows = totalSlots / 7
 
                     for (row in 0 until rows) {
+                        if (row > 0) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 2.dp),
+                                thickness = 0.5.dp,
+                                color = calendarPalette.gridBorderColor
+                            )
+                        }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -393,6 +408,7 @@ fun CalendarScreen(
                                             Text(
                                                 text = info.displayLabel,
                                                 fontSize = 9.sp,
+                                                fontFamily = FontFamily.SansSerif,
                                                 maxLines = 1,
                                                 fontWeight = if (!info.festival.isNullOrEmpty() || !info.solarTerm.isNullOrEmpty()) FontWeight.Bold else FontWeight.Normal,
                                                 color = calendarPalette.resolveLunarLabelColor(
@@ -463,8 +479,9 @@ fun CalendarScreen(
                             color = calendarPalette.detailTextColor
                         )
                         Text(
-                            text = selectedDateInfo.lunarDate.getFormattedString(),
+                            text = "農曆 ${selectedDateInfo.lunarDate.getFormattedString()}",
                             style = MaterialTheme.typography.bodyMedium,
+                            fontFamily = FontFamily.SansSerif,
                             color = calendarPalette.detailPrimaryColor,
                             fontWeight = FontWeight.SemiBold
                         )

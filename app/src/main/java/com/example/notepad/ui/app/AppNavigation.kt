@@ -361,7 +361,7 @@ fun AppNavigation(
                     val headerTitle = when (currentTopRoute) {
                         NotesRoute -> "📝 記事與分類搜尋"
                         TaskRoute -> "📋 雙軌待辦與提醒"
-                        CalendarRoute -> "📅 農曆萬年曆"
+                        CalendarRoute -> "📅 月曆"
                         ScheduleRoute -> "⏰ 時間規畫表"
                         PomodoroRoute -> "🍅 專注番茄鐘"
                         else -> "記事本"

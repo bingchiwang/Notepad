@@ -38,6 +38,19 @@ class CalendarWidgetPreferences(context: Context) {
     }
 
     /**
+     * 將所有已放置於桌面的月曆小工具同步至 App 內目前顯示的年與月
+     */
+    fun syncAllWidgetsDisplayedMonth(appWidgetIds: IntArray, year: Int, month: Int) {
+        if (appWidgetIds.isEmpty()) return
+        val editor = prefs.edit()
+        appWidgetIds.forEach { appWidgetId ->
+            editor.putInt(yearKey(appWidgetId), year)
+            editor.putInt(monthKey(appWidgetId), month)
+        }
+        editor.apply()
+    }
+
+    /**
      * 將指定小工具的顯示月份往前或往後移動 [deltaMonths] 個月
      */
     fun shiftDisplayedMonth(

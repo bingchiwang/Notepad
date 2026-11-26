@@ -6,6 +6,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.dp
 import com.example.notepad.data.preferences.CalendarStyle
 
@@ -35,17 +36,19 @@ data class CalendarPalette(
     val detailSolarTermColor: Color
 ) {
     /**
-     * 計算月曆單一日期格之數字文字顏色（確保不與選日或卡片底色相同）
+     * 計算月曆單一日期格之數字文字顏色（星期日強制維持高對比紅色，且不與選日或卡片底色衝突）
      */
     fun resolveDayNumberColor(isSelected: Boolean, dayOfWeekIndex: Int): Color {
         val activeBg = if (isSelected) selectedBgColor else cardBgColor
-        val preferred = when {
-            isSelected -> selectedTextColor
-            dayOfWeekIndex == 0 -> Color(0xFFE53935)
-            dayOfWeekIndex == 6 -> Color(0xFF1E88E5)
-            else -> ColorContrastUtils.bestOnBackgroundColor(cardBgColor)
+        val bgIsLight = activeBg.luminance() > 0.5f
+        val sundayRed = if (bgIsLight) Color(0xFFD32F2F) else Color(0xFFFF5252)
+        val saturdayBlue = if (bgIsLight) Color(0xFF1565C0) else Color(0xFF64B5F6)
+        return when {
+            dayOfWeekIndex == 0 -> ColorContrastUtils.ensureReadableAccentOnSurface(sundayRed, activeBg)
+            isSelected -> ColorContrastUtils.ensureReadableTextColor(selectedTextColor, activeBg)
+            dayOfWeekIndex == 6 -> ColorContrastUtils.ensureReadableAccentOnSurface(saturdayBlue, activeBg)
+            else -> ColorContrastUtils.bestOnBackgroundColor(activeBg)
         }
-        return ColorContrastUtils.ensureReadableTextColor(preferred, activeBg)
     }
 
     /**
@@ -57,13 +60,18 @@ data class CalendarPalette(
         hasSolarTerm: Boolean
     ): Color {
         val activeBg = if (isSelected) selectedBgColor else cardBgColor
-        val preferred = when {
-            hasFestival -> Color(0xFFD32F2F)
-            hasSolarTerm -> Color(0xFF388E3C)
-            isSelected -> selectedTextColor.copy(alpha = 0.9f)
-            else -> ColorContrastUtils.bestOnBackgroundColor(cardBgColor).copy(alpha = 0.68f)
+        val bgIsLight = activeBg.luminance() > 0.5f
+        val festivalRed = if (bgIsLight) Color(0xFFD32F2F) else Color(0xFFFF5252)
+        val solarTermGreen = if (bgIsLight) Color(0xFF2E7D32) else Color(0xFF81C784)
+        return when {
+            hasFestival -> ColorContrastUtils.ensureReadableAccentOnSurface(festivalRed, activeBg)
+            hasSolarTerm -> ColorContrastUtils.ensureReadableAccentOnSurface(solarTermGreen, activeBg)
+            isSelected -> ColorContrastUtils.ensureReadableTextColor(selectedTextColor.copy(alpha = 0.9f), activeBg)
+            else -> ColorContrastUtils.ensureReadableTextColor(
+                ColorContrastUtils.bestOnBackgroundColor(cardBgColor).copy(alpha = 0.68f),
+                activeBg
+            )
         }
-        return ColorContrastUtils.ensureReadableTextColor(preferred, activeBg)
     }
 }
 
@@ -161,6 +169,10 @@ object CalendarThemeResolver {
             minContrast = ColorContrastUtils.MIN_ACCENT_CONTRAST
         )
 
+        val cardIsLight = rawBase.cardBg.luminance() > 0.5f
+        val sundayBaseRed = if (cardIsLight) Color(0xFFD32F2F) else Color(0xFFFF5252)
+        val saturdayBaseBlue = if (cardIsLight) Color(0xFF1565C0) else Color(0xFF64B5F6)
+
         return CalendarPalette(
             headerBgColor = rawBase.headerBg,
             headerContentColor = headerText,
@@ -175,13 +187,13 @@ object CalendarThemeResolver {
             selectedTextColor = selectedText,
             todayBgColor = todayBg,
             todayBorderColor = todayBorder,
-            sundayHeaderColor = ColorContrastUtils.ensureReadableTextColor(Color(0xFFE53935), rawBase.cardBg),
-            saturdayHeaderColor = ColorContrastUtils.ensureReadableTextColor(Color(0xFF1E88E5), rawBase.cardBg),
+            sundayHeaderColor = ColorContrastUtils.ensureReadableAccentOnSurface(sundayBaseRed, rawBase.cardBg),
+            saturdayHeaderColor = ColorContrastUtils.ensureReadableAccentOnSurface(saturdayBaseBlue, rawBase.cardBg),
             weekdayHeaderColor = onCardInk.copy(alpha = 0.78f),
             detailPrimaryColor = ColorContrastUtils.ensureReadableAccentOnSurface(rawBase.selectedBg, rawBase.detailBg),
             detailTextColor = onDetailInk,
-            detailFestivalColor = ColorContrastUtils.ensureReadableTextColor(Color(0xFFD32F2F), rawBase.detailBg),
-            detailSolarTermColor = ColorContrastUtils.ensureReadableTextColor(Color(0xFF388E3C), rawBase.detailBg)
+            detailFestivalColor = ColorContrastUtils.ensureReadableAccentOnSurface(Color(0xFFD32F2F), rawBase.detailBg),
+            detailSolarTermColor = ColorContrastUtils.ensureReadableAccentOnSurface(Color(0xFF2E7D32), rawBase.detailBg)
         )
     }
 

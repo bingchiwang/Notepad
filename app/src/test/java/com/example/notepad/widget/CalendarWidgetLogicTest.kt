@@ -31,8 +31,8 @@ class CalendarWidgetLogicTest {
     }
 
     @Test
-    fun `完整月份網格固定為42格且週日對齊並正確標示今天日期`() {
-        // 2026 年 12 月 1 日為星期二，因此第 0 格應為 11 月 29 日（星期日）
+    fun `完整月份網格依當月實際週數動態對齊且正確標示週日與今天日期`() {
+        // 2026 年 12 月 1 日為星期二，共跨 5 週（35 格），第 0 格應為 11 月 29 日（星期日）
         val today = localMillis(2026, 12, 15, 14, 30)
         val state = CalendarWidgetLogic.resolveMonthGrid(
             year = 2026,
@@ -43,14 +43,17 @@ class CalendarWidgetLogicTest {
         )
 
         assertEquals("2026年 12月", state.headerTitle)
-        assertEquals(CalendarWidgetLogic.GRID_CELL_COUNT, state.cells.size)
+        assertEquals(5, state.weekCount)
+        assertEquals(35, state.cells.size)
         assertEquals(localMillis(2026, 12, 15, 0, 0), state.quickAddDefaultDateMillis)
 
-        // 第一格為上個月（11/29），isCurrentMonth 應為 false
+        // 第一格為上個月（11/29 星期日），isCurrentMonth 為 false 且 isSunday 為 true
         assertEquals(29, state.cells.first().dayOfMonth)
         assertFalse(state.cells.first().isCurrentMonth)
+        assertTrue(state.cells.first().isSunday)
+        assertFalse(state.cells[1].isSunday)
 
-        // 本月最後幾格為隔月（1/9）
+        // 本月最後幾格為隔月（1/2）
         assertFalse(state.cells.last().isCurrentMonth)
 
         // 當月天數應恰為 31 格，且僅有 12/15 標示 isToday = true
@@ -59,6 +62,42 @@ class CalendarWidgetLogicTest {
         val todayCells = state.cells.filter { it.isToday }
         assertEquals(1, todayCells.size)
         assertEquals(15, todayCells.first().dayOfMonth)
+    }
+
+    @Test
+    fun `動態週數支援4週5週與6週月份自動增減列數`() {
+        // 2026 年 2 月：2/1 為週日且共 28 天 -> 恰為 4 週（28 格）
+        val feb2026 = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 2,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 2, 1)
+        )
+        assertEquals(4, feb2026.weekCount)
+        assertEquals(28, feb2026.cells.size)
+
+        // 2026 年 11 月：11/1 為週日且共 30 天 -> 5 週（35 格）
+        val nov2026 = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 11,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 11, 1)
+        )
+        assertEquals(5, nov2026.weekCount)
+        assertEquals(35, nov2026.cells.size)
+
+        // 2026 年 5 月：5/1 為週五且共 31 天 -> 6 週（42 格）
+        val may2026 = CalendarWidgetLogic.resolveMonthGrid(
+            year = 2026,
+            month = 5,
+            notes = emptyList(),
+            todos = emptyList(),
+            todayMillis = localMillis(2026, 5, 1)
+        )
+        assertEquals(6, may2026.weekCount)
+        assertEquals(42, may2026.cells.size)
     }
 
     @Test

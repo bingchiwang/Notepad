@@ -294,6 +294,16 @@
   - 支援記事 Markdown 核取清單即時互動勾選、Enter 延續與選字轉換待辦／時間規劃
   - 全專案 93 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
+### Task_26_CalendarAndWidgetRefinement: 月曆標題改為「月曆」、週日「日」與數字改紅色、農曆繁體中文與台灣節慶、小工具月曆同步／放大年月字體／動態週數列／每週橫線區隔。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 將 `AppNavigation` 月曆頁標題由「📅 農曆萬年曆」改為「📅 月曆」，並於 `CalendarThemeResolver`、`CalendarWidgetProvider` 與 `widget_calendar.xml` 將星期日「日」及星期日日期數字統一設為紅色。
+  - 更新 `LunarCalendarEngine` 與 `LunarCalendarFacade` 為台灣繁體中文二十四節氣與台灣節慶（元旦、二二八和平紀念日、兒童節、母親節、端午節、父親節、中元節、教師節、中秋節、雙十國慶日、台灣光復節、除夕、春節、尾牙、行憲紀念日等），並修正閏月年份月份推進邏輯。
+  - 更新 `CalendarWidgetLogic`、`CalendarWidgetProvider` 與 `widget_calendar.xml`：放大年月標題至 `18sp`、依當月實際週數（4~6 週）動態增減列數、取消每日方框改以每週橫線區隔，並與 App 月曆同步顯示月份與資料。
+- **驗收標準 (Acceptance Criteria):**
+  - App 月曆與小工具月曆之週日紅字、台灣節慶、動態週數與每週橫線區隔一致生效
+  - 全專案 94 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

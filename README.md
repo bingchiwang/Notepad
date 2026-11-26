@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-93%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-94%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -225,11 +225,11 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **20 個單元測試套件、共 93 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **20 個單元測試套件、共 94 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
-| `LunarCalendarFacadeTest` | 4 | 春節農曆換算、清明節氣、聖誕節慶與明日到期判定 |
+| `LunarCalendarFacadeTest` | 4 | 春節農曆換算、繁體中文二十四節氣、台灣節慶（除夕、二二八、母親節、父親節、教師節、國慶日等）與明日到期判定 |
 | `PriorityAndConvertersTest` | 5 | 優先級權重排序與 Room `DatabaseConverters`（含 `RecurrenceType`）雙向轉換 |
 | `RecurringTaskLogicTest` | 5 | 每天／每週／每月（含月底 31 日保留不偏移）下期計算、標籤格式與防重生成保護 |
 | `NoteRepositoryTest` | 9 | 記事空白標題/內文保存、`updatedAt` 更新、釘選排序、分類防重、刪除分類記事歸屬、全文搜尋與離線刪除墓碑 |
@@ -243,11 +243,11 @@ com.example.notepad/
 | `CloudSyncManagerTest` | 4 | 本地優先上傳、雲端拉取合併、離線墓碑排隊與網路恢復自動上傳、個人化設定雲端同步 |
 | `GoogleDriveSyncPayloadSerializerTest` | 2 | Google 雲端硬碟 JSON 快照之 64 位元整數、空值與各實體／墓碑來回序列化與異常防護 |
 | `GoogleDriveRemoteDataSourceTest` | 3 | Google Drive `appDataFolder` 建立與增量更新保留既有文件、HTTP 401 提示與路由分派 |
-| `ColorContrastUtilsTest` | 5 | WCAG 相對明度與對比度、淺底深字/深底白字自動切換、同色邊框判定、Hex 色碼解析與 6 款月曆樣式防重色驗證 |
+| `ColorContrastUtilsTest` | 5 | WCAG 相對明度與對比度、淺底深字/深底白字自動切換、同色邊框判定、Hex 色碼解析、6 款月曆樣式防重色與週日紅字保持 |
 | `QuickNoteWidgetLogicTest` | 7 | 記事小工具分類編解碼、釘選與更新時間排序、分類刪除退回、空白標題／多行摘要格式化與深度連結解析 |
 | `ToDoWidgetLogicTest` | 5 | 待辦小工具未完成過濾、優先級與截止日排序、徽章標籤格式、逾期／今日／明日判別與深度連結解析 |
 | `TodayScheduleWidgetLogicTest` | 5 | 今日行程小工具今日到期待辦、綜合完成進度計算、即將到來提醒排序與格式及深度連結解析 |
-| `CalendarWidgetLogicTest` | 7 | 月曆小工具跨年月份切換、42 格週日對齊與今日標示、記事與待辦歸類、超過 2 筆顯示 `＋3 項`、農曆顯示切換與深度連結解析 |
+| `CalendarWidgetLogicTest` | 8 | 月曆小工具跨年月份切換、4／5／6 週動態週數與週日標記、記事與待辦歸類、超過 2 筆顯示 `＋3 項`、農曆顯示切換與深度連結解析 |
 | `ExampleUnitTest` | 1 | 基礎 JUnit 測試環境驗證 |
 
 ---
@@ -280,7 +280,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 93 項單元測試
+# 1. 執行全部 94 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

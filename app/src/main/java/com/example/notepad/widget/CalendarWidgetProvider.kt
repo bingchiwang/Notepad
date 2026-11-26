@@ -101,6 +101,15 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             R.id.widget_cal_week_5
         )
 
+        private val WEEK_DIVIDER_IDS = intArrayOf(
+            0,
+            R.id.widget_cal_divider_1,
+            R.id.widget_cal_divider_2,
+            R.id.widget_cal_divider_3,
+            R.id.widget_cal_divider_4,
+            R.id.widget_cal_divider_5
+        )
+
         /**
          * 讀取本地記事與待辦任務並重新繪製指定月曆桌面小工具
          */
@@ -228,19 +237,31 @@ class CalendarWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widget_cal_add_button, quickAddPendingIntent)
 
-            // 填入 6 週 x 7 天 月曆格網（共 42 格）
+            // 依當月實際週數（4~6 週）動態顯示或隱藏週次列與週隔橫線
             WEEK_ROW_IDS.forEachIndexed { weekIndex, weekRowId ->
                 views.removeAllViews(weekRowId)
-                for (dayInWeek in 0 until 7) {
-                    val cellIndex = weekIndex * 7 + dayInWeek
-                    val cellState = resolved.cells.getOrNull(cellIndex) ?: continue
-                    val cellViews = buildDayCellRemoteViews(
-                        context = context,
-                        appWidgetId = appWidgetId,
-                        cellIndex = cellIndex,
-                        cell = cellState
-                    )
-                    views.addView(weekRowId, cellViews)
+                val dividerId = WEEK_DIVIDER_IDS[weekIndex]
+                if (weekIndex < resolved.weekCount) {
+                    views.setViewVisibility(weekRowId, View.VISIBLE)
+                    if (dividerId != 0) {
+                        views.setViewVisibility(dividerId, View.VISIBLE)
+                    }
+                    for (dayInWeek in 0 until 7) {
+                        val cellIndex = weekIndex * 7 + dayInWeek
+                        val cellState = resolved.cells.getOrNull(cellIndex) ?: continue
+                        val cellViews = buildDayCellRemoteViews(
+                            context = context,
+                            appWidgetId = appWidgetId,
+                            cellIndex = cellIndex,
+                            cell = cellState
+                        )
+                        views.addView(weekRowId, cellViews)
+                    }
+                } else {
+                    views.setViewVisibility(weekRowId, View.GONE)
+                    if (dividerId != 0) {
+                        views.setViewVisibility(dividerId, View.GONE)
+                    }
                 }
             }
 
@@ -255,13 +276,16 @@ class CalendarWidgetProvider : AppWidgetProvider() {
         ): RemoteViews {
             val cellViews = RemoteViews(context.packageName, R.layout.widget_calendar_day_cell)
 
-            // 今天以藍色底＋外框標示，其餘依是否屬於當月調整背景與日號顏色
+            // 今天以藍色底＋外框標示，一般日期不畫方框（僅以每週橫線區隔）；星期日數字為紅色
             val cellBackgroundRes = when {
                 cell.isToday -> R.drawable.widget_cal_today_bg
                 cell.isCurrentMonth -> R.drawable.widget_cal_cell_bg
                 else -> R.drawable.widget_cal_cell_other_bg
             }
+            val isSundayCell = cell.isSunday || (cellIndex % 7 == 0)
             val dayNumberColorRes = when {
+                isSundayCell && cell.isCurrentMonth -> R.color.widget_cal_sunday_text
+                isSundayCell && !cell.isCurrentMonth -> R.color.widget_cal_sunday_other_text
                 cell.isToday -> R.color.widget_cal_today_text
                 cell.isCurrentMonth -> R.color.widget_text_primary
                 else -> R.color.widget_cal_text_other
@@ -445,6 +469,30 @@ object CalendarWidgetUpdater {
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
         if (appWidgetIds.isEmpty()) return
 
+        updateScope.launch {
+            CalendarWidgetProvider.updateWidgetsInternal(
+                context = appContext,
+                appWidgetManager = appWidgetManager,
+                appWidgetIds = appWidgetIds
+            )
+        }
+    }
+
+    /**
+     * 當使用者於 App 內月曆切換瀏覽年月時，同步更新桌面月曆小工具顯示之年月與內容
+     */
+    fun syncDisplayedMonth(context: Context, year: Int, month: Int) {
+        val appContext = context.applicationContext
+        val appWidgetManager = AppWidgetManager.getInstance(appContext) ?: return
+        val componentName = ComponentName(appContext, CalendarWidgetProvider::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        if (appWidgetIds.isEmpty()) return
+
+        CalendarWidgetPreferences(appContext).syncAllWidgetsDisplayedMonth(
+            appWidgetIds = appWidgetIds,
+            year = year,
+            month = month
+        )
         updateScope.launch {
             CalendarWidgetProvider.updateWidgetsInternal(
                 context = appContext,

@@ -7,7 +7,7 @@
     android:orientation="vertical"
     android:padding="10dp">
 
-    <!-- 頂部月份導覽與快速新增按鈕 -->
+    <!-- 頂部月份導覽與快速新增按鈕（放大年份與月份字體） -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,16 +16,16 @@
         android:paddingBottom="6dp">
 
         <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
             android:layout_marginEnd="5dp"
             android:contentDescription="@string/widget_calendar_name"
             android:src="@drawable/ic_widget_calendar" />
 
         <LinearLayout
             android:id="@+id/widget_cal_prev_button"
-            android:layout_width="26dp"
-            android:layout_height="28dp"
+            android:layout_width="28dp"
+            android:layout_height="30dp"
             android:background="@drawable/widget_cal_nav_bg"
             android:gravity="center"
             android:orientation="horizontal">
@@ -41,20 +41,22 @@
             android:id="@+id/widget_cal_month_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="4dp"
+            android:layout_marginHorizontal="6dp"
             android:layout_weight="1"
             android:ellipsize="end"
+            android:fontFamily="sans-serif"
             android:gravity="center"
+            android:includeFontPadding="false"
             android:maxLines="1"
             android:text="2026年 1月"
             android:textColor="@color/widget_text_primary"
-            android:textSize="13.5sp"
+            android:textSize="18sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:id="@+id/widget_cal_next_button"
-            android:layout_width="26dp"
-            android:layout_height="28dp"
+            android:layout_width="28dp"
+            android:layout_height="30dp"
             android:layout_marginEnd="5dp"
             android:background="@drawable/widget_cal_nav_bg"
             android:gravity="center"
@@ -73,6 +75,7 @@
             android:layout_height="28dp"
             android:layout_marginEnd="5dp"
             android:background="@drawable/widget_chip_bg"
+            android:fontFamily="sans-serif"
             android:gravity="center"
             android:maxLines="1"
             android:paddingHorizontal="7dp"
@@ -107,7 +110,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- 星期列（日 一 二 三 四 五 六） -->
+    <!-- 星期列（日 一 二 三 四 五 六；星期日「日」為紅色） -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -121,8 +124,8 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="日"
-            android:textColor="@color/widget_cal_today_text"
-            android:textSize="10.5sp"
+            android:textColor="@color/widget_cal_sunday_text"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -132,7 +135,7 @@
             android:gravity="center"
             android:text="一"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -142,7 +145,7 @@
             android:gravity="center"
             android:text="二"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -152,7 +155,7 @@
             android:gravity="center"
             android:text="三"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -162,7 +165,7 @@
             android:gravity="center"
             android:text="四"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -172,7 +175,7 @@
             android:gravity="center"
             android:text="五"
             android:textColor="@color/widget_text_secondary"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
 
         <TextView
@@ -182,11 +185,18 @@
             android:gravity="center"
             android:text="六"
             android:textColor="@color/widget_cal_today_text"
-            android:textSize="10.5sp"
+            android:textSize="11sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- 完整 6 週 x 7 天 月曆格（動態填入 widget_calendar_day_cell） -->
+    <!-- 星期標題下方橫線 -->
+    <TextView
+        android:id="@+id/widget_cal_header_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_cal_cell_border" />
+
+    <!-- 依當月實際週數（4~6 週）動態顯示之週次列，每週之間僅以橫線區隔 -->
     <LinearLayout
         android:id="@+id/widget_cal_week_0"
         android:layout_width="match_parent"
@@ -194,6 +204,12 @@
         android:layout_weight="1"
         android:orientation="horizontal"
         android:weightSum="7" />
+
+    <TextView
+        android:id="@+id/widget_cal_divider_1"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_cal_cell_border" />
 
     <LinearLayout
         android:id="@+id/widget_cal_week_1"
@@ -203,6 +219,12 @@
         android:orientation="horizontal"
         android:weightSum="7" />
 
+    <TextView
+        android:id="@+id/widget_cal_divider_2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_cal_cell_border" />
+
     <LinearLayout
         android:id="@+id/widget_cal_week_2"
         android:layout_width="match_parent"
@@ -210,6 +232,12 @@
         android:layout_weight="1"
         android:orientation="horizontal"
         android:weightSum="7" />
+
+    <TextView
+        android:id="@+id/widget_cal_divider_3"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_cal_cell_border" />
 
     <LinearLayout
         android:id="@+id/widget_cal_week_3"
@@ -219,6 +247,12 @@
         android:orientation="horizontal"
         android:weightSum="7" />
 
+    <TextView
+        android:id="@+id/widget_cal_divider_4"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_cal_cell_border" />
+
     <LinearLayout
         android:id="@+id/widget_cal_week_4"
         android:layout_width="match_parent"
@@ -226,6 +260,12 @@
         android:layout_weight="1"
         android:orientation="horizontal"
         android:weightSum="7" />
+
+    <TextView
+        android:id="@+id/widget_cal_divider_5"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/widget_cal_cell_border" />
 
     <LinearLayout
         android:id="@+id/widget_cal_week_5"

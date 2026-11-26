@@ -41,9 +41,9 @@ class LunarCalendarEngine {
         )
 
         private val solarTermNames = arrayOf(
-            "小寒", "大寒", "立春", "雨水", "惊蛰", "春分",
-            "清明", "谷雨", "立夏", "小满", "芒种", "夏至",
-            "小暑", "大暑", "立秋", "处暑", "白露", "秋分",
+            "小寒", "大寒", "立春", "雨水", "驚蟄", "春分",
+            "清明", "穀雨", "立夏", "小滿", "芒種", "夏至",
+            "小暑", "大暑", "立秋", "處暑", "白露", "秋分",
             "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"
         )
 
@@ -52,22 +52,37 @@ class LunarCalendarEngine {
             263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758
         )
 
-        // 國曆固定節日對照表 (MMDD -> 節日識別鍵)
+        // 台灣國曆主要節慶與紀念日對照表 (MMDD -> 繁體中文節慶名稱)
         private val solarFestivals = mapOf(
-            "0101" to "New Year's Day",
-            "0214" to "Valentine's Day",
-            "0501" to "Labor Day",
-            "1225" to "Christmas"
+            "0101" to "元旦",
+            "0214" to "西洋情人節",
+            "0228" to "和平紀念日",
+            "0308" to "婦女節",
+            "0329" to "青年節",
+            "0404" to "兒童節",
+            "0501" to "勞動節",
+            "0808" to "父親節",
+            "0903" to "軍人節",
+            "0928" to "教師節",
+            "1010" to "國慶日",
+            "1025" to "台灣光復節",
+            "1225" to "行憲紀念日"
         )
 
-        // 農曆傳統節日對照表 (MMDD -> 節日識別鍵)
+        // 台灣農曆傳統節慶對照表 (MMDD -> 繁體中文節慶名稱)
         private val lunarFestivals = mapOf(
-            "0101" to "Spring Festival",
-            "0115" to "Lantern Festival",
-            "0505" to "Dragon Boat Festival",
-            "0707" to "Qixi Festival",
-            "0815" to "Mid-Autumn Festival",
-            "0909" to "Double Ninth Festival"
+            "0101" to "春節",
+            "0109" to "天公生",
+            "0115" to "元宵節",
+            "0202" to "頭牙",
+            "0323" to "媽祖生",
+            "0505" to "端午節",
+            "0707" to "七夕",
+            "0715" to "中元節",
+            "0815" to "中秋節",
+            "0909" to "重陽節",
+            "1216" to "尾牙",
+            "1224" to "送神"
         )
 
         /**
@@ -137,57 +152,32 @@ class LunarCalendarEngine {
 
             var daysToConsume = offset
             var iYear = 1900
-            var daysOfYear = 0
-            while (iYear <= 2100 && daysToConsume > 0) {
-                daysOfYear = getYearDays(iYear)
+            while (iYear <= 2100) {
+                val daysOfYear = getYearDays(iYear)
+                if (daysToConsume < daysOfYear) break
                 daysToConsume -= daysOfYear
                 iYear++
             }
 
-            if (daysToConsume < 0) {
-                daysToConsume += daysOfYear
-                iYear--
-            }
-
-            var leapMonth = getLeapMonth(iYear)
+            val leapMonth = getLeapMonth(iYear)
             var isLeap = false
             var iMonth = 1
-            var daysOfMonth = 0
 
-            while (iMonth <= 12 && daysToConsume > 0) {
-                if (leapMonth > 0 && iMonth == leapMonth + 1 && !isLeap) {
-                    --iMonth
-                    isLeap = true
-                    daysOfMonth = getLeapMonthDays(iYear)
+            while (iMonth <= 12 && daysToConsume >= 0) {
+                val daysOfMonth = if (isLeap) {
+                    getLeapMonthDays(iYear)
                 } else {
-                    daysOfMonth = getMonthDays(iYear, iMonth)
+                    getMonthDays(iYear, iMonth)
                 }
-
-                if (isLeap && iMonth == leapMonth + 1) {
-                    isLeap = false
+                if (daysToConsume < daysOfMonth) {
+                    break
                 }
-
                 daysToConsume -= daysOfMonth
-                if (!isLeap) {
-                    iMonth++
-                }
-            }
-
-            if (daysToConsume == 0 && leapMonth > 0 && iMonth == leapMonth + 1) {
-                if (isLeap) {
-                    isLeap = false
-                } else {
+                if (leapMonth > 0 && iMonth == leapMonth && !isLeap) {
                     isLeap = true
-                    --iMonth
-                }
-            }
-
-            if (daysToConsume < 0) {
-                daysToConsume += daysOfMonth
-                if (!isLeap) {
-                    --iMonth
                 } else {
                     isLeap = false
+                    iMonth++
                 }
             }
 
@@ -214,19 +204,33 @@ class LunarCalendarEngine {
         }
 
         fun getFestival(solarDate: Calendar, lunarDate: LunarDate): String? {
-            val sMonth = (solarDate.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
-            val sDay = solarDate.get(Calendar.DAY_OF_MONTH).toString().padStart(2, '0')
-            val sKey = sMonth + sDay
-            if (solarFestivals.containsKey(sKey)) {
-                return solarFestivals[sKey]
+            // 1. 台灣農曆重要傳統節慶（含農曆臘月最後一日「除夕」）
+            if (!lunarDate.isLeapMonth) {
+                if (lunarDate.month == 12 && lunarDate.day == getMonthDays(lunarDate.year, 12)) {
+                    return "除夕"
+                }
+                val lMonth = lunarDate.month.toString().padStart(2, '0')
+                val lDay = lunarDate.day.toString().padStart(2, '0')
+                val lKey = lMonth + lDay
+                lunarFestivals[lKey]?.let { return it }
             }
 
-            val lMonth = lunarDate.month.toString().padStart(2, '0')
-            val lDay = lunarDate.day.toString().padStart(2, '0')
-            val lKey = lMonth + lDay
-            if (!lunarDate.isLeapMonth && lunarFestivals.containsKey(lKey)) {
-                return lunarFestivals[lKey]
+            // 2. 台灣國曆固定節慶與紀念日
+            val monthNum = solarDate.get(Calendar.MONTH) + 1
+            val dayNum = solarDate.get(Calendar.DAY_OF_MONTH)
+            val sMonth = monthNum.toString().padStart(2, '0')
+            val sDay = dayNum.toString().padStart(2, '0')
+            val sKey = sMonth + sDay
+            solarFestivals[sKey]?.let { return it }
+
+            // 3. 台灣母親節（每年 5 月第 2 個星期日）
+            if (monthNum == 5 &&
+                solarDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY &&
+                dayNum in 8..14
+            ) {
+                return "母親節"
             }
+
             return null
         }
     }

@@ -125,7 +125,7 @@
 - **即時聯動刷新**：`ReminderReceiver`、`TaskRepository.onLocalDataChanged` 與 `CloudSyncManager.onRemoteDataSynced` 皆即時觸發 `TodayScheduleWidgetUpdater.notifyDataChanged`。
 
 ### 3.11 月曆桌面小工具與全小工具圖示系統（`CalendarWidgetProvider` / `CalendarWidgetLogic` / `CalendarWidgetPreferences` / `CalendarWidgetConfigureActivity`）
-- **完整月份與星期顯示（日期置中靠上＋可選農曆日期）**：透過 `CalendarWidgetLogic.resolveMonthGrid` 產生固定 6 週 × 7 天（42 格，週日為首日）月曆格網與「`YYYY年 M月`」標題（搭配 `ic_widget_calendar.xml` 標頭圖示），今天日期以藍色底色與藍色外框（`widget_cal_today_bg.xml`）及藍字日號標示；格內國曆日號採「置中靠上（`top|center_horizontal`）」對齊，並透過 `CalendarWidgetPreferences` 依 `appWidgetId` 獨立保存顯示年月與是否顯示農曆開關（`showLunarDate`），支援點擊頂部「`農曆 ✓`」按鈕一鍵切換，或於加入／重設配置頁（`CalendarWidgetConfigureActivity`）預覽與選擇是否顯示農曆日期、節慶與二十四節氣。
+- **動態週數、每週橫線區隔與大字體年月標題（同步 App 月曆）**：透過 `CalendarWidgetLogic.resolveMonthGrid` 依當月實際週數動態產生 4～6 週 × 7 天（28／35／42 格，週日為首日）月曆列與放大版 `18sp`「`YYYY年 M月`」標題，星期日標題「日」與星期日日期數字均為紅色，每週之間以橫線區隔（不畫每日獨立方框），今天日期以藍色底色與外框（`widget_cal_today_bg.xml`）標示；格內國曆日號採「置中靠上（`top|center_horizontal`）」對齊，農曆欄位採繁體中文與台灣節慶（含除夕、春節、二二八、兒童節、母親節、端午節、父親節、中元節、教師節、中秋節、國慶日等），並於 App 切換年月或異動資料時即時同步桌面小工具。
 - **直接顯示圖示＋文字標籤與多筆截斷規則（不使用小圓點）**：
   - 將該日建立的 `Note`（依 `createdAt` 歸屬當日）與該日到期的 `ToDo`（依 `dueDate` 歸屬當日）直接以附帶類型圖示（`ic_widget_cal_event_note` / `ic_widget_cal_event_todo` / `ic_widget_cal_event_todo_done`）之單行省略文字膠囊（`maxLines = 1, ellipsize = end`）呈現於日期格內，並以不同底色區分記事（暖琥珀底色）與待辦事項（湛藍底色／已完成翠綠底色）。
   - 每個日期格最多直接顯示 2 筆事項（`MAX_VISIBLE_EVENTS = 2`）；當同一天超過 2 筆事項時，自動計算剩餘筆數並顯示「`＋N 項`」標籤（例如共 5 筆時顯示前 2 筆及「`＋3 項`」）。
@@ -137,34 +137,34 @@
   - 點擊格內待辦膠囊：透過 `WidgetDeepLink.OpenToDoDetail(taskId)` 直接開啟 `TaskDetailRoute` 查看或修改該筆待辦事項。
   - 點擊左右箭頭：發送廣播 `ACTION_PREV_MONTH` / `ACTION_NEXT_MONTH` 切換顯示月份。
   - 點擊「`+ 新增`」按鈕：透過 `WidgetDeepLink.OpenCalendarDay(dateMillis, openQuickAdd = true)` 開啟月曆快速建立對話框，一鍵選擇建立該日記事（帶入 `initialCreatedAtMillis`）或建立該日待辦事項。
-- **即時聯動刷新**：`NoteRepository.onLocalDataChanged`、`TaskRepository.onLocalDataChanged`、`WidgetTaskActions.completeToDo` 與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `CalendarWidgetUpdater.notifyDataChanged` / `refreshAllBlocking`。
+- **即時聯動刷新**：`NoteRepository.onLocalDataChanged`、`TaskRepository.onLocalDataChanged`、`WidgetTaskActions.completeToDo`、`CalendarScreen` 年月切換與 `CloudSyncManager.onRemoteDataSynced` 皆連動 `CalendarWidgetUpdater`。
 
 ---
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **20 個測試類別、93 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **20 個測試類別、94 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
-1. `LunarCalendarFacadeTest`（4 項）：驗證農曆日期換算、節氣、節慶與明日判定。
+1. `LunarCalendarFacadeTest`（4 項）：驗證繁體中文農曆日期換算、二十四節氣、台灣節慶（含除夕、二二八、母親節、父親節、教師節、國慶日等）與明日判定。
 2. `PriorityAndConvertersTest`（5 項）：驗證優先級權重與 Room 型別轉換器（含 `RecurrenceType`）。
 3. `NoteRepositoryTest`（9 項）：驗證記事 CRUD、釘選排序、分類防重、分類刪除記事重歸類、全文搜尋與離線墓碑。
 4. `NoteChecklistLogicTest`（5 項）：驗證 Markdown 核取方塊（`- [ ]` / `- [x]`）解析、切換、游標插入、換行延續與選字轉待辦標題萃取。
-4. `TaskRepositoryTest`（5 項）：驗證待辦非空檢核、完成狀態分離、優先級排序、重複任務完成自動產生下期、截止日與提醒分離及離線墓碑。
-5. `RecurringTaskLogicTest`（5 項）：驗證每天／每週／每月（含月底 31 日保留）下期計算、標籤格式與防重複衍生。
-5. `ReminderSchedulerLogicTest`（5 項）：驗證過期時間攔截、通知總開關、開機／更新後重排篩選與系統廣播動作白名單。
-6. `ThemePreferencesTest`（6 項）：驗證主題模式、按鍵色、月曆樣式、字體大小持久化與重設預設值。
-7. `NotificationPreferencesTest`（1 項）：驗證通知總開關 DataStore 持久化。
-8. `NoteDraftPreferencesTest`（1 項）：驗證未儲存記事草稿保存、讀取與清除。
-9. `SyncConflictResolverTest`（8 項）：驗證 LWW 雙向合併與刪除墓碑衝突決策。
-10. `CloudSyncManagerTest`（4 項）：驗證本地優先上傳、雲端下載合併、離線恢復補傳與個人化設定同步。
-11. `GoogleDriveSyncPayloadSerializerTest`（2 項）：驗證 Google 雲端硬碟快照 JSON 之 64 位元整數、空值、各實體與墓碑來回序列化與異常防護。
-12. `GoogleDriveRemoteDataSourceTest`（3 項）：驗證 Google Drive `appDataFolder` 建立與增量更新合併保留未異動文件、HTTP 401 提示與路由分派。
-13. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析與 6 款月曆樣式對比度。
-14. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
-15. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
-16. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
-17. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
-18. `CalendarWidgetLogicTest`（7 項）：驗證月曆小工具跨年月份進退位、42 格週日對齊與今日標示、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、農曆顯示切換與節慶標記及深度連結解析。
+5. `TaskRepositoryTest`（5 項）：驗證待辦非空檢核、完成狀態分離、優先級排序、重複任務完成自動產生下期、截止日與提醒分離及離線墓碑。
+6. `RecurringTaskLogicTest`（5 項）：驗證每天／每週／每月（含月底 31 日保留）下期計算、標籤格式與防重複衍生。
+7. `ReminderSchedulerLogicTest`（5 項）：驗證過期時間攔截、通知總開關、開機／更新後重排篩選與系統廣播動作白名單。
+8. `ThemePreferencesTest`（6 項）：驗證主題模式、按鍵色、月曆樣式、字體大小持久化與重設預設值。
+9. `NotificationPreferencesTest`（1 項）：驗證通知總開關 DataStore 持久化。
+10. `NoteDraftPreferencesTest`（1 項）：驗證未儲存記事草稿保存、讀取與清除。
+11. `SyncConflictResolverTest`（8 項）：驗證 LWW 雙向合併與刪除墓碑衝突決策。
+12. `CloudSyncManagerTest`（4 項）：驗證本地優先上傳、雲端下載合併、離線恢復補傳與個人化設定同步。
+13. `GoogleDriveSyncPayloadSerializerTest`（2 項）：驗證 Google 雲端硬碟快照 JSON 之 64 位元整數、空值、各實體與墓碑來回序列化與異常防護。
+14. `GoogleDriveRemoteDataSourceTest`（3 項）：驗證 Google Drive `appDataFolder` 建立與增量更新合併保留未異動文件、HTTP 401 提示與路由分派。
+15. `ColorContrastUtilsTest`（5 項）：驗證 WCAG 對比度計算、同色防隱形文字翻轉、Hex 解析、6 款月曆樣式對比度與星期日紅字保持。
+16. `ExampleUnitTest`（1 項）：驗證基礎測試框架運作。
+17. `QuickNoteWidgetLogicTest`（7 項）：驗證桌面記事小工具分類篩選編解碼、釘選與更新時間排序、分類遺失安全退回、空白標題／多行摘要格式化與新增／編輯深度連結解析。
+18. `ToDoWidgetLogicTest`（5 項）：驗證待辦小工具未完成任務過濾、高中低優先級與截止日排序、徽章與標籤格式、逾期／今日／明日／未來截止日判別與深度連結解析。
+19. `TodayScheduleWidgetLogicTest`（5 項）：驗證今日行程小工具今天到期待辦過濾、今日完成進度統計（含時間規劃與到期任務）、即將到來提醒篩選與時間格式及深度連結解析。
+20. `CalendarWidgetLogicTest`（8 項）：驗證月曆小工具跨年月份進退位、4／5／6 週動態週數列與週日紅字標記、非當月快速新增預設日、記事與待辦同日歸類排序、超過 2 筆截斷與「`＋3 項`」顯示規則、台灣節慶與農曆顯示切換及深度連結解析。
 
 ---
 

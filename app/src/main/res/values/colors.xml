@@ -43,9 +43,11 @@
     <color name="widget_cal_today_bg">#FFEBF2FF</color>
     <color name="widget_cal_today_border">#FF2563EB</color>
     <color name="widget_cal_today_text">#FF1D4ED8</color>
-    <color name="widget_cal_cell_bg">#FFFFFFFF</color>
-    <color name="widget_cal_cell_border">#FFE5E7EB</color>
-    <color name="widget_cal_cell_other_bg">#FFF8FAFC</color>
+    <color name="widget_cal_sunday_text">#FFD32F2F</color>
+    <color name="widget_cal_sunday_other_text">#FFE57373</color>
+    <color name="widget_cal_cell_bg">#00000000</color>
+    <color name="widget_cal_cell_border">#FFD8DEE9</color>
+    <color name="widget_cal_cell_other_bg">#00000000</color>
     <color name="widget_cal_text_other">#FF9CA3AF</color>
     <color name="widget_cal_note_bg">#FFFEF3C7</color>
     <color name="widget_cal_note_text">#FF92400E</color>

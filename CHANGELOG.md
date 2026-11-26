@@ -4,6 +4,16 @@
 
 ---
 
+## [1.13.0] - 2026-11-26
+### 優化與調整 (Changed / Improved)
+- **月曆標題、農曆台灣節慶、週日紅字與桌面小工具月曆同步改版（`LunarCalendarEngine` / `CalendarScreen` / `CalendarWidgetProvider`）**：
+  - 將月曆分頁頂部標題「📅 農曆萬年曆」改為「📅 月曆」（[AppNavigation.kt](app/src/main/java/com/example/notepad/ui/app/AppNavigation.kt)），並將 App 月曆與桌面小工具月曆之星期日標題「日」與星期日日期數字統一改為高對比紅色（[CalendarThemeResolver.kt](app/src/main/java/com/example/notepad/ui/theme/CalendarThemeResolver.kt)、[widget_calendar.xml](app/src/main/res/layout/widget_calendar.xml)、[CalendarWidgetProvider.kt](app/src/main/java/com/example/notepad/widget/CalendarWidgetProvider.kt)）。
+  - 全面將 [LunarCalendarEngine.kt](app/src/main/java/com/example/notepad/calendar/LunarCalendarEngine.kt) 與 [LunarCalendarFacade.kt](app/src/main/java/com/example/notepad/calendar/LunarCalendarFacade.kt) 農曆欄位改為純繁體中文（修正「驚蟄、穀雨、小滿、芒種、處暑」正體字與閏月年份推進邏輯），並改以台灣節慶為主（新增除夕、元旦、二二八和平紀念日、兒童節、母親節、勞動節、端午節、七夕、父親節、中元節、教師節、中秋節、重陽節、雙十國慶日、台灣光復節、尾牙、行憲紀念日等）。
+  - 改造桌面小工具月曆與 App 月曆同步：於 App 月曆切換年月時自動同步小工具顯示月份（`CalendarWidgetUpdater.syncDisplayedMonth`）、將小工具年份與月份標題字體放大至 `18sp`、讓小工具週次列依當月實際週數（4／5／6 週）動態增減，並移除每日方框改以每週橫線區隔（[CalendarWidgetLogic.kt](app/src/main/java/com/example/notepad/widget/CalendarWidgetLogic.kt)、[widget_calendar.xml](app/src/main/res/layout/widget_calendar.xml)）。
+- **測試覆蓋擴充**：擴充 `LunarCalendarFacadeTest`、`CalendarWidgetLogicTest`（8 項）與 `ColorContrastUtilsTest`，全專案單元測試達 **94 項**（20 個測試套件，0 失敗、0 略過、0 Lint 錯誤）。
+
+---
+
 ## [1.12.0] - 2026-11-25
 ### 新增 (Added)
 - **記事內嵌核取方塊（Checklist）與一鍵轉待辦／今日規劃（`NoteChecklistLogic` / `NoteEditorScreen`）**：

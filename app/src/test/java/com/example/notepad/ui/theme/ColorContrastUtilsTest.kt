@@ -107,6 +107,24 @@ class ColorContrastUtilsTest {
             hasSolarTerm = true
         )
         assertTrue(ColorContrastUtils.contrastRatio(selectedSolarTermInk, yellowCellPalette.selectedBgColor) >= 4.5f)
+
+        // 驗證所有月曆樣式在深／淺色模式下的星期日「日」標題與未選中星期日數字皆維持紅色色相且達 4.5+ 對比度
+        for (style in CalendarStyle.entries) {
+            for (dark in listOf(false, true)) {
+                val palette = CalendarThemeResolver.resolvePalette(
+                    style = style,
+                    customAccentColorLong = null,
+                    darkTheme = dark,
+                    themeColorScheme = if (dark) darkColorScheme() else lightScheme
+                )
+                val sundayHeader = palette.sundayHeaderColor
+                val sundayNumber = palette.resolveDayNumberColor(isSelected = false, dayOfWeekIndex = 0)
+                assertTrue(sundayHeader.red > sundayHeader.green && sundayHeader.red > sundayHeader.blue)
+                assertTrue(sundayNumber.red > sundayNumber.green && sundayNumber.red > sundayNumber.blue)
+                assertTrue(ColorContrastUtils.contrastRatio(sundayHeader, palette.cardBgColor) >= 4.5f)
+                assertTrue(ColorContrastUtils.contrastRatio(sundayNumber, palette.cardBgColor) >= 4.5f)
+            }
+        }
     }
 
     @Test

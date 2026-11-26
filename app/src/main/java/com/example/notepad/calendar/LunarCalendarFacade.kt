@@ -98,24 +98,21 @@ data class CalendarInfo(
             "Mid-Autumn Festival" -> "中秋節"
             "Double Ninth Festival" -> "重陽節"
             "New Year's Day" -> "元旦"
-            "Valentine's Day" -> "情人節"
+            "Valentine's Day" -> "西洋情人節"
             "Labor Day" -> "勞動節"
-            "Christmas" -> "聖誕節"
+            "Christmas" -> "行憲紀念日"
             else -> festival
         }
 
     val displayLabel: String
         get() {
-            val f = when (festival) {
-                "Spring Festival" -> "春節"
-                "Lantern Festival" -> "元宵"
-                "Dragon Boat Festival" -> "端午"
-                "Qixi Festival" -> "七夕"
-                "Mid-Autumn Festival" -> "中秋"
-                "Double Ninth Festival" -> "重陽"
-                "New Year's Day" -> "元旦"
-                "Christmas" -> "聖誕"
-                else -> festival
+            if (solarTerm == "清明") return "清明"
+            val f = when (val fest = displayFestival) {
+                "和平紀念日" -> "二二八"
+                "西洋情人節" -> "情人節"
+                "台灣光復節" -> "光復節"
+                "行憲紀念日" -> "行憲紀念"
+                else -> fest
             }
             if (!f.isNullOrEmpty()) return f
             if (!solarTerm.isNullOrEmpty()) return solarTerm

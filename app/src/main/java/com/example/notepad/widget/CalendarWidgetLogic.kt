@@ -26,7 +26,7 @@ data class CalendarDayEvent(
 )
 
 /**
- * 月曆桌面小工具單一日期格完整狀態（6 週 x 7 天 共 42 格）
+ * 月曆桌面小工具單一日期格完整狀態（依當月實際週數動態產生 4~6 週 x 7 天）
  */
 data class CalendarDayCellState(
     val dayStartMillis: Long,
@@ -37,11 +37,12 @@ data class CalendarDayCellState(
     val overflowCount: Int,
     val overflowLabel: String?,
     val lunarLabel: String? = null,
-    val isLunarHighlight: Boolean = false
+    val isLunarHighlight: Boolean = false,
+    val isSunday: Boolean = false
 )
 
 /**
- * 經月份對齊、農曆顯示設定、多筆截斷與色彩語意整理後的月曆小工具狀態
+ * 經月份對齊、動態週數計算、農曆顯示設定、多筆截斷與色彩語意整理後的月曆小工具狀態
  */
 data class ResolvedCalendarWidgetState(
     val year: Int,
@@ -49,7 +50,8 @@ data class ResolvedCalendarWidgetState(
     val headerTitle: String,
     val quickAddDefaultDateMillis: Long,
     val showLunarDate: Boolean,
-    val cells: List<CalendarDayCellState>
+    val cells: List<CalendarDayCellState>,
+    val weekCount: Int = (cells.size / CalendarWidgetLogic.DAYS_PER_WEEK).coerceAtLeast(1)
 )
 
 /**
@@ -60,7 +62,13 @@ object CalendarWidgetLogic {
     /** 每個日期格最多直接顯示的文字事項筆數 */
     const val MAX_VISIBLE_EVENTS = 2
 
-    /** 完整月曆固定顯示 6 週 x 7 天 */
+    /** 每週固定 7 天 */
+    const val DAYS_PER_WEEK = 7
+
+    /** 單月最多橫跨 6 週 */
+    const val MAX_WEEK_COUNT = 6
+
+    /** 最大格數上限（6 週 x 7 天） */
     const val GRID_CELL_COUNT = 42
 
     /** 共用離線農曆門面實例（避免每次繪製重複建立物件） */
@@ -126,19 +134,23 @@ object CalendarWidgetLogic {
             set(Calendar.MILLISECOND, 0)
         }
         val firstDayOfMonthMillis = dateNormalizer(cursor.timeInMillis)
+        val daysInMonth = cursor.getActualMaximum(Calendar.DAY_OF_MONTH)
         val leadingDaysCount = cursor.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY
+        val weekCount = ((leadingDaysCount + daysInMonth + 6) / DAYS_PER_WEEK).coerceIn(4, MAX_WEEK_COUNT)
+        val totalCellCount = weekCount * DAYS_PER_WEEK
         cursor.add(Calendar.DAY_OF_MONTH, -leadingDaysCount)
 
         var todayContainedInMonth = false
-        val cells = ArrayList<CalendarDayCellState>(GRID_CELL_COUNT)
+        val cells = ArrayList<CalendarDayCellState>(totalCellCount)
 
-        repeat(GRID_CELL_COUNT) {
+        repeat(totalCellCount) { index ->
             val cellYear = cursor.get(Calendar.YEAR)
             val cellMonth = cursor.get(Calendar.MONTH) + 1
             val cellDay = cursor.get(Calendar.DAY_OF_MONTH)
             val cellMidnight = dateNormalizer(cursor.timeInMillis)
             val isCurrentMonth = cellYear == year && cellMonth == month
             val isToday = cellMidnight == normalizedToday
+            val isSunday = (index % DAYS_PER_WEEK == 0)
             if (isToday && isCurrentMonth) {
                 todayContainedInMonth = true
             }
@@ -163,7 +175,8 @@ object CalendarWidgetLogic {
                     overflowCount = overflowCount,
                     overflowLabel = overflowLabel,
                     lunarLabel = lunarLabel,
-                    isLunarHighlight = isLunarHighlight
+                    isLunarHighlight = isLunarHighlight,
+                    isSunday = isSunday
                 )
             )
 
@@ -182,7 +195,8 @@ object CalendarWidgetLogic {
             headerTitle = "${year}年 ${month}月",
             quickAddDefaultDateMillis = quickAddDefaultDateMillis,
             showLunarDate = showLunarDate,
-            cells = cells
+            cells = cells,
+            weekCount = weekCount
         )
     }
 
