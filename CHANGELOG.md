@@ -4,6 +4,17 @@
 
 ---
 
+## [1.14.1] - 2026-11-26
+### 修復 (Fixed)
+- **修復二十四節氣錯日問題（改採 VSOP87D 高精度天文太陽黃經演算法）與全面稽核 1900–2100 曆法日期（`SolarTermAstronomy` / `LunarCalendarEngine` / `LunarCalendarFacade`）**：
+  - 根因修復：舊版 `LunarCalendarEngine.getSolarTerm` 使用線性近似公式並疊加 UTC+8 偏移，導致全部節氣晚約 7～10 小時，僅 2026 年即造成 10 個節氣錯日（雨水 2/18、驚蟄 3/5、春分 3/20、立夏 5/5、芒種 6/5、夏至 6/21、立秋 8/7、白露 9/7、霜降 10/23、**立冬 11/7**）。
+  - 新增 [SolarTermAstronomy.kt](app/src/main/java/com/example/notepad/calendar/SolarTermAstronomy.kt)，實作 Jean Meeus / VSOP87D 地球日心黃經 `L0–L5`、FK5 修正、IAU 黃經章動、光行差與 NASA $\Delta T$，以牛頓切線法求解台灣標準時間（UTC+8）交節時刻（與台灣中央氣象署 2024–2028 年全部 120 個節氣比對誤差小於 1 分鐘、0 錯日），並加入年度查詢快取。
+  - 全面校驗 1900–2100 年 2,485 個農曆初一朔日：修正 [LunarCalendarEngine.kt](app/src/main/java/com/example/notepad/calendar/LunarCalendarEngine.kt) 中 2060 年位元表誤差（`0x0a2e0` → `0x092e0`，將 2060 農曆四月初一修正為正確天文日 `2060-04-30`），並加入 1900–2100 範圍外日期邊界防護。
+  - 修復 [LunarCalendarFacade.kt](app/src/main/java/com/example/notepad/calendar/LunarCalendarFacade.kt) 閏月初一 `displayLabel` 漏顯示「閏」字的問題（如 2025-07-25 正確顯示「`閏六月`」）。
+- **測試覆蓋擴充**：擴充 [LunarCalendarFacadeTest](app/src/test/java/com/example/notepad/calendar/LunarCalendarFacadeTest.kt)（7 項，完整驗證 2024–2028 年全部 120 個節氣、2026 年 12 個農曆初一、閏月標籤、2060 年修正與邊界安全），全專案單元測試達 **98 項**（20 個測試套件，0 失敗、0 略過、0 Lint 錯誤）。
+
+---
+
 ## [1.14.0] - 2026-11-26
 ### 新增與優化 (Added / Improved)
 - **小工具月曆日期字體大小調整（`CalendarWidgetLogic` / `CalendarWidgetPreferences` / `CalendarWidgetProvider` / `CalendarWidgetConfigureActivity`）**：

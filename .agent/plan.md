@@ -315,6 +315,16 @@
   - App 設定中心完成分類摺疊設計，點擊分類後才展開對應設定項目
   - 全專案 95 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
 
+### Task_28_AstronomicalSolarTermsAndCalendarAudit: 全面稽核並修復二十四節氣演算法（VSOP87D 高精度天文太陽黃經）、2060 年農曆表誤差與閏月初一顯示。
+- **狀態 (Status):** COMPLETED (已完成)
+- **更新記錄 (Updates):**
+  - 稽核查出舊版 `getSolarTerm` 線性公式加 UTC+8 偏移造成 2026 年 10 個節氣錯日（含立冬誤判為 11/8）；新增 `SolarTermAstronomy.kt` 導入 Jean Meeus / VSOP87D `L0–L5` 視太陽黃經、章動、光行差與 $\Delta T$ 演算法，與台灣中央氣象署 2024–2028 年全部 120 個節氣完全吻合（誤差小於 1 分鐘、0 錯日）。
+  - 全表檢核 1900–2100 年 2,485 個天文朔日，修正 `LunarCalendarEngine.lunarInfo` 2060 年位元表誤差（`0x0a2e0` → `0x092e0`）並補齊邊界安全防護；修復 `LunarCalendarFacade.CalendarInfo.displayLabel` 閏月初一漏顯示「閏」字問題。
+  - 擴充 `LunarCalendarFacadeTest`（共 7 項），全專案達 **20 套件、98 項單元測試** 全部通過且 0 Lint 錯誤。
+- **驗收標準 (Acceptance Criteria):**
+  - 2024–2028 年全部 120 個二十四節氣（含 2026-11-07 立冬）與 2026 全年農曆初一 100% 精準匹配
+  - 全專案 98 項單元測試、`./gradlew test build`、R8 Release 與 APK 簽章驗證通過並推送至 GitHub
+
 ---
 
 ## 專案規範索引 (Guidelines Reference)

@@ -116,6 +116,10 @@ data class CalendarInfo(
             }
             if (!f.isNullOrEmpty()) return f
             if (!solarTerm.isNullOrEmpty()) return solarTerm
-            return if (lunarDate.day == 1) lunarDate.getLunarMonthName() else lunarDate.getLunarDayName()
+            return if (lunarDate.day == 1) {
+                "${if (lunarDate.isLeapMonth) "閏" else ""}${lunarDate.getLunarMonthName()}"
+            } else {
+                lunarDate.getLunarDayName()
+            }
         }
 }

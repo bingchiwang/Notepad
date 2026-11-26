@@ -224,9 +224,14 @@ class CalendarWidgetLogicTest {
         assertEquals("春節", springFestivalCell.lunarLabel)
         assertTrue(springFestivalCell.isLunarHighlight)
 
+        // 2026 年 2 月 18 日 23:52 (UTC+8) 為「雨水」節氣（醒目標示），2 月 19 日為一般農曆「初三」
         val feb18Cell = withLunar.cells.first { it.isCurrentMonth && it.dayOfMonth == 18 }
-        assertEquals("初二", feb18Cell.lunarLabel)
-        assertFalse(feb18Cell.isLunarHighlight)
+        assertEquals("雨水", feb18Cell.lunarLabel)
+        assertTrue(feb18Cell.isLunarHighlight)
+
+        val feb19Cell = withLunar.cells.first { it.isCurrentMonth && it.dayOfMonth == 19 }
+        assertEquals("初三", feb19Cell.lunarLabel)
+        assertFalse(feb19Cell.isLunarHighlight)
     }
 
     @Test

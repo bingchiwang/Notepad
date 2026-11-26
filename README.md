@@ -6,7 +6,7 @@
 [![Navigation 3](https://img.shields.io/badge/Navigation-3.0-orange.svg)](https://developer.android.com/guide/navigation)
 [![Min SDK](https://img.shields.io/badge/Min%20SDK-26%20(Android%208.0)-teal.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-37-brightgreen.svg)](https://developer.android.com)
-[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-95%20Passed-success.svg)](app/src/test/java/com/example/notepad)
+[![Unit Tests](https://img.shields.io/badge/Unit%20Tests-98%20Passed-success.svg)](app/src/test/java/com/example/notepad)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
@@ -226,11 +226,11 @@ com.example.notepad/
 
 ## 🧪 測試覆蓋與品質保證 (Testing & QA)
 
-本專案包含 **20 個單元測試套件、共 95 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
+本專案包含 **20 個單元測試套件、共 98 項自動化測試案例**，涵蓋所有核心演算法、自動化重複任務計算、記事核取方塊解析、資料倉儲、偏好設定、雲端同步衝突解決、Google Drive API 序列化與合併、WCAG 色彩對比計算與桌面小工具邏輯：
 
 | 測試套件類別 | 測試數量 | 驗證範圍說明 |
 | :--- | :---: | :--- |
-| `LunarCalendarFacadeTest` | 4 | 春節農曆換算、繁體中文二十四節氣、台灣節慶（除夕、二二八、母親節、父親節、教師節、國慶日等）與明日到期判定 |
+| `LunarCalendarFacadeTest` | 7 | 農曆全年換算、2024–2028 全部 120 個 VSOP87D 天文二十四節氣、閏月初一標籤、2060 位元表修正、台灣節慶與明日到期判定 |
 | `PriorityAndConvertersTest` | 5 | 優先級權重排序與 Room `DatabaseConverters`（含 `RecurrenceType`）雙向轉換 |
 | `RecurringTaskLogicTest` | 5 | 每天／每週／每月（含月底 31 日保留不偏移）下期計算、標籤格式與防重生成保護 |
 | `NoteRepositoryTest` | 9 | 記事空白標題/內文保存、`updatedAt` 更新、釘選排序、分類防重、刪除分類記事歸屬、全文搜尋與離線刪除墓碑 |
@@ -281,7 +281,7 @@ com.example.notepad/
 
 ### 常用 Gradle 指令
 ```bash
-# 1. 執行全部 95 項單元測試
+# 1. 執行全部 98 項單元測試
 ./gradlew testDebugUnitTest
 
 # 2. 建置 Debug APK

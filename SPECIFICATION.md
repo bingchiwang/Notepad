@@ -78,7 +78,7 @@
 - 完整處理 Android 8.0+（API 26+）通知頻道與權限：Android 13+ 動態申請 `POST_NOTIFICATIONS`，並結合 `NotificationManagerCompat.areNotificationsEnabled()` 與 `AppSettingsDialog` 的 `ON_RESUME` 生命週期監聽即時反映系統授權狀態。
 
 ### 3.4 離線農曆萬年曆、每日排程與番茄鐘
-- **離線農曆萬年曆（`LunarCalendarFacade` / `CalendarScreen`）**：支援 1900–2100 年農曆日、天干地支生肖、二十四節氣與傳統民俗節日演算，並連動當日待辦與提醒項目。
+- **離線農曆萬年曆（`LunarCalendarFacade` / `LunarCalendarEngine` / `SolarTermAstronomy` / `CalendarScreen`）**：支援 1900–2100 年全表校驗之農曆日、閏月（「閏X月」標示）、干支生肖、VSOP87D 高精度天文二十四節氣（對齊台灣中央氣象署 UTC+8）與台灣節慶演算，並連動當日記事、待辦與提醒項目。
 - **每日時間規畫與內嵌番茄鐘（`ScheduleScreen` / `PomodoroScreen`）**：於「時間規畫表」內整合「`⏰ 時間規畫`」與「`🍅 番茄鐘`」雙分頁，以日期切換檢視時間區塊、計算當日完成率進度條，並可一鍵將排程或待辦任務帶入番茄鐘（專注工作 25 分鐘、短暫休息 5 分鐘、深度休息 15 分鐘）自動寫入 `PomodoroRecord`。
 
 ### 3.5 全局導航、系統欄安全防護與操作規範
@@ -144,9 +144,9 @@
 
 ## 4. 單元測試與驗證矩陣
 
-全專案共計 **20 個測試類別、95 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
+全專案共計 **20 個測試類別、98 項單元測試**，每次異動均透過 `./gradlew test` 與 `./gradlew build` 驗證通過：
 
-1. `LunarCalendarFacadeTest`（4 項）：驗證繁體中文農曆日期換算、二十四節氣、台灣節慶（含除夕、二二八、母親節、父親節、教師節、國慶日等）與明日判定。
+1. `LunarCalendarFacadeTest`（7 項）：驗證繁體中文農曆日期換算、2024–2028 年全部 120 個 VSOP87D 天文二十四節氣（對齊台灣中央氣象署 UTC+8）、2026 全年農曆初一、閏月初一「閏」字顯示、2060 年位元表修正、範圍邊界防護、台灣節慶與明日判定。
 2. `PriorityAndConvertersTest`（5 項）：驗證優先級權重與 Room 型別轉換器（含 `RecurrenceType`）。
 3. `NoteRepositoryTest`（9 項）：驗證記事 CRUD、釘選排序、分類防重、分類刪除記事重歸類、全文搜尋與離線墓碑。
 4. `NoteChecklistLogicTest`（5 項）：驗證 Markdown 核取方塊（`- [ ]` / `- [x]`）解析、切換、游標插入、換行延續與選字轉待辦標題萃取。

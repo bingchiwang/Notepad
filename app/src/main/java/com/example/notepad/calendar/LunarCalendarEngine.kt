@@ -6,8 +6,8 @@ import java.util.TimeZone
 
 /**
  * 農曆萬年曆核心演算法引擎（支援西元 1900 年至 2100 年）
- * - 透過 16 進位位元遮罩表 (lunarInfo) 解算農曆大月 (30天)、小月 (29天) 與閏月月份
- * - 結合太陽黃經分鐘偏移量計算二十四節氣與傳統／國曆節慶
+ * - 透過 16 進位位元遮罩表 (lunarInfo) 解算農曆大月 (30天)、小月 (29天) 與閏月月份（已全表校驗天文朔日）
+ * - 委託 [SolarTermAstronomy] 採 VSOP87D 視太陽黃經高精度演算法計算台灣標準時間（UTC+8）二十四節氣與台灣節慶
  */
 class LunarCalendarEngine {
 
@@ -33,23 +33,11 @@ class LunarCalendarEngine {
             0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45, // 2030-2039
             0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0, // 2040-2049
             0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1a6c4, 0x0aae0, // 2050-2059
-            0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4, // 2060-2069
+            0x092e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4, // 2060-2069
             0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0, // 2070-2079
             0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160, // 2080-2089
             0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252, // 2090-2099
             0x0d520 // 2100
-        )
-
-        private val solarTermNames = arrayOf(
-            "小寒", "大寒", "立春", "雨水", "驚蟄", "春分",
-            "清明", "穀雨", "立夏", "小滿", "芒種", "夏至",
-            "小暑", "大暑", "立秋", "處暑", "白露", "秋分",
-            "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"
-        )
-
-        private val solarTermInfo = intArrayOf(
-            0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693,
-            263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758
         )
 
         // 台灣國曆主要節慶與紀念日對照表 (MMDD -> 繁體中文節慶名稱)
@@ -149,6 +137,9 @@ class LunarCalendarEngine {
             }
 
             val offset = ((dateCal.timeInMillis - baseCal.timeInMillis) / 86400000L).toInt()
+            if (offset < 0) {
+                return LunarDate(1900, 1, 1, false)
+            }
 
             var daysToConsume = offset
             var iYear = 1900
@@ -157,6 +148,9 @@ class LunarCalendarEngine {
                 if (daysToConsume < daysOfYear) break
                 daysToConsume -= daysOfYear
                 iYear++
+            }
+            if (iYear > 2100) {
+                return LunarDate(2100, 12, getMonthDays(2100, 12), false)
             }
 
             val leapMonth = getLeapMonth(iYear)
@@ -184,23 +178,11 @@ class LunarCalendarEngine {
             return LunarDate(iYear, iMonth, daysToConsume + 1, isLeap)
         }
 
+        /**
+         * 取得指定西曆年月日對應之二十四節氣名稱（以台灣標準時間 UTC+8 視太陽黃經高精度演算）
+         */
         fun getSolarTerm(year: Int, month: Int, day: Int): String? {
-            val baseDate = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
-                set(1900, 0, 6, 2, 5, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.time.time
-
-            // 傳統二十四節氣依東亞標準時間（GMT+8）判定所屬曆日，確保在 UTC 或全球各時區（含 CI）結果完全一致
-            val eastAsiaZone = TimeZone.getTimeZone("GMT+8")
-            for (i in 0 until 24) {
-                val ms = (31556925974.7 * (year - 1900) + solarTermInfo[i] * 60000L).toLong()
-                val termDate = Date(baseDate + ms)
-                val cal = Calendar.getInstance(eastAsiaZone).apply { time = termDate }
-                if (cal.get(Calendar.MONTH) == month - 1 && cal.get(Calendar.DAY_OF_MONTH) == day) {
-                    return solarTermNames[i]
-                }
-            }
-            return null
+            return SolarTermAstronomy.getSolarTerm(year, month, day)
         }
 
         fun getFestival(solarDate: Calendar, lunarDate: LunarDate): String? {
